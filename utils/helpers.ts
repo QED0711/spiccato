@@ -77,3 +77,41 @@ export const restoreState = (state: {[key: string]: any}, removed: {[key: string
     }
     return restored
 }
+
+const createParamsString = (params: {[key: string]: any}): string => {
+    let str = ""
+    for (let param of Object.keys(params)) {
+        str += (param + "=" + params[param] + ",")
+    }
+    return str;
+}
+
+export class WindowManager{
+
+    /* Instance Properties */
+    private children: {[key: string]: any};
+    window: {[key: string]: any} | null;
+
+    constructor(window: {[key: string]: any} | null){
+        this.children = [];
+        this.window = window;
+    }
+
+    open(url: string, name: string, queryParams: {[key: string]: any}){
+        if(this.window){
+             this.children[name] = this.window.open(url, name, createParamsString(queryParams) )
+        }
+    }
+
+    close(name: string){
+        this.children[name]?.close();
+        delete this.children[name]
+    }
+
+    removeChildren(){
+        for(let child of Object.values(this.children)){
+            child.close()
+        }
+    }
+
+}

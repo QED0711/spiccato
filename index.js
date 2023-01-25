@@ -22,13 +22,15 @@ const DEFAULT_INIT_OPTIONS = {
     clearOnWindowUnload: true,
     privateState: [],
 };
-let GLOBAL = "global" in (this !== null && this !== void 0 ? this : {}) ? (Object.assign({}, (this !== null && this !== void 0 ? this : { global: null }))).global : (Object.assign({}, (this !== null && this !== void 0 ? this : { window: null }))).window;
-GLOBAL = GLOBAL !== null && GLOBAL !== void 0 ? GLOBAL : {};
-GLOBAL.localStorage = (_a = GLOBAL.localStorage) !== null && _a !== void 0 ? _a : {
+const IS_BROWSER = "window" in (this !== null && this !== void 0 ? this : {});
+let WINDOW = IS_BROWSER ? (Object.assign({}, (this !== null && this !== void 0 ? this : { window: null }))).window : (Object.assign({}, (this !== null && this !== void 0 ? this : { global: null }))).global;
+WINDOW = WINDOW !== null && WINDOW !== void 0 ? WINDOW : {};
+WINDOW.localStorage = (_a = WINDOW.localStorage) !== null && _a !== void 0 ? _a : {
     setItem(key, value) { },
     removeItem(key) { },
     clear() { }
 };
+console.log({ IS_BROWSER, WINDOW });
 class StateManager {
     static registerManager(instance) {
         if (instance.initOptions.id in this.managers) {
@@ -96,7 +98,7 @@ class StateManager {
         var _a;
         if (this.initOptions.persist && !!this.initOptions.windowID) {
             const [sanitized, removed] = (0, helpers_js_1.sanitizeState)(state, this.initOptions.privateState || []);
-            (_a = GLOBAL === null || GLOBAL === void 0 ? void 0 : GLOBAL.localStorage) === null || _a === void 0 ? void 0 : _a.setItem(this.initOptions.windowID, JSON.stringify(sanitized));
+            (_a = WINDOW === null || WINDOW === void 0 ? void 0 : WINDOW.localStorage) === null || _a === void 0 ? void 0 : _a.setItem(this.initOptions.windowID, JSON.stringify(sanitized));
             this.state = (0, helpers_js_1.restoreState)(state, removed);
         }
     }

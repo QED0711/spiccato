@@ -1,4 +1,4 @@
-import { formatAccessor, getNestedRoutes, nestedSetterFactory, sanitizeState, restoreState} from './utils/helpers.js'
+import { formatAccessor, getNestedRoutes, nestedSetterFactory, sanitizeState, restoreState, WindowManager} from './utils/helpers.js'
 /* TYPES */
 type managerID = string;
 
@@ -41,9 +41,10 @@ const DEFAULT_INIT_OPTIONS: InitializationOptions = {
     privateState: [],
 }
 
-let GLOBAL: ({[key: string]: any} | null) = "global" in (this ?? {}) ? ({...(this ?? {global: null})}).global : ({...(this ?? {window: null})}).window;
-GLOBAL = GLOBAL ?? {}
-GLOBAL.localStorage = GLOBAL.localStorage ?? {
+const IS_BROWSER = "window" in (this ?? {})
+let WINDOW: ({[key: string]: any} | null) =  IS_BROWSER ? ({...(this ?? {window: null})}).window : ({...(this ?? {global: null})}).global;
+WINDOW = WINDOW ?? {}
+WINDOW.localStorage = WINDOW.localStorage ?? {
     setItem(key: string, value: string){},
     removeItem(key: string){},
     clear(){}
@@ -70,6 +71,7 @@ export class StateManager {
     getters: { [key: string]: Function };
     setters: { [key: string]: Function };
     methods: { [key: string]: Function };
+    windowManager: (WindowManager | null);
     private _eventListeners: { [key: string]: Function[] }
     [key: string]: any; /* for runtime added properties */
 
@@ -80,6 +82,8 @@ export class StateManager {
         this.getters = {}
         this.setters = {}
         this.methods = {}
+        
+        this.windowManager = IS_BROWSER ? new WindowManager(WINDOW) : null;
 
         this._applyState();
         this._eventListeners = {};
@@ -138,7 +142,7 @@ export class StateManager {
     private _persistToLocalStorage(state: StateObject){
         if(this.initOptions.persist && !!this.initOptions.windowID){
             const [sanitized, removed] = sanitizeState(state, this.initOptions.privateState || []) 
-            GLOBAL?.localStorage?.setItem(this.initOptions.windowID, JSON.stringify(sanitized))
+            WINDOW?.localStorage?.setItem(this.initOptions.windowID, JSON.stringify(sanitized))
             this.state = restoreState(state, removed);
         }
     }
@@ -190,6 +194,8 @@ export class StateManager {
             }
         }
     }
+
+    /********** EVENTS **********/
 
     addEventListener(eventType: string, callback: Function) {
         if (eventType in this._eventListeners) {
