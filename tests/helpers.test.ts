@@ -1,20 +1,8 @@
-import { getNestedRoutes, sanitizeState } from "../utils/helpers";
+import { getNestedRoutes, sanitizeState, restoreState } from "../utils/helpers";
 
 describe("Helpers", () => {
-    test("getNestedRoutes", () => {
-        // console.log(getNestedRoutes({
-        //     a: 1,
-        //     b: {
-        //         c: 2,
-        //         d: {
-        //             e: 3,
-        //             f: []
-        //         }
-        //     }
-        // }))
-    })
+    test("Sanitization and Restoration", () => {
 
-    describe("sanitizeState", () => {
         const state = {
             a: {
                 b: {
@@ -25,16 +13,12 @@ describe("Helpers", () => {
             e: 3
         }
 
-        test("Sanitization removes private state", () => {
-            const sanitized = sanitizeState(state, [["e"], ["a", "b", "c"]]);
-            expect(sanitized.a.b.c).toBe(undefined);
-            expect(sanitized.e).toBe(undefined);
-        })
+        const [sanitized, removed] = sanitizeState(state, [["e"], ["a", "b", "c"]]);
+        expect(sanitized.a.b.c).toBe(undefined);
+        expect(sanitized.e).toBe(undefined);
 
-        test("Sanitization doesn't change original state", () => {
-            expect(state).toHaveProperty(["a", "b", "c"], 1);
-            expect(state).toHaveProperty("e", 3);
-        })
-
+        const restored = restoreState(state, removed)
+        expect(restored.a.b.c).toBe(1);
+        expect(restored.e).toBe(3)
     })
 })

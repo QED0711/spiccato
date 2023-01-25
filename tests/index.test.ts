@@ -153,17 +153,17 @@ describe("Events", () => {
                 testManager.addEventListener("update", (payload: EventPayload) => {
                     resolve(payload);
                 });
-                testManager.setState({myVal: 84});
+                testManager.setState({ myVal: 84 });
             })
             expect(payload.state).toStrictEqual(testManager.state);
             expect(payload.state?.myVal).toBe(84);
         })
 
         test("removeEventListener", async () => {
-    
+
             const value: number = await new Promise(async resolve => {
                 const callback = (payload: EventPayload) => {
-                    if(payload.value > 2) resolve(payload.value) // if it makes it to the third call this will resolve to '3' and will fail the test
+                    if (payload.value > 2) resolve(payload.value) // if it makes it to the third call this will resolve to '3' and will fail the test
                 }
                 testManager.addEventListener("on_my_val_update", callback)
                 await testManager.setters.setMyVal(1);
@@ -172,10 +172,28 @@ describe("Events", () => {
                 await testManager.setters.setMyVal(3);
                 resolve(0)
             })
-    
+
             expect(value).toBe(0);
-    
+
         })
     });
 
+})
+
+describe("Local Storage Peristance", () => {
+    test("Persistance doesn't mutate local state", () => {
+        const manager = new StateManager({
+            a: {
+                b: {
+                    c: 3
+                },
+                d: 4
+            },
+            e: 5
+        }, { id: "Persist", persist: true, privateState: ["e", ["a", "b", "c"]] })
+
+        manager.setters.setA_d(10);
+        expect(manager.state.a.b.c).toBe(3);
+        expect(manager.state.e).toBe(5);
+    })
 })

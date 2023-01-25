@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.sanitizeState = exports.nestedSetterFactory = exports.getNestedRoutes = exports.formatAccessor = void 0;
+exports.restoreState = exports.sanitizeState = exports.nestedSetterFactory = exports.getNestedRoutes = exports.formatAccessor = void 0;
 const formatAccessor = (path, accessorType = "get") => {
     path = Array.isArray(path) ? path.join("_") : path;
     return accessorType + path[0].toUpperCase() + path.slice(1);
@@ -39,12 +39,14 @@ const nestedSetterFactory = (state, path) => (newValue) => {
 exports.nestedSetterFactory = nestedSetterFactory;
 const sanitizeState = (state, privatePaths) => {
     const sanitized = Object.assign({}, state);
+    const removed = new Map();
     for (let path of privatePaths !== null && privatePaths !== void 0 ? privatePaths : []) {
         if (typeof Array.isArray(path)) {
             let copy = sanitized;
             for (let i = 0; i < path.length; i++) {
-                console.log(copy, path[i], "\n");
+                // console.log(copy, path[i], "\n")
                 if (i === path.length - 1) {
+                    removed.set(path, copy[path[i]]);
                     delete copy[path[i]];
                     break;
                 }
@@ -55,6 +57,24 @@ const sanitizeState = (state, privatePaths) => {
             delete sanitized[path];
         }
     }
-    return sanitized;
+    return [sanitized, removed];
 };
 exports.sanitizeState = sanitizeState;
+const restoreState = (state, removed) => {
+    const restored = Object.assign({}, state);
+    let copy;
+    for (let [path, value] of removed.entries()) {
+        path = Array.isArray(path) ? path : [path];
+        copy = restored;
+        for (let i = 0; i < path.length; i++) {
+            if (i == path.length - 1) {
+                copy[path[i]] = value;
+            }
+            else {
+                copy = copy[path[i]];
+            }
+        }
+    }
+    return restored;
+};
+exports.restoreState = restoreState;

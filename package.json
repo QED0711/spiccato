@@ -8,6 +8,6 @@
   "scripts": {
     "start": "npx tsc; node index.js",
     "build": "npx tsc",
-    "test": "npm run build; ./node_modules/.bin/jest" 
+    "test": "npm run build && ./node_modules/.bin/jest"
   }
 }

@@ -153,3 +153,19 @@ describe("Events", () => {
         }));
     });
 });
+describe("Local Storage Peristance", () => {
+    test("Persistance doesn't mutate local state", () => {
+        const manager = new index_1.StateManager({
+            a: {
+                b: {
+                    c: 3
+                },
+                d: 4
+            },
+            e: 5
+        }, { id: "Persist", persist: true, privateState: ["e", ["a", "b", "c"]] });
+        manager.setters.setA_d(10);
+        expect(manager.state.a.b.c).toBe(3);
+        expect(manager.state.e).toBe(5);
+    });
+});

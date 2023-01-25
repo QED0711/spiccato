@@ -8,6 +8,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.StateManager = void 0;
 const helpers_js_1 = require("./utils/helpers.js");
@@ -20,6 +21,13 @@ const DEFAULT_INIT_OPTIONS = {
     persist: false,
     clearOnWindowUnload: true,
     privateState: [],
+};
+let GLOBAL = "global" in (this !== null && this !== void 0 ? this : {}) ? (Object.assign({}, (this !== null && this !== void 0 ? this : { global: null }))).global : (Object.assign({}, (this !== null && this !== void 0 ? this : { window: null }))).window;
+GLOBAL = GLOBAL !== null && GLOBAL !== void 0 ? GLOBAL : {};
+GLOBAL.localStorage = (_a = GLOBAL.localStorage) !== null && _a !== void 0 ? _a : {
+    setItem(key, value) { },
+    removeItem(key) { },
+    clear() { }
 };
 class StateManager {
     static registerManager(instance) {
@@ -84,10 +92,12 @@ class StateManager {
             }
         }
     }
-    persistToLocalStorage(state) {
+    _persistToLocalStorage(state) {
+        var _a;
         if (this.initOptions.persist && !!this.initOptions.windowID) {
-            const sanitized = (0, helpers_js_1.sanitizeState)(state, this.initOptions.privateState || []);
-            this.localStorage.setItem(this.initOptions.windowID, JSON.stringify(sanitized));
+            const [sanitized, removed] = (0, helpers_js_1.sanitizeState)(state, this.initOptions.privateState || []);
+            (_a = GLOBAL === null || GLOBAL === void 0 ? void 0 : GLOBAL.localStorage) === null || _a === void 0 ? void 0 : _a.setItem(this.initOptions.windowID, JSON.stringify(sanitized));
+            this.state = (0, helpers_js_1.restoreState)(state, removed);
         }
     }
     setState(updater, callback = null) {
@@ -103,7 +113,8 @@ class StateManager {
             callback === null || callback === void 0 ? void 0 : callback(updated);
             this.emitEvent("update", { state: updated });
             if (this.initOptions.persist && this.initOptions.windowID) {
-                window.localStorage.setItem(this.initOptions.windowID, JSON.stringify(this.state));
+                this._persistToLocalStorage(this.state);
+                // window.localStorage.setItem(this.initOptions.windowID, JSON.stringify(this.state))
             }
         });
     }

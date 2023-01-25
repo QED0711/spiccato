@@ -1,4 +1,4 @@
-import { formatAccessor, getNestedRoutes, nestedSetterFactory, sanitizeState } from './utils/helpers.js'
+import { formatAccessor, getNestedRoutes, nestedSetterFactory, sanitizeState, restoreState} from './utils/helpers.js'
 /* TYPES */
 type managerID = string;
 
@@ -40,6 +40,14 @@ const DEFAULT_INIT_OPTIONS: InitializationOptions = {
     clearOnWindowUnload: true, 
     privateState: [],
 }
+
+let GLOBAL: ({[key: string]: any} | null) = "global" in (this ?? {}) ? ({...(this ?? {global: null})}).global : ({...(this ?? {window: null})}).window;
+GLOBAL = GLOBAL ?? {}
+GLOBAL.localStorage = GLOBAL.localStorage ?? {
+    setItem(key: string, value: string){},
+    removeItem(key: string){},
+    clear(){}
+};
 
 export class StateManager {
     /* Class Properties */
@@ -127,10 +135,11 @@ export class StateManager {
         }
     }
 
-    persistToLocalStorage(state: StateObject){
+    private _persistToLocalStorage(state: StateObject){
         if(this.initOptions.persist && !!this.initOptions.windowID){
-            const sanitized = sanitizeState(state, this.initOptions.privateState || []) 
-            this.localStorage.setItem(this.initOptions.windowID, JSON.stringify(sanitized))
+            const [sanitized, removed] = sanitizeState(state, this.initOptions.privateState || []) 
+            GLOBAL?.localStorage?.setItem(this.initOptions.windowID, JSON.stringify(sanitized))
+            this.state = restoreState(state, removed);
         }
     }
 
@@ -146,7 +155,8 @@ export class StateManager {
             callback?.(updated);
             this.emitEvent("update", { state: updated })
             if(this.initOptions.persist && this.initOptions.windowID){
-                window.localStorage.setItem(this.initOptions.windowID, JSON.stringify(this.state))
+                this._persistToLocalStorage(this.state)
+                // window.localStorage.setItem(this.initOptions.windowID, JSON.stringify(this.state))
             }
         })
     }
@@ -201,5 +211,6 @@ export class StateManager {
 
 
 }
+
 
 
