@@ -190,7 +190,7 @@ describe("Local Storage Peristance", () => {
                 d: 4
             },
             e: 5
-        }, { id: "Persist", persist: true, privateState: ["e", ["a", "b", "c"]] })
+        }, { id: "Persist", connectToLocalStorage: true, privateState: ["e", ["a", "b", "c"]] })
 
         manager.setters.setA_d(10);
         expect(manager.state.a.b.c).toBe(3);

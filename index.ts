@@ -23,10 +23,14 @@ interface InitializationOptions {
     dynamicSetters?: boolean,
     nestedGetters?: boolean,
     nestedSetters?: boolean,
-    persist?: boolean,
+    connectToLocalStorage?: boolean,
+    persistKey?: string,
+    initializeFromLocalStorage?: boolean,
     windowID?: string,
+    providerID?: string,
     subscriberIDs?: string[],
-    clearOnWindowUnload?: boolean,
+    clearStorageOnUnload?: boolean,
+    removeChildrenOnUnload?: boolean,
     privateState?: (string | string[])[], 
 }
 
@@ -36,13 +40,18 @@ const DEFAULT_INIT_OPTIONS: InitializationOptions = {
     dynamicSetters: true,
     nestedGetters: true,
     nestedSetters: true,
-    persist: false,
-    clearOnWindowUnload: true, 
+    connectToLocalStorage: false,
+    persistKey: "",
+    initializeFromLocalStorage: false,
+    providerID: "",
+    subscriberIDs: [],
+    clearStorageOnUnload: true, 
+    removeChildrenOnUnload: true,
     privateState: [],
 }
 
 const IS_BROWSER = "window" in (this ?? {})
-let WINDOW: ({[key: string]: any} | null) =  IS_BROWSER ? ({...(this ?? {window: null})}).window : ({...(this ?? {global: null})}).global;
+let WINDOW: {[key: string]: any} = (IS_BROWSER ? ({...(this ?? {window: null})}).window : ({...(this ?? {global: null})}).global) ?? {}
 WINDOW = WINDOW ?? {}
 WINDOW.localStorage = WINDOW.localStorage ?? {
     setItem(key: string, value: string){},
@@ -84,9 +93,16 @@ export class StateManager {
         this.methods = {}
         
         this.windowManager = IS_BROWSER ? new WindowManager(WINDOW) : null;
-
+        if(this.initOptions.connectToLocalStorage){
+            this.establishLocalStorageConnection()
+        }
         this._applyState();
         this._eventListeners = {};
+
+        if(IS_BROWSER){
+            WINDOW?.addEventListener("beforeunload", this.handleUnload.bind(this))
+            WINDOW?.addEventListener("onunload", this.handleUnload.bind(this))
+        }
 
         (this.constructor as typeof StateManager).registerManager(this)
     }
@@ -140,7 +156,7 @@ export class StateManager {
     }
 
     private _persistToLocalStorage(state: StateObject){
-        if(this.initOptions.persist && !!this.initOptions.windowID){
+        if(this.initOptions.connectToLocalStorage && !!this.initOptions.windowID){
             const [sanitized, removed] = sanitizeState(state, this.initOptions.privateState || []) 
             WINDOW?.localStorage?.setItem(this.initOptions.windowID, JSON.stringify(sanitized))
             this.state = restoreState(state, removed);
@@ -158,7 +174,7 @@ export class StateManager {
             resolve(updated);
             callback?.(updated);
             this.emitEvent("update", { state: updated })
-            if(this.initOptions.persist && this.initOptions.windowID){
+            if(this.initOptions.connectToLocalStorage && this.initOptions.windowID){
                 this._persistToLocalStorage(this.state)
                 // window.localStorage.setItem(this.initOptions.windowID, JSON.stringify(this.state))
             }
@@ -215,6 +231,33 @@ export class StateManager {
         })
     }
 
+    private establishLocalStorageConnection(){
+        this.bindToLocalStorage = true;
+        if(!WINDOW.name && this.initOptions.providerID){
+            WINDOW.name = this.initOptions.providerID;
+        }
+
+        if(this.initOptions.initializeFromLocalStorage){
+            if(!!WINDOW.localStorage.getItem(this.initOptions.windowID)){
+                this.state = {
+                    ...this.state,
+                    ...JSON.parse(WINDOW.localStorage.getItem(this.initOptions.windowID)),
+                }
+            }
+        }
+    }
+
+    private handleUnload(event: {[key: string]: any}){
+        // clear local storage only if specified by user AND the window being closed is the provider window
+        if(this.initOptions.clearStorageOnUnload && this.initOptions.providerID === WINDOW?.name){
+            WINDOW?.localStorage.removeItem(this.initOptions.persistKey)
+        }
+
+        // close all children (and grand children) windows if this functionality has been specified by the user   
+        if(this.initOptions.removeChildrenOnUnload){
+            this.windowManager?.removeChildren();
+        }
+    }
 
 }
 
