@@ -1,3 +1,4 @@
+const {StateManager: StateManagerBrowser} = require("../testENV");
 import { StateManager, EventPayload } from '../index'
 
 const testManager = new StateManager(
@@ -182,6 +183,7 @@ describe("Events", () => {
 
 describe("Local Storage Peristance", () => {
     test("Persistance doesn't mutate local state", () => {
+        StateManager.clear()
         const manager = new StateManager({
             a: {
                 b: {
@@ -195,5 +197,14 @@ describe("Local Storage Peristance", () => {
         manager.setters.setA_d(10);
         expect(manager.state.a.b.c).toBe(3);
         expect(manager.state.e).toBe(5);
+    })
+
+    test("Provider window name is set correctly", () => {
+        const manager = new StateManagerBrowser({}, {
+            id: "main",
+            initializeFromLocalStorage: true,
+            windowID: "test",
+
+        })
     })
 })

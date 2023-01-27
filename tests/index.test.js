@@ -9,6 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const { StateManager: StateManagerBrowser } = require("../testENV");
 const index_1 = require("../index");
 const testManager = new index_1.StateManager({
     user: {},
@@ -155,6 +156,7 @@ describe("Events", () => {
 });
 describe("Local Storage Peristance", () => {
     test("Persistance doesn't mutate local state", () => {
+        index_1.StateManager.clear();
         const manager = new index_1.StateManager({
             a: {
                 b: {
@@ -163,9 +165,16 @@ describe("Local Storage Peristance", () => {
                 d: 4
             },
             e: 5
-        }, { id: "Persist", persist: true, privateState: ["e", ["a", "b", "c"]] });
+        }, { id: "Persist", connectToLocalStorage: true, privateState: ["e", ["a", "b", "c"]] });
         manager.setters.setA_d(10);
         expect(manager.state.a.b.c).toBe(3);
         expect(manager.state.e).toBe(5);
+    });
+    test("Provider window name is set correctly", () => {
+        const manager = new StateManagerBrowser({}, {
+            id: "main",
+            initializeFromLocalStorage: true,
+            windowID: "test",
+        });
     });
 });

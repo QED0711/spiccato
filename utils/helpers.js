@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.restoreState = exports.sanitizeState = exports.nestedSetterFactory = exports.getNestedRoutes = exports.formatAccessor = void 0;
+exports.WindowManager = exports.restoreState = exports.sanitizeState = exports.nestedSetterFactory = exports.getNestedRoutes = exports.formatAccessor = void 0;
 const formatAccessor = (path, accessorType = "get") => {
     path = Array.isArray(path) ? path.join("_") : path;
     return accessorType + path[0].toUpperCase() + path.slice(1);
@@ -78,3 +78,32 @@ const restoreState = (state, removed) => {
     return restored;
 };
 exports.restoreState = restoreState;
+const createParamsString = (params) => {
+    let str = "";
+    for (let param of Object.keys(params)) {
+        str += (param + "=" + params[param] + ",");
+    }
+    return str;
+};
+class WindowManager {
+    constructor(window) {
+        this.children = [];
+        this.window = window;
+    }
+    open(url, name, queryParams) {
+        if (this.window) {
+            this.children[name] = this.window.open(url, name, createParamsString(queryParams));
+        }
+    }
+    close(name) {
+        var _a;
+        (_a = this.children[name]) === null || _a === void 0 ? void 0 : _a.close();
+        delete this.children[name];
+    }
+    removeChildren() {
+        for (let child of Object.values(this.children)) {
+            child.close();
+        }
+    }
+}
+exports.WindowManager = WindowManager;

@@ -51,9 +51,10 @@ const DEFAULT_INIT_OPTIONS: InitializationOptions = {
 }
 
 const IS_BROWSER = "window" in (this ?? {})
-let WINDOW: {[key: string]: any} = (IS_BROWSER ? ({...(this ?? {window: null})}).window : ({...(this ?? {global: null})}).global) ?? {}
+export let WINDOW: {[key: string]: any} = (IS_BROWSER ? ({...(this ?? {window: null})}).window : ({...(this ?? {global: null})}).global) ?? {}
 WINDOW = WINDOW ?? {}
 WINDOW.localStorage = WINDOW.localStorage ?? {
+    getItem(key: string){},
     setItem(key: string, value: string){},
     removeItem(key: string){},
     clear(){}
@@ -72,6 +73,10 @@ export class StateManager {
 
     static getManagerById(id: managerID) {
         return this.managers[id];
+    }
+
+    static clear(){
+        this.managers = {};
     }
 
     /* Instance Properties */
