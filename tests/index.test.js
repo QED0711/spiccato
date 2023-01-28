@@ -126,6 +126,17 @@ describe("Events", () => {
             expect(payload.path).toEqual(["level1", "level2Val"]);
             expect(payload.value).toBe("Goodbye");
         }));
+        test("Nested Payload Event Bubbles", () => __awaiter(void 0, void 0, void 0, function* () {
+            const payload = yield new Promise(resolve => {
+                testManager.addEventListener("on_level1_update", (payload) => {
+                    resolve(payload);
+                });
+                testManager.setters.setLevel1_level2Val("Hi there again!");
+            });
+            expect(payload.path).toEqual(["level1"]);
+            expect(payload.value.level2Val).toBe("Hi there again!");
+            expect(payload.value.level2.level3).toBeDefined();
+        }));
         test("Full State Update", () => __awaiter(void 0, void 0, void 0, function* () {
             var _a;
             const payload = yield new Promise(resolve => {
@@ -208,8 +219,8 @@ describe("Local Storage Peristance", () => {
     });
     test("Initialize subscriber from local storage", () => {
         index_1.StateManager.clear();
-        index_1.WINDOW.localStorage.setItem("init", JSON.stringify({ a: 100 }));
         index_1.WINDOW.name = "someSubscriber";
+        index_1.WINDOW.localStorage.setItem("init", JSON.stringify({ a: 100 }));
         const manager = new index_1.StateManager({ a: 1, b: 2 }, { id: "localStorageInit" });
         manager.connectToLocalStorage({
             persistKey: "init",
@@ -220,6 +231,5 @@ describe("Local Storage Peristance", () => {
         manager.init();
         expect(manager.state.a).toEqual(100);
         expect(manager.state.b).toBeUndefined();
-        // console.log(WINDOW.localStorage.getItem("init"))
     });
 });

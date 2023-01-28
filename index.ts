@@ -159,7 +159,16 @@ export class StateManager {
                         const updatedState = nestedSetterFactory(this.state, path)(v);
                         return new Promise(async resolve => {
                             resolve(await this.setState(updatedState, callback));
-                            this.emitEvent("on_" + path.join("_") + "_update", { path, value: v })
+                            let p, v;
+                            for(let i = 0; i < path.length; i++){
+                                p = path.slice(0,i+1);
+                                v = this.state
+                                for(let key of p){
+                                    v = v[key]
+                                }
+                                this.emitEvent("on_" + p.join("_") + "_update", {path: p, value: v})
+                            }
+                            // this.emitEvent("on_" + path.join("_") + "_update", { path, value: v })
                         })
                     }
                 }

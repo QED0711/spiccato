@@ -104,7 +104,16 @@ class StateManager {
                         const updatedState = (0, helpers_js_1.nestedSetterFactory)(this.state, path)(v);
                         return new Promise((resolve) => __awaiter(this, void 0, void 0, function* () {
                             resolve(yield this.setState(updatedState, callback));
-                            this.emitEvent("on_" + path.join("_") + "_update", { path, value: v });
+                            let p, v;
+                            for (let i = 0; i < path.length; i++) {
+                                p = path.slice(0, i + 1);
+                                v = this.state;
+                                for (let key of p) {
+                                    v = v[key];
+                                }
+                                this.emitEvent("on_" + p.join("_") + "_update", { path: p, value: v });
+                            }
+                            // this.emitEvent("on_" + path.join("_") + "_update", { path, value: v })
                         }));
                     };
                 }
