@@ -115,3 +115,28 @@ export class WindowManager{
     }
 
 }
+
+
+
+export class _localStorage {
+    private state: {[key: string]: string}
+    constructor(){
+        this.state = {}
+    }
+
+    getItem(key: string) {
+        return this.state[key]
+    }
+
+    setItem(key:string, value:string){
+        this.state[key] = value;
+    }
+
+    removeItem(key:string){
+        delete this.state[key]
+    }
+
+    clear(){
+        this.state = {};
+    }
+}

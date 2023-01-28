@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.WindowManager = exports.restoreState = exports.sanitizeState = exports.nestedSetterFactory = exports.getNestedRoutes = exports.formatAccessor = void 0;
+exports._localStorage = exports.WindowManager = exports.restoreState = exports.sanitizeState = exports.nestedSetterFactory = exports.getNestedRoutes = exports.formatAccessor = void 0;
 const formatAccessor = (path, accessorType = "get") => {
     path = Array.isArray(path) ? path.join("_") : path;
     return accessorType + path[0].toUpperCase() + path.slice(1);
@@ -107,3 +107,21 @@ class WindowManager {
     }
 }
 exports.WindowManager = WindowManager;
+class _localStorage {
+    constructor() {
+        this.state = {};
+    }
+    getItem(key) {
+        return this.state[key];
+    }
+    setItem(key, value) {
+        this.state[key] = value;
+    }
+    removeItem(key) {
+        delete this.state[key];
+    }
+    clear() {
+        this.state = {};
+    }
+}
+exports._localStorage = _localStorage;

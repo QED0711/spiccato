@@ -1,4 +1,4 @@
-import { formatAccessor, getNestedRoutes, nestedSetterFactory, sanitizeState, restoreState, WindowManager} from './utils/helpers.js'
+import { formatAccessor, getNestedRoutes, nestedSetterFactory, sanitizeState, restoreState, WindowManager, _localStorage } from './utils/helpers.js'
 /* TYPES */
 type managerID = string;
 
@@ -23,15 +23,6 @@ interface InitializationOptions {
     dynamicSetters?: boolean,
     nestedGetters?: boolean,
     nestedSetters?: boolean,
-    connectToLocalStorage?: boolean,
-    persistKey?: string,
-    initializeFromLocalStorage?: boolean,
-    windowID?: string,
-    providerID?: string,
-    subscriberIDs?: string[],
-    clearStorageOnUnload?: boolean,
-    removeChildrenOnUnload?: boolean,
-    privateState?: (string | string[])[], 
 }
 
 const DEFAULT_INIT_OPTIONS: InitializationOptions = {
@@ -40,25 +31,38 @@ const DEFAULT_INIT_OPTIONS: InitializationOptions = {
     dynamicSetters: true,
     nestedGetters: true,
     nestedSetters: true,
-    connectToLocalStorage: false,
-    persistKey: "",
-    initializeFromLocalStorage: false,
-    providerID: "",
-    subscriberIDs: [],
-    clearStorageOnUnload: true, 
-    removeChildrenOnUnload: true,
-    privateState: [],
 }
 
-const IS_BROWSER = "window" in (this ?? {})
-export let WINDOW: {[key: string]: any} = (IS_BROWSER ? ({...(this ?? {window: null})}).window : ({...(this ?? {global: null})}).global) ?? {}
-WINDOW = WINDOW ?? {}
-WINDOW.localStorage = WINDOW.localStorage ?? {
-    getItem(key: string){},
-    setItem(key: string, value: string){},
-    removeItem(key: string){},
-    clear(){}
-};
+interface StorageOptions {
+    persistKey: string,
+    initializeFromLocalStorage?: boolean,
+    providerID?: string,
+    subscriberIDs?: string[],
+    clearStorageOnUnload?: boolean,
+    removeChildrenOnUnload?: boolean,
+    privateState?: (string | string[])[],
+}
+
+const DEFAULT_STORAGE_OPTIONS: StorageOptions = {
+    persistKey: "",
+    initializeFromLocalStorage: false,
+    subscriberIDs: [],
+    clearStorageOnUnload: true,
+    removeChildrenOnUnload: true,
+    privateState: [],
+
+}
+let IS_BROWSER: boolean;
+export let WINDOW: { [key: string]: any };
+try {
+    WINDOW = window;
+    IS_BROWSER = true;
+} catch (err) {
+    WINDOW = global;
+    IS_BROWSER = false;
+}
+
+WINDOW.localStorage = WINDOW.localStorage ?? new _localStorage();
 
 export class StateManager {
     /* Class Properties */
@@ -75,7 +79,7 @@ export class StateManager {
         return this.managers[id];
     }
 
-    static clear(){
+    static clear() {
         this.managers = {};
     }
 
@@ -85,6 +89,7 @@ export class StateManager {
     getters: { [key: string]: Function };
     setters: { [key: string]: Function };
     methods: { [key: string]: Function };
+    private _bindToLocalStorage: boolean;
     windowManager: (WindowManager | null);
     private _eventListeners: { [key: string]: Function[] }
     [key: string]: any; /* for runtime added properties */
@@ -96,20 +101,22 @@ export class StateManager {
         this.getters = {}
         this.setters = {}
         this.methods = {}
-        
+
+        this._bindToLocalStorage = false
         this.windowManager = IS_BROWSER ? new WindowManager(WINDOW) : null;
-        if(this.initOptions.connectToLocalStorage){
-            this.establishLocalStorageConnection()
-        }
-        this._applyState();
+
         this._eventListeners = {};
 
-        if(IS_BROWSER){
+        if (IS_BROWSER) {
             WINDOW?.addEventListener("beforeunload", this.handleUnload.bind(this))
             WINDOW?.addEventListener("onunload", this.handleUnload.bind(this))
         }
 
         (this.constructor as typeof StateManager).registerManager(this)
+    }
+
+    init() {
+        this._applyState();
     }
 
     private _applyState() {
@@ -160,10 +167,10 @@ export class StateManager {
         }
     }
 
-    private _persistToLocalStorage(state: StateObject){
-        if(this.initOptions.connectToLocalStorage && !!this.initOptions.windowID){
-            const [sanitized, removed] = sanitizeState(state, this.initOptions.privateState || []) 
-            WINDOW?.localStorage?.setItem(this.initOptions.windowID, JSON.stringify(sanitized))
+    private _persistToLocalStorage(state: StateObject) {
+        if (this._bindToLocalStorage && !!this.storageOptions.persistKey) {
+            const [sanitized, removed] = sanitizeState(state, this.storageOptions.privateState || [])
+            WINDOW?.localStorage?.setItem(this.storageOptions.persistKey, JSON.stringify(sanitized))
             this.state = restoreState(state, removed);
         }
     }
@@ -179,9 +186,8 @@ export class StateManager {
             resolve(updated);
             callback?.(updated);
             this.emitEvent("update", { state: updated })
-            if(this.initOptions.connectToLocalStorage && this.initOptions.windowID){
+            if (this._bindToLocalStorage && this.storageOptions.persistKey) {
                 this._persistToLocalStorage(this.state)
-                // window.localStorage.setItem(this.initOptions.windowID, JSON.stringify(this.state))
             }
         })
     }
@@ -236,30 +242,42 @@ export class StateManager {
         })
     }
 
-    private establishLocalStorageConnection(){
-        this.bindToLocalStorage = true;
-        if(!WINDOW.name && this.initOptions.providerID){
-            WINDOW.name = this.initOptions.providerID;
+    connectToLocalStorage(storageOptions: StorageOptions) {
+        this._bindToLocalStorage = true;
+        this.storageOptions = { ...DEFAULT_STORAGE_OPTIONS, ...storageOptions };
+
+        // if window does not have a "name" peroperty, default to the provider window id
+        if (!WINDOW.name && this.storageOptions.providerID) {
+            WINDOW.name = this.storageOptions.providerID;
         }
 
-        if(this.initOptions.initializeFromLocalStorage){
-            if(!!WINDOW.localStorage.getItem(this.initOptions.windowID)){
-                this.state = {
-                    ...this.state,
-                    ...JSON.parse(WINDOW.localStorage.getItem(this.initOptions.windowID)),
-                }
+        if (!WINDOW.name) {
+            console.error("If connecting to localStorage, storageOptions.providerID must be defined");
+            return;
+        }
+
+        if (this.storageOptions.initializeFromLocalStorage) {
+            if (!!WINDOW.localStorage.getItem(this.storageOptions.persistKey)) {
+                this.state = WINDOW.name === this.storageOptions.providerID
+                    ? {
+                        ...this.state,
+                        ...JSON.parse(WINDOW.localStorage.getItem(this.storageOptions.persistKey)),
+                    }
+                    : (this.storageOptions.subscriberIDs ?? []).includes(WINDOW.name) // is a listed subscriber and is allowed to read this state
+                        ? JSON.parse(WINDOW.localStorage.getItem(this.storageOptions.persistKey))
+                        : {}
             }
         }
     }
 
-    private handleUnload(event: {[key: string]: any}){
+    private handleUnload(event: { [key: string]: any }) {
         // clear local storage only if specified by user AND the window being closed is the provider window
-        if(this.initOptions.clearStorageOnUnload && this.initOptions.providerID === WINDOW?.name){
-            WINDOW?.localStorage.removeItem(this.initOptions.persistKey)
+        if (this.storageOptions.clearStorageOnUnload && this.storageOptions.providerID === WINDOW?.name) {
+            WINDOW?.localStorage.removeItem(this.storageOptions.persistKey)
         }
 
         // close all children (and grand children) windows if this functionality has been specified by the user   
-        if(this.initOptions.removeChildrenOnUnload){
+        if (this.storageOptions.removeChildrenOnUnload) {
             this.windowManager?.removeChildren();
         }
     }

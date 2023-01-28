@@ -9,7 +9,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const { StateManager: StateManagerBrowser } = require("../testENV");
 const index_1 = require("../index");
 const testManager = new index_1.StateManager({
     user: {},
@@ -25,6 +24,7 @@ const testManager = new index_1.StateManager({
 }, {
     id: "TEST"
 });
+testManager.init();
 testManager.addCustomGetters({
     getAddedNums: function () {
         return this.state.num1 + this.state.num2;
@@ -155,6 +155,18 @@ describe("Events", () => {
     });
 });
 describe("Local Storage Peristance", () => {
+    test("Provider window name is set correctly", () => {
+        const manager = new index_1.StateManager({}, {
+            id: "main",
+        });
+        manager.connectToLocalStorage({
+            persistKey: "main",
+            initializeFromLocalStorage: false,
+            providerID: "windowTest",
+        });
+        manager.init();
+        expect(index_1.WINDOW.name).toEqual("windowTest");
+    });
     test("Persistance doesn't mutate local state", () => {
         index_1.StateManager.clear();
         const manager = new index_1.StateManager({
@@ -165,16 +177,49 @@ describe("Local Storage Peristance", () => {
                 d: 4
             },
             e: 5
-        }, { id: "Persist", connectToLocalStorage: true, privateState: ["e", ["a", "b", "c"]] });
+        }, {
+            id: "Persist",
+        });
+        manager.connectToLocalStorage({
+            persistKey: "persist",
+            initializeFromLocalStorage: false,
+            providerID: "Persist",
+            privateState: ["e", ["a", "b", "c"]]
+        });
+        manager.init();
         manager.setters.setA_d(10);
         expect(manager.state.a.b.c).toBe(3);
         expect(manager.state.e).toBe(5);
     });
-    test("Provider window name is set correctly", () => {
-        const manager = new StateManagerBrowser({}, {
-            id: "main",
+    test("Initialize provider from local storage", () => {
+        index_1.StateManager.clear();
+        index_1.WINDOW.name = "provider";
+        index_1.WINDOW.localStorage.setItem("init", JSON.stringify({ a: 100 }));
+        const manager = new index_1.StateManager({ a: 1, b: 2 }, { id: "localStorageInit" });
+        manager.connectToLocalStorage({
+            persistKey: "init",
             initializeFromLocalStorage: true,
-            windowID: "test",
+            providerID: "provider",
+            privateState: ["b"]
         });
+        manager.init();
+        expect(manager.state.a).toEqual(100);
+        expect(manager.state.b).toEqual(2);
+    });
+    test("Initialize subscriber from local storage", () => {
+        index_1.StateManager.clear();
+        index_1.WINDOW.localStorage.setItem("init", JSON.stringify({ a: 100 }));
+        index_1.WINDOW.name = "someSubscriber";
+        const manager = new index_1.StateManager({ a: 1, b: 2 }, { id: "localStorageInit" });
+        manager.connectToLocalStorage({
+            persistKey: "init",
+            subscriberIDs: ["someSubscriber"],
+            initializeFromLocalStorage: true,
+            privateState: ["b"]
+        });
+        manager.init();
+        expect(manager.state.a).toEqual(100);
+        expect(manager.state.b).toBeUndefined();
+        // console.log(WINDOW.localStorage.getItem("init"))
     });
 });
