@@ -8,7 +8,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.StateManager = exports.WINDOW = void 0;
 const helpers_js_1 = require("./utils/helpers.js");
@@ -36,7 +35,8 @@ catch (err) {
     exports.WINDOW = global;
     IS_BROWSER = false;
 }
-exports.WINDOW.localStorage = (_a = exports.WINDOW.localStorage) !== null && _a !== void 0 ? _a : new helpers_js_1._localStorage();
+if (!("localStorage" in exports.WINDOW))
+    exports.WINDOW.localStorage = new helpers_js_1._localStorage;
 class StateManager {
     static registerManager(instance) {
         if (instance.initOptions.id in this.managers) {
@@ -219,7 +219,7 @@ class StateManager {
         }
         // close all children (and grand children) windows if this functionality has been specified by the user   
         if (this.storageOptions.removeChildrenOnUnload) {
-            (_a = this.windowManager) === null || _a === void 0 ? void 0 : _a.removeChildren();
+            (_a = this.windowManager) === null || _a === void 0 ? void 0 : _a.removeSubscribers();
         }
     }
 }

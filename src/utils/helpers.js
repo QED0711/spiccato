@@ -87,22 +87,22 @@ const createParamsString = (params) => {
 };
 class WindowManager {
     constructor(window) {
-        this.children = [];
+        this.subscribers = [];
         this.window = window;
     }
     open(url, name, queryParams) {
         if (this.window) {
-            this.children[name] = this.window.open(url, name, createParamsString(queryParams));
+            this.subscribers[name] = this.window.open(url, name, createParamsString(queryParams));
         }
     }
     close(name) {
         var _a;
-        (_a = this.children[name]) === null || _a === void 0 ? void 0 : _a.close();
-        delete this.children[name];
+        (_a = this.subscribers[name]) === null || _a === void 0 ? void 0 : _a.close();
+        delete this.subscribers[name];
     }
-    removeChildren() {
-        for (let child of Object.values(this.children)) {
-            child.close();
+    removeSubscribers() {
+        for (let subscriber of Object.values(this.subscribers)) {
+            subscriber.close();
         }
     }
 }

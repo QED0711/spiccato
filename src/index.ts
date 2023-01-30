@@ -2,19 +2,12 @@ import { formatAccessor, getNestedRoutes, nestedSetterFactory, sanitizeState, re
 /* TYPES */
 type managerID = string;
 
-
 interface StateObject {
     [k: string]: any
 }
 
 interface StateUpdateCallback {
     (state: { [key: string]: any }): void;
-}
-
-export type EventPayload = {
-    path?: string | string[],
-    value?: any,
-    state?: StateObject
 }
 
 interface InitializationOptions {
@@ -52,6 +45,13 @@ const DEFAULT_STORAGE_OPTIONS: StorageOptions = {
     privateState: [],
 
 }
+
+export type EventPayload = {
+    path?: string | string[],
+    value?: any,
+    state?: StateObject
+}
+
 let IS_BROWSER: boolean;
 export let WINDOW: { [key: string]: any };
 try {
@@ -61,8 +61,7 @@ try {
     WINDOW = global;
     IS_BROWSER = false;
 }
-
-WINDOW.localStorage = WINDOW.localStorage ?? new _localStorage();
+if(!("localStorage" in WINDOW)) WINDOW.localStorage = new _localStorage
 
 export class StateManager {
     /* Class Properties */
@@ -287,7 +286,7 @@ export class StateManager {
 
         // close all children (and grand children) windows if this functionality has been specified by the user   
         if (this.storageOptions.removeChildrenOnUnload) {
-            this.windowManager?.removeChildren();
+            this.windowManager?.removeSubscribers();
         }
     }
 
