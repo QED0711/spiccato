@@ -89,29 +89,54 @@ const createParamsString = (params: {[key: string]: any}): string => {
 export class WindowManager{
 
     /* Instance Properties */
-    private children: {[key: string]: any};
+    private subscribers: {[key: string]: any};
     window: {[key: string]: any} | null;
 
     constructor(window: {[key: string]: any} | null){
-        this.children = [];
+        this.subscribers = [];
         this.window = window;
     }
 
     open(url: string, name: string, queryParams: {[key: string]: any}){
         if(this.window){
-             this.children[name] = this.window.open(url, name, createParamsString(queryParams) )
+             this.subscribers[name] = this.window.open(url, name, createParamsString(queryParams) )
         }
     }
 
     close(name: string){
-        this.children[name]?.close();
-        delete this.children[name]
+        this.subscribers[name]?.close();
+        delete this.subscribers[name]
     }
 
-    removeChildren(){
-        for(let child of Object.values(this.children)){
-            child.close()
+    removeSubscribers(){
+        for(let subscriber of Object.values(this.subscribers)){
+            subscriber.close()
         }
     }
 
+}
+
+
+
+export class _localStorage {
+    private state: {[key: string]: string}
+    constructor(){
+        this.state = {}
+    }
+
+    getItem(key: string) {
+        return this.state[key]
+    }
+
+    setItem(key:string, value:string){
+        this.state[key] = value;
+    }
+
+    removeItem(key:string){
+        delete this.state[key]
+    }
+
+    clear(){
+        this.state = {};
+    }
 }

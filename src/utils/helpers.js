@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.restoreState = exports.sanitizeState = exports.nestedSetterFactory = exports.getNestedRoutes = exports.formatAccessor = void 0;
+exports._localStorage = exports.WindowManager = exports.restoreState = exports.sanitizeState = exports.nestedSetterFactory = exports.getNestedRoutes = exports.formatAccessor = void 0;
 const formatAccessor = (path, accessorType = "get") => {
     path = Array.isArray(path) ? path.join("_") : path;
     return accessorType + path[0].toUpperCase() + path.slice(1);
@@ -78,3 +78,50 @@ const restoreState = (state, removed) => {
     return restored;
 };
 exports.restoreState = restoreState;
+const createParamsString = (params) => {
+    let str = "";
+    for (let param of Object.keys(params)) {
+        str += (param + "=" + params[param] + ",");
+    }
+    return str;
+};
+class WindowManager {
+    constructor(window) {
+        this.subscribers = [];
+        this.window = window;
+    }
+    open(url, name, queryParams) {
+        if (this.window) {
+            this.subscribers[name] = this.window.open(url, name, createParamsString(queryParams));
+        }
+    }
+    close(name) {
+        var _a;
+        (_a = this.subscribers[name]) === null || _a === void 0 ? void 0 : _a.close();
+        delete this.subscribers[name];
+    }
+    removeSubscribers() {
+        for (let subscriber of Object.values(this.subscribers)) {
+            subscriber.close();
+        }
+    }
+}
+exports.WindowManager = WindowManager;
+class _localStorage {
+    constructor() {
+        this.state = {};
+    }
+    getItem(key) {
+        return this.state[key];
+    }
+    setItem(key, value) {
+        this.state[key] = value;
+    }
+    removeItem(key) {
+        delete this.state[key];
+    }
+    clear() {
+        this.state = {};
+    }
+}
+exports._localStorage = _localStorage;

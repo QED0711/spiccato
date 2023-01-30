@@ -1,4 +1,4 @@
-import { StateManager, EventPayload } from '../index'
+import { StateManager, EventPayload, WINDOW } from '../index'
 
 const testManager = new StateManager(
     {
@@ -17,6 +17,8 @@ const testManager = new StateManager(
         id: "TEST"
     }
 );
+
+testManager.init();
 
 testManager.addCustomGetters({
     getAddedNums: function (this: StateManager) {
@@ -148,6 +150,19 @@ describe("Events", () => {
             expect(payload.value).toBe("Goodbye");
         });
 
+        test("Nested Payload Event Bubbles", async () => {
+            const payload : EventPayload = await new Promise(resolve => {
+                testManager.addEventListener("on_level1_update", (payload: EventPayload) => {
+                    resolve(payload)
+                })
+                testManager.setters.setLevel1_level2Val("Hi there again!")
+            })
+
+            expect(payload.path).toEqual(["level1"]);
+            expect(payload.value.level2Val).toBe("Hi there again!");
+            expect(payload.value.level2.level3).toBeDefined()
+        })
+
         test("Full State Update", async () => {
             const payload: EventPayload = await new Promise(resolve => {
                 testManager.addEventListener("update", (payload: EventPayload) => {
@@ -181,7 +196,24 @@ describe("Events", () => {
 })
 
 describe("Local Storage Peristance", () => {
+
+    test("Provider window name is set correctly", () => {
+        const manager = new StateManager({}, {
+            id: "main",
+        })
+        manager.connectToLocalStorage({
+            persistKey: "main",
+            initializeFromLocalStorage: false,
+            providerID: "windowTest",
+        })
+
+        manager.init()
+
+        expect(WINDOW.name).toEqual("windowTest")
+    })
+
     test("Persistance doesn't mutate local state", () => {
+        StateManager.clear()
         const manager = new StateManager({
             a: {
                 b: {
@@ -190,10 +222,57 @@ describe("Local Storage Peristance", () => {
                 d: 4
             },
             e: 5
-        }, { id: "Persist", connectToLocalStorage: true, privateState: ["e", ["a", "b", "c"]] })
+        }, {
+            id: "Persist",
+        })
+
+        manager.connectToLocalStorage({
+            persistKey: "persist",
+            initializeFromLocalStorage: false,
+            providerID: "Persist",
+            privateState: ["e", ["a", "b", "c"]]
+        })
+
+        manager.init()
 
         manager.setters.setA_d(10);
         expect(manager.state.a.b.c).toBe(3);
         expect(manager.state.e).toBe(5);
     })
+
+
+    test("Initialize provider from local storage", () => {
+        StateManager.clear()
+        WINDOW.name = "provider"
+        WINDOW.localStorage.setItem("init", JSON.stringify({ a: 100 }))
+        const manager = new StateManager({ a: 1, b: 2 }, { id: "localStorageInit" })
+        manager.connectToLocalStorage({
+            persistKey: "init",
+            initializeFromLocalStorage: true,
+            providerID: "provider",
+            privateState: ["b"]
+        })
+
+        manager.init()
+        expect(manager.state.a).toEqual(100);
+        expect(manager.state.b).toEqual(2)
+    })
+
+    test("Initialize subscriber from local storage", () => {
+        StateManager.clear()
+        WINDOW.name = "someSubscriber"
+        WINDOW.localStorage.setItem("init", JSON.stringify({ a: 100 }))
+        const manager = new StateManager({ a: 1, b: 2 }, { id: "localStorageInit" })
+        manager.connectToLocalStorage({
+            persistKey: "init",
+            subscriberIDs: ["someSubscriber"],
+            initializeFromLocalStorage: true,
+            privateState: ["b"]
+        })
+
+        manager.init()
+        expect(manager.state.a).toEqual(100);
+        expect(manager.state.b).toBeUndefined()
+    })
+
 })
