@@ -69,6 +69,9 @@ class StateManager {
         this._applyState();
     }
     _applyState() {
+        if (this._bindToLocalStorage) {
+            this._persistToLocalStorage(this.state);
+        }
         for (let k in this.state) {
             if (this.initOptions.dynamicGetters) {
                 this.getters[(0, helpers_js_1.formatAccessor)(k, "get")] = () => {
@@ -105,7 +108,7 @@ class StateManager {
                         return new Promise((resolve) => __awaiter(this, void 0, void 0, function* () {
                             resolve(yield this.setState(updatedState, callback));
                             let p, v;
-                            for (let i = 0; i < path.length; i++) {
+                            for (let i = path.length - 1; i >= 0; i--) {
                                 p = path.slice(0, i + 1);
                                 v = this.state;
                                 for (let key of p) {
@@ -210,6 +213,14 @@ class StateManager {
                     : {};
             }
         }
+        if ("addEventListener" in exports.WINDOW) {
+            exports.WINDOW.addEventListener("storage", () => {
+                this._udpateFromLocalStorage();
+            });
+        }
+    }
+    _udpateFromLocalStorage() {
+        this.setState(Object.assign(Object.assign({}, this.state), JSON.parse(exports.WINDOW.localStorage.getItem(this.storageOptions.persistKey))));
     }
     handleUnload(event) {
         var _a;

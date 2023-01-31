@@ -61,7 +61,7 @@ try {
     WINDOW = global;
     IS_BROWSER = false;
 }
-if(!("localStorage" in WINDOW)) WINDOW.localStorage = new _localStorage
+if (!("localStorage" in WINDOW)) WINDOW.localStorage = new _localStorage
 
 export class StateManager {
     /* Class Properties */
@@ -119,6 +119,11 @@ export class StateManager {
     }
 
     private _applyState() {
+
+        if (this._bindToLocalStorage) {
+            this._persistToLocalStorage(this.state)
+        }
+
         for (let k in this.state) {
             if (this.initOptions.dynamicGetters) {
                 this.getters[formatAccessor(k, "get")] = () => {
@@ -158,14 +163,14 @@ export class StateManager {
                         const updatedState = nestedSetterFactory(this.state, path)(v);
                         return new Promise(async resolve => {
                             resolve(await this.setState(updatedState, callback));
-                            let p, v;
-                            for(let i = 0; i < path.length; i++){
-                                p = path.slice(0,i+1);
+                            let p: string | string[], v: any;
+                            for (let i = path.length - 1; i >= 0; i--) {
+                                p = path.slice(0, i + 1);
                                 v = this.state
-                                for(let key of p){
+                                for (let key of p) {
                                     v = v[key]
                                 }
-                                this.emitEvent("on_" + p.join("_") + "_update", {path: p, value: v})
+                                this.emitEvent("on_" + p.join("_") + "_update", { path: p, value: v })
                             }
                             // this.emitEvent("on_" + path.join("_") + "_update", { path, value: v })
                         })
@@ -276,6 +281,15 @@ export class StateManager {
                         : {}
             }
         }
+        if ("addEventListener" in WINDOW) {
+            WINDOW.addEventListener("storage", () => {
+                this._udpateFromLocalStorage()
+            })
+        }
+    }
+
+    private _udpateFromLocalStorage() {
+        this.setState({ ...this.state, ...JSON.parse(WINDOW.localStorage.getItem(this.storageOptions.persistKey)) })
     }
 
     private handleUnload(event: { [key: string]: any }) {
