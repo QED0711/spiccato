@@ -1,4 +1,4 @@
-import { formatAccessor, getNestedRoutes, nestedSetterFactory, sanitizeState, restoreState, WindowManager, _localStorage } from './utils/helpers.js'
+import { formatAccessor, getNestedRoutes, nestedSetterFactory, sanitizeState, restoreState, WindowManager, _localStorage, getUpdatedPaths } from './utils/helpers.js'
 /* TYPES */
 type managerID = string;
 
@@ -190,10 +190,14 @@ export class StateManager {
 
     setState(updater: StateObject | Function, callback: StateUpdateCallback | null = null) {
         return new Promise(resolve => {
+            let updatedPaths: string[][];
             if (typeof updater === 'object') {
+                updatedPaths = getUpdatedPaths(updater, this.state)
                 this.state = { ...this.state, ...updater };
             } else if (typeof updater === 'function') {
-                this.state = { ...this.state, ...updater({ ...this.state }) };
+                const updaterValue: StateObject = updater(this.state);
+                updatedPaths = getUpdatedPaths(updaterValue, this.state)
+                this.state = { ...this.state, ...updaterValue };
             }
             const updated = { ...this.state }
             resolve(updated);

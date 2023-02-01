@@ -19,6 +19,11 @@ export declare const restoreState: (state: {
 }) => {
     [x: string]: any;
 };
+export declare const getUpdatedPaths: (update: {
+    [key: string]: any;
+}, prevState: {
+    [key: string]: any;
+}) => string[][];
 export declare class WindowManager {
     private subscribers;
     window: {

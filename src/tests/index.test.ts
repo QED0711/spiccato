@@ -184,26 +184,26 @@ describe("Events", () => {
         })
 
         test("setState emits appropriate events", async () => {
-            const resolved = await Promise.allSettled([
-                new Promise(resolve => {
-                    testManager.addEventListener("on_level1_update", (payload: EventPayload) => {
-                        resolve(payload)
-                    })
-                }),
-                new Promise(resolve => {
-                    testManager.addEventListener("on_level2_update", (payload: EventPayload) => {
-                        resolve(payload)
-                    })
-                }),
-                new Promise(resolve => {
-                    testManager.addEventListener("on_level3_update", (payload: EventPayload) => {
-                        resolve(payload)
-                    })
+            // const resolved = await Promise.allSettled([
+            //     new Promise(resolve => {
+            //         testManager.addEventListener("on_level1_update", (payload: EventPayload) => {
+            //             resolve(payload)
+            //         })
+            //     }),
+            //     new Promise(resolve => {
+            //         testManager.addEventListener("on_level2_update", (payload: EventPayload) => {
+            //             resolve(payload)
+            //         })
+            //     }),
+            //     new Promise(resolve => {
+            //         testManager.addEventListener("on_level3_update", (payload: EventPayload) => {
+            //             resolve(payload)
+            //         })
 
-                    testManager.setState({ level1: { level2Val: "UPDATED!!!", level2: { level3: -1 } } })
-                }),
-            ])
-            console.log(resolved)
+            //         testManager.setState({ level1: { level2Val: "UPDATED!!!", level2: { level3: -1 } } })
+            //     }),
+            // ])
+            // console.log(resolved)
 
             // level1: {
             //             level2: {

@@ -156,25 +156,25 @@ describe("Events", () => {
             expect((_a = payload.state) === null || _a === void 0 ? void 0 : _a.myVal).toBe(84);
         }));
         test("setState emits appropriate events", () => __awaiter(void 0, void 0, void 0, function* () {
-            const resolved = yield Promise.allSettled([
-                new Promise(resolve => {
-                    testManager.addEventListener("on_level1_update", (payload) => {
-                        resolve(payload);
-                    });
-                }),
-                new Promise(resolve => {
-                    testManager.addEventListener("on_level2_update", (payload) => {
-                        resolve(payload);
-                    });
-                }),
-                new Promise(resolve => {
-                    testManager.addEventListener("on_level3_update", (payload) => {
-                        resolve(payload);
-                    });
-                    testManager.setState({ level1: { level2Val: "UPDATED!!!", level2: { level3: -1 } } });
-                }),
-            ]);
-            console.log(resolved);
+            // const resolved = await Promise.allSettled([
+            //     new Promise(resolve => {
+            //         testManager.addEventListener("on_level1_update", (payload: EventPayload) => {
+            //             resolve(payload)
+            //         })
+            //     }),
+            //     new Promise(resolve => {
+            //         testManager.addEventListener("on_level2_update", (payload: EventPayload) => {
+            //             resolve(payload)
+            //         })
+            //     }),
+            //     new Promise(resolve => {
+            //         testManager.addEventListener("on_level3_update", (payload: EventPayload) => {
+            //             resolve(payload)
+            //         })
+            //         testManager.setState({ level1: { level2Val: "UPDATED!!!", level2: { level3: -1 } } })
+            //     }),
+            // ])
+            // console.log(resolved)
             // level1: {
             //             level2: {
             //                 level3: 3

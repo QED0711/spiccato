@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports._localStorage = exports.WindowManager = exports.restoreState = exports.sanitizeState = exports.nestedSetterFactory = exports.getNestedRoutes = exports.formatAccessor = void 0;
+exports._localStorage = exports.WindowManager = exports.getUpdatedPaths = exports.restoreState = exports.sanitizeState = exports.nestedSetterFactory = exports.getNestedRoutes = exports.formatAccessor = void 0;
 const formatAccessor = (path, accessorType = "get") => {
     path = Array.isArray(path) ? path.join("_") : path;
     return accessorType + path[0].toUpperCase() + path.slice(1);
@@ -78,6 +78,24 @@ const restoreState = (state, removed) => {
     return restored;
 };
 exports.restoreState = restoreState;
+const getUpdatedPaths = (update, prevState) => {
+    const paths = [];
+    const traverse = (updatedVal, prevVal, path = []) => {
+        if (typeof updatedVal !== "object" || Array.isArray(updatedVal) || !updatedVal) {
+            if (updatedVal !== prevVal) {
+                path.length > 0 && paths.push(path);
+            }
+            return;
+        }
+        path.length > 0 && paths.push(path);
+        for (let key of Object.keys(updatedVal)) {
+            traverse(updatedVal[key], ((!!prevVal && key in prevVal) ? prevVal[key] : null), [...path, key]);
+        }
+    };
+    traverse(update, prevState);
+    return paths;
+};
+exports.getUpdatedPaths = getUpdatedPaths;
 const createParamsString = (params) => {
     let str = "";
     for (let param of Object.keys(params)) {
@@ -85,6 +103,7 @@ const createParamsString = (params) => {
     }
     return str;
 };
+/* CLASSES */
 class WindowManager {
     constructor(window) {
         this.subscribers = [];

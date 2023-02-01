@@ -78,6 +78,28 @@ export const restoreState = (state: {[key: string]: any}, removed: {[key: string
     return restored
 }
 
+export const getUpdatedPaths = (update: {[key: string]: any}, prevState: {[key: string]: any}) => {
+    const paths: string[][] = [];
+
+    const traverse = (updatedVal: any, prevVal: any, path: string[] = []) => {
+        if(typeof updatedVal !== "object" || Array.isArray(updatedVal) || !updatedVal){
+            if(updatedVal !== prevVal){
+                path.length > 0 && paths.push(path);
+            } 
+            return
+        }
+
+        path.length > 0 && paths.push(path)
+        for(let key of Object.keys(updatedVal)){
+            traverse(updatedVal[key], ((!!prevVal && key in prevVal) ? prevVal[key] : null), [...path, key])
+        }
+    }
+
+    traverse(update, prevState)
+    return paths;
+}
+
+
 const createParamsString = (params: {[key: string]: any}): string => {
     let str = ""
     for (let param of Object.keys(params)) {
@@ -86,6 +108,8 @@ const createParamsString = (params: {[key: string]: any}): string => {
     return str;
 }
 
+
+/* CLASSES */
 export class WindowManager{
 
     /* Instance Properties */
@@ -115,8 +139,6 @@ export class WindowManager{
     }
 
 }
-
-
 
 export class _localStorage {
     private state: {[key: string]: string}

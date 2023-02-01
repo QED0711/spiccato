@@ -137,7 +137,8 @@ class StateManager {
                 this.state = Object.assign(Object.assign({}, this.state), updater);
             }
             else if (typeof updater === 'function') {
-                this.state = Object.assign(Object.assign({}, this.state), updater(Object.assign({}, this.state)));
+                const updaterValue = updater(this.state);
+                this.state = Object.assign(Object.assign({}, this.state), updaterValue);
             }
             const updated = Object.assign({}, this.state);
             resolve(updated);
