@@ -141,8 +141,7 @@ describe("Events", () => {
                 })
                 testManager.setters.setMyVal(42);
             })
-
-            expect(payload.path).toBe("myVal");
+            expect(payload.path).toEqual(["myVal"]);
             expect(payload.value).toBe(42);
 
         });
@@ -159,7 +158,7 @@ describe("Events", () => {
             expect(payload.value).toBe("Goodbye");
         });
 
-        test("Nested Payload Event Bubbles", async () => {
+        test("Events Bubble", async () => {
             const payload: EventPayload = await new Promise(resolve => {
                 testManager.addEventListener("on_level1_update", (payload: EventPayload) => {
                     resolve(payload)
@@ -170,6 +169,39 @@ describe("Events", () => {
             expect(payload.path).toEqual(["level1"]);
             expect(payload.value.level2Val).toBe("Hi there again!");
             expect(payload.value.level2.level3).toBeDefined()
+        })
+
+        test("setState emits appropriate events", async () => {
+            const resolved = await Promise.allSettled([
+                new Promise(resolve => {
+                    testManager.addEventListener("on_level1_update", (payload: EventPayload) => {
+                        resolve(payload)
+                    })
+                }),
+                new Promise(resolve => {
+                    testManager.addEventListener("on_level1_level2_update", (payload: EventPayload) => {
+                        resolve(payload)
+                    })
+                }),
+                new Promise(resolve => {
+                    testManager.addEventListener("on_level1_level2_level3_update", (payload: EventPayload) => {
+                        resolve(payload)
+                    })
+
+                    testManager.setState({ level1: { level2Val: "UPDATED!!!", level2: { level3: -1 } } })
+                }),
+            ])
+            const results: (EventPayload | null)[] = resolved.map((prom) => {
+                return prom.status === 'fulfilled' ? (prom.value as EventPayload) : null;
+            })
+            
+            expect(results[0]?.path).toEqual(["level1"])
+            expect(results[0]?.value).toEqual({level2: {level3: -1}, level2Val: "UPDATED!!!"})
+            expect(results[1]?.path).toEqual(["level1", "level2"])
+            expect(results[1]?.value).toEqual({level3: -1})
+            expect(results[2]?.path).toEqual(["level1", "level2", "level3"])
+            expect(results[2]?.value).toEqual(-1)
+            
         })
 
         test("Full State Update", async () => {
@@ -183,36 +215,6 @@ describe("Events", () => {
             expect(payload.state?.myVal).toBe(84);
         })
 
-        test("setState emits appropriate events", async () => {
-            // const resolved = await Promise.allSettled([
-            //     new Promise(resolve => {
-            //         testManager.addEventListener("on_level1_update", (payload: EventPayload) => {
-            //             resolve(payload)
-            //         })
-            //     }),
-            //     new Promise(resolve => {
-            //         testManager.addEventListener("on_level2_update", (payload: EventPayload) => {
-            //             resolve(payload)
-            //         })
-            //     }),
-            //     new Promise(resolve => {
-            //         testManager.addEventListener("on_level3_update", (payload: EventPayload) => {
-            //             resolve(payload)
-            //         })
-
-            //         testManager.setState({ level1: { level2Val: "UPDATED!!!", level2: { level3: -1 } } })
-            //     }),
-            // ])
-            // console.log(resolved)
-
-            // level1: {
-            //             level2: {
-            //                 level3: 3
-            //             },
-            //             level2Val: "hello"
-            //         }
-            /* TODO: Implement test to see if a custom setter can auto detect the correct event(s) to fire */
-        })
 
         test("removeEventListener", async () => {
 

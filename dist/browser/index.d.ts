@@ -75,6 +75,8 @@ export declare class StateManager {
     addEventListener(eventType: string, callback: Function): void;
     removeEventListener(eventType: string, callback: Function): void;
     private emitEvent;
+    private emitUpdateEventFromPath;
+    /********** LOCAL STORAGE **********/
     connectToLocalStorage(storageOptions: StorageOptions): void;
     private _udpateFromLocalStorage;
     private handleUnload;

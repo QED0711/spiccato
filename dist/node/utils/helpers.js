@@ -87,7 +87,7 @@ const getUpdatedPaths = (update, prevState) => {
             }
             return;
         }
-        path.length > 0 && paths.push(path);
+        // path.length > 0 && paths.push(path)
         for (let key of Object.keys(updatedVal)) {
             traverse(updatedVal[key], ((!!prevVal && key in prevVal) ? prevVal[key] : null), [...path, key]);
         }

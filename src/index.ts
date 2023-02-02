@@ -1,11 +1,11 @@
-import { 
-    formatAccessor, 
-    getNestedRoutes, 
-    nestedSetterFactory, 
-    sanitizeState, 
-    restoreState, 
-    WindowManager, 
-    _localStorage, 
+import {
+    formatAccessor,
+    getNestedRoutes,
+    nestedSetterFactory,
+    sanitizeState,
+    restoreState,
+    WindowManager,
+    _localStorage,
     getUpdatedPaths,
 } from './utils/helpers'
 
@@ -173,16 +173,6 @@ export class StateManager {
                         const updatedState = nestedSetterFactory(this.state, path)(v);
                         return new Promise(async resolve => {
                             resolve(await this.setState(updatedState, callback));
-                            let p: string | string[], v: any;
-                            for (let i = path.length - 1; i >= 0; i--) {
-                                p = path.slice(0, i + 1);
-                                v = this.state
-                                for (let key of p) {
-                                    v = v[key]
-                                }
-                                this.emitEvent("on_" + p.join("_") + "_update", { path: p, value: v })
-                            }
-                            // this.emitEvent("on_" + path.join("_") + "_update", { path, value: v })
                         })
                     }
                 }
@@ -208,13 +198,13 @@ export class StateManager {
                 const updaterValue: StateObject = updater(this.state);
                 updatedPaths = getUpdatedPaths(updaterValue, this.state)
                 this.state = { ...this.state, ...updaterValue };
-            } 
+            }
             const updated = { ...this.state }
             resolve(updated);
             callback?.(updated);
             this.emitEvent("update", { state: updated })
-            for(let path of updatedPaths){
-                /* TODO: format event key and call */
+            for (let path of updatedPaths) {
+                this.emitUpdateEventFromPath(path)
             }
             if (this._bindToLocalStorage && this.storageOptions.persistKey) {
                 this._persistToLocalStorage(this.state)
@@ -272,8 +262,16 @@ export class StateManager {
         })
     }
 
-    private emitEventFromPath(path: string[]) {
-
+    private emitUpdateEventFromPath(path: string[]) {
+        let p: string[], v: any;
+        for (let i = 0; i < path.length; i++) {
+            p = path.slice(0, i + 1)
+            v = this.state
+            for (let key of p) {
+                v = v[key]
+            }
+            this.emitEvent("on_" + p.join("_") + "_update", { path: p, value: v })
+        }
     }
 
     /********** LOCAL STORAGE **********/

@@ -118,7 +118,7 @@ describe("Events", () => {
                 });
                 testManager.setters.setMyVal(42);
             });
-            expect(payload.path).toBe("myVal");
+            expect(payload.path).toEqual(["myVal"]);
             expect(payload.value).toBe(42);
         }));
         test("Nested Payload", () => __awaiter(void 0, void 0, void 0, function* () {
@@ -154,32 +154,34 @@ describe("Events", () => {
             expect((_a = payload.state) === null || _a === void 0 ? void 0 : _a.myVal).toBe(84);
         }));
         test("setState emits appropriate events", () => __awaiter(void 0, void 0, void 0, function* () {
-            // const resolved = await Promise.allSettled([
-            //     new Promise(resolve => {
-            //         testManager.addEventListener("on_level1_update", (payload: EventPayload) => {
-            //             resolve(payload)
-            //         })
-            //     }),
-            //     new Promise(resolve => {
-            //         testManager.addEventListener("on_level2_update", (payload: EventPayload) => {
-            //             resolve(payload)
-            //         })
-            //     }),
-            //     new Promise(resolve => {
-            //         testManager.addEventListener("on_level3_update", (payload: EventPayload) => {
-            //             resolve(payload)
-            //         })
-            //         testManager.setState({ level1: { level2Val: "UPDATED!!!", level2: { level3: -1 } } })
-            //     }),
-            // ])
-            // console.log(resolved)
-            // level1: {
-            //             level2: {
-            //                 level3: 3
-            //             },
-            //             level2Val: "hello"
-            //         }
-            /* TODO: Implement test to see if a custom setter can auto detect the correct event(s) to fire */
+            var _b, _c, _d, _e, _f, _g;
+            const resolved = yield Promise.allSettled([
+                new Promise(resolve => {
+                    testManager.addEventListener("on_level1_update", (payload) => {
+                        resolve(payload);
+                    });
+                }),
+                new Promise(resolve => {
+                    testManager.addEventListener("on_level1_level2_update", (payload) => {
+                        resolve(payload);
+                    });
+                }),
+                new Promise(resolve => {
+                    testManager.addEventListener("on_level1_level2_level3_update", (payload) => {
+                        resolve(payload);
+                    });
+                    testManager.setState({ level1: { level2Val: "UPDATED!!!", level2: { level3: -1 } } });
+                }),
+            ]);
+            const results = resolved.map((prom) => {
+                return prom.status === 'fulfilled' ? prom.value : null;
+            });
+            expect((_b = results[0]) === null || _b === void 0 ? void 0 : _b.path).toEqual(["level1"]);
+            expect((_c = results[0]) === null || _c === void 0 ? void 0 : _c.value).toEqual({ level2: { level3: -1 }, level2Val: "UPDATED!!!" });
+            expect((_d = results[1]) === null || _d === void 0 ? void 0 : _d.path).toEqual(["level1", "level2"]);
+            expect((_e = results[1]) === null || _e === void 0 ? void 0 : _e.value).toEqual({ level3: -1 });
+            expect((_f = results[2]) === null || _f === void 0 ? void 0 : _f.path).toEqual(["level1", "level2", "level3"]);
+            expect((_g = results[2]) === null || _g === void 0 ? void 0 : _g.value).toEqual(-1);
         }));
         test("removeEventListener", () => __awaiter(void 0, void 0, void 0, function* () {
             const value = yield new Promise((resolve) => __awaiter(void 0, void 0, void 0, function* () {
