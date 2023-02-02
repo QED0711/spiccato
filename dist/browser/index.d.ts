@@ -1,4 +1,4 @@
-import { WindowManager } from './utils/helpers.js';
+import { WindowManager } from './utils/helpers';
 type managerID = string;
 interface StateObject {
     [k: string]: any;
@@ -75,7 +75,10 @@ export declare class StateManager {
     addEventListener(eventType: string, callback: Function): void;
     removeEventListener(eventType: string, callback: Function): void;
     private emitEvent;
+    private emitUpdateEventFromPath;
+    /********** LOCAL STORAGE **********/
     connectToLocalStorage(storageOptions: StorageOptions): void;
+    private _udpateFromLocalStorage;
     private handleUnload;
 }
 export {};

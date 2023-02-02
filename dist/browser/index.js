@@ -7,7 +7,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-import { formatAccessor, getNestedRoutes, nestedSetterFactory, sanitizeState, restoreState, WindowManager, _localStorage } from './utils/helpers.js';
+import { formatAccessor, getNestedRoutes, nestedSetterFactory, sanitizeState, restoreState, WindowManager, _localStorage, getUpdatedPaths, } from './utils/helpers';
 const DEFAULT_INIT_OPTIONS = {
     id: "",
     dynamicGetters: true,
@@ -67,6 +67,9 @@ export class StateManager {
         this._applyState();
     }
     _applyState() {
+        if (this._bindToLocalStorage) {
+            this._persistToLocalStorage(this.state);
+        }
         for (let k in this.state) {
             if (this.initOptions.dynamicGetters) {
                 this.getters[formatAccessor(k, "get")] = () => {
@@ -102,16 +105,6 @@ export class StateManager {
                         const updatedState = nestedSetterFactory(this.state, path)(v);
                         return new Promise((resolve) => __awaiter(this, void 0, void 0, function* () {
                             resolve(yield this.setState(updatedState, callback));
-                            let p, v;
-                            for (let i = 0; i < path.length; i++) {
-                                p = path.slice(0, i + 1);
-                                v = this.state;
-                                for (let key of p) {
-                                    v = v[key];
-                                }
-                                this.emitEvent("on_" + p.join("_") + "_update", { path: p, value: v });
-                            }
-                            // this.emitEvent("on_" + path.join("_") + "_update", { path, value: v })
                         }));
                     };
                 }
@@ -128,16 +121,23 @@ export class StateManager {
     }
     setState(updater, callback = null) {
         return new Promise(resolve => {
+            let updatedPaths = [];
             if (typeof updater === 'object') {
+                updatedPaths = getUpdatedPaths(updater, this.state);
                 this.state = Object.assign(Object.assign({}, this.state), updater);
             }
             else if (typeof updater === 'function') {
-                this.state = Object.assign(Object.assign({}, this.state), updater(Object.assign({}, this.state)));
+                const updaterValue = updater(this.state);
+                updatedPaths = getUpdatedPaths(updaterValue, this.state);
+                this.state = Object.assign(Object.assign({}, this.state), updaterValue);
             }
             const updated = Object.assign({}, this.state);
             resolve(updated);
             callback === null || callback === void 0 ? void 0 : callback(updated);
             this.emitEvent("update", { state: updated });
+            for (let path of updatedPaths) {
+                this.emitUpdateEventFromPath(path);
+            }
             if (this._bindToLocalStorage && this.storageOptions.persistKey) {
                 this._persistToLocalStorage(this.state);
             }
@@ -188,6 +188,18 @@ export class StateManager {
             callback(payload);
         });
     }
+    emitUpdateEventFromPath(path) {
+        let p, v;
+        for (let i = 0; i < path.length; i++) {
+            p = path.slice(0, i + 1);
+            v = this.state;
+            for (let key of p) {
+                v = v[key];
+            }
+            this.emitEvent("on_" + p.join("_") + "_update", { path: p, value: v });
+        }
+    }
+    /********** LOCAL STORAGE **********/
     connectToLocalStorage(storageOptions) {
         var _a;
         this._bindToLocalStorage = true;
@@ -208,6 +220,14 @@ export class StateManager {
                     : {};
             }
         }
+        if ("addEventListener" in WINDOW) {
+            WINDOW.addEventListener("storage", () => {
+                this._udpateFromLocalStorage();
+            });
+        }
+    }
+    _udpateFromLocalStorage() {
+        this.setState(Object.assign(Object.assign({}, this.state), JSON.parse(WINDOW.localStorage.getItem(this.storageOptions.persistKey))));
     }
     handleUnload(event) {
         var _a;

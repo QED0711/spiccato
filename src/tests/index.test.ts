@@ -88,6 +88,14 @@ describe("State Interactions", () => {
             expect(testManager.getters.getMyVal()).toBe(2);
         });
 
+        test("setState with functional argument", () => {
+            testManager.setState((prevState: { [key: string]: any }) => {
+                const myVal = prevState.myVal;
+                return { myVal: myVal + 1 }
+            })
+            expect(testManager.getters.getMyVal()).toBe(3)
+        })
+
         test("Dynamic Setters", () => {
             testManager.setters.setMyVal(3);
             expect(testManager.getters.getMyVal()).toBe(3);
@@ -104,6 +112,7 @@ describe("State Interactions", () => {
             expect(testManager.getters.getLevel1_level2_level3()).toBe(300);
             expect(testManager.getters.getLevel1_level2Val()).toBe("world");
         })
+
     })
 
     describe("Methods", () => {
@@ -132,8 +141,7 @@ describe("Events", () => {
                 })
                 testManager.setters.setMyVal(42);
             })
-
-            expect(payload.path).toBe("myVal");
+            expect(payload.path).toEqual(["myVal"]);
             expect(payload.value).toBe(42);
 
         });
@@ -150,8 +158,8 @@ describe("Events", () => {
             expect(payload.value).toBe("Goodbye");
         });
 
-        test("Nested Payload Event Bubbles", async () => {
-            const payload : EventPayload = await new Promise(resolve => {
+        test("Events Bubble", async () => {
+            const payload: EventPayload = await new Promise(resolve => {
                 testManager.addEventListener("on_level1_update", (payload: EventPayload) => {
                     resolve(payload)
                 })
@@ -161,6 +169,39 @@ describe("Events", () => {
             expect(payload.path).toEqual(["level1"]);
             expect(payload.value.level2Val).toBe("Hi there again!");
             expect(payload.value.level2.level3).toBeDefined()
+        })
+
+        test("setState emits appropriate events", async () => {
+            const resolved = await Promise.allSettled([
+                new Promise(resolve => {
+                    testManager.addEventListener("on_level1_update", (payload: EventPayload) => {
+                        resolve(payload)
+                    })
+                }),
+                new Promise(resolve => {
+                    testManager.addEventListener("on_level1_level2_update", (payload: EventPayload) => {
+                        resolve(payload)
+                    })
+                }),
+                new Promise(resolve => {
+                    testManager.addEventListener("on_level1_level2_level3_update", (payload: EventPayload) => {
+                        resolve(payload)
+                    })
+
+                    testManager.setState({ level1: { level2Val: "UPDATED!!!", level2: { level3: -1 } } })
+                }),
+            ])
+            const results: (EventPayload | null)[] = resolved.map((prom) => {
+                return prom.status === 'fulfilled' ? (prom.value as EventPayload) : null;
+            })
+            
+            expect(results[0]?.path).toEqual(["level1"])
+            expect(results[0]?.value).toEqual({level2: {level3: -1}, level2Val: "UPDATED!!!"})
+            expect(results[1]?.path).toEqual(["level1", "level2"])
+            expect(results[1]?.value).toEqual({level3: -1})
+            expect(results[2]?.path).toEqual(["level1", "level2", "level3"])
+            expect(results[2]?.value).toEqual(-1)
+            
         })
 
         test("Full State Update", async () => {
@@ -173,6 +214,7 @@ describe("Events", () => {
             expect(payload.state).toStrictEqual(testManager.state);
             expect(payload.state?.myVal).toBe(84);
         })
+
 
         test("removeEventListener", async () => {
 
