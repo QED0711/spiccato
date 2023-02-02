@@ -10,7 +10,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.StateManager = exports.WINDOW = void 0;
-const helpers_js_1 = require("./utils/helpers.js");
+const helpers_1 = require("./utils/helpers");
 const DEFAULT_INIT_OPTIONS = {
     id: "",
     dynamicGetters: true,
@@ -36,7 +36,7 @@ catch (err) {
     IS_BROWSER = false;
 }
 if (!("localStorage" in exports.WINDOW))
-    exports.WINDOW.localStorage = new helpers_js_1._localStorage;
+    exports.WINDOW.localStorage = new helpers_1._localStorage;
 class StateManager {
     static registerManager(instance) {
         if (instance.initOptions.id in this.managers) {
@@ -57,7 +57,7 @@ class StateManager {
         this.setters = {};
         this.methods = {};
         this._bindToLocalStorage = false;
-        this.windowManager = IS_BROWSER ? new helpers_js_1.WindowManager(exports.WINDOW) : null;
+        this.windowManager = IS_BROWSER ? new helpers_1.WindowManager(exports.WINDOW) : null;
         this._eventListeners = {};
         if (IS_BROWSER) {
             exports.WINDOW === null || exports.WINDOW === void 0 ? void 0 : exports.WINDOW.addEventListener("beforeunload", this.handleUnload.bind(this));
@@ -74,12 +74,12 @@ class StateManager {
         }
         for (let k in this.state) {
             if (this.initOptions.dynamicGetters) {
-                this.getters[(0, helpers_js_1.formatAccessor)(k, "get")] = () => {
+                this.getters[(0, helpers_1.formatAccessor)(k, "get")] = () => {
                     return this.state[k];
                 };
             }
             if (this.initOptions.dynamicSetters) {
-                this.setters[(0, helpers_js_1.formatAccessor)(k, "set")] = (v, callback) => {
+                this.setters[(0, helpers_1.formatAccessor)(k, "set")] = (v, callback) => {
                     return new Promise((resolve) => __awaiter(this, void 0, void 0, function* () {
                         resolve(yield this.setState({ [k]: v }, callback));
                         this.emitEvent("on_" + k + "_update", { path: k, value: v });
@@ -91,10 +91,10 @@ class StateManager {
         const createNestedGetters = this.initOptions.dynamicGetters && this.initOptions.nestedGetters;
         const createNestedSetters = this.initOptions.dynamicSetters && this.initOptions.nestedSetters;
         if (createNestedGetters || createNestedSetters) {
-            const nestedPaths = (0, helpers_js_1.getNestedRoutes)(this.state);
+            const nestedPaths = (0, helpers_1.getNestedRoutes)(this.state);
             for (let path of nestedPaths) {
                 if (createNestedGetters) {
-                    this.getters[(0, helpers_js_1.formatAccessor)(path, "get")] = () => {
+                    this.getters[(0, helpers_1.formatAccessor)(path, "get")] = () => {
                         let value = this.state[path[0]];
                         for (let i = 1; i < path.length; i++) {
                             value = value[path[i]];
@@ -103,8 +103,8 @@ class StateManager {
                     };
                 }
                 if (createNestedSetters) {
-                    this.setters[(0, helpers_js_1.formatAccessor)(path, "set")] = (v, callback) => {
-                        const updatedState = (0, helpers_js_1.nestedSetterFactory)(this.state, path)(v);
+                    this.setters[(0, helpers_1.formatAccessor)(path, "set")] = (v, callback) => {
+                        const updatedState = (0, helpers_1.nestedSetterFactory)(this.state, path)(v);
                         return new Promise((resolve) => __awaiter(this, void 0, void 0, function* () {
                             resolve(yield this.setState(updatedState, callback));
                             let p, v;
@@ -126,19 +126,26 @@ class StateManager {
     _persistToLocalStorage(state) {
         var _a;
         if (this._bindToLocalStorage && !!this.storageOptions.persistKey) {
-            const [sanitized, removed] = (0, helpers_js_1.sanitizeState)(state, this.storageOptions.privateState || []);
+            const [sanitized, removed] = (0, helpers_1.sanitizeState)(state, this.storageOptions.privateState || []);
             (_a = exports.WINDOW === null || exports.WINDOW === void 0 ? void 0 : exports.WINDOW.localStorage) === null || _a === void 0 ? void 0 : _a.setItem(this.storageOptions.persistKey, JSON.stringify(sanitized));
-            this.state = (0, helpers_js_1.restoreState)(state, removed);
+            this.state = (0, helpers_1.restoreState)(state, removed);
         }
     }
     setState(updater, callback = null) {
         return new Promise(resolve => {
+            let updatedPaths;
             if (typeof updater === 'object') {
+                updatedPaths = (0, helpers_1.getUpdatedPaths)(updater, this.state);
                 this.state = Object.assign(Object.assign({}, this.state), updater);
             }
             else if (typeof updater === 'function') {
                 const updaterValue = updater(this.state);
+                updatedPaths = (0, helpers_1.getUpdatedPaths)(updaterValue, this.state);
                 this.state = Object.assign(Object.assign({}, this.state), updaterValue);
+            }
+            else {
+                resolve(null);
+                return;
             }
             const updated = Object.assign({}, this.state);
             resolve(updated);

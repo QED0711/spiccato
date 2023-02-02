@@ -78,7 +78,7 @@ export const restoreState = (state: {[key: string]: any}, removed: {[key: string
     return restored
 }
 
-export const getUpdatedPaths = (update: {[key: string]: any}, prevState: {[key: string]: any}) => {
+export const getUpdatedPaths = (update: {[key: string]: any}, prevState: {[key: string]: any}): string[][] => {
     const paths: string[][] = [];
 
     const traverse = (updatedVal: any, prevVal: any, path: string[] = []) => {

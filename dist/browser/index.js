@@ -7,7 +7,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-import { formatAccessor, getNestedRoutes, nestedSetterFactory, sanitizeState, restoreState, WindowManager, _localStorage } from './utils/helpers.js';
+import { formatAccessor, getNestedRoutes, nestedSetterFactory, sanitizeState, restoreState, WindowManager, _localStorage, getUpdatedPaths, } from './utils/helpers';
 const DEFAULT_INIT_OPTIONS = {
     id: "",
     dynamicGetters: true,
@@ -131,12 +131,19 @@ export class StateManager {
     }
     setState(updater, callback = null) {
         return new Promise(resolve => {
+            let updatedPaths;
             if (typeof updater === 'object') {
+                updatedPaths = getUpdatedPaths(updater, this.state);
                 this.state = Object.assign(Object.assign({}, this.state), updater);
             }
             else if (typeof updater === 'function') {
                 const updaterValue = updater(this.state);
+                updatedPaths = getUpdatedPaths(updaterValue, this.state);
                 this.state = Object.assign(Object.assign({}, this.state), updaterValue);
+            }
+            else {
+                resolve(null);
+                return;
             }
             const updated = Object.assign({}, this.state);
             resolve(updated);

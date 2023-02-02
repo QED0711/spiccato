@@ -1,4 +1,4 @@
-import { WindowManager } from './utils/helpers.js';
+import { WindowManager } from './utils/helpers';
 type managerID = string;
 interface StateObject {
     [k: string]: any;

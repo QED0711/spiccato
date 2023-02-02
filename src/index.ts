@@ -1,4 +1,14 @@
-import { formatAccessor, getNestedRoutes, nestedSetterFactory, sanitizeState, restoreState, WindowManager, _localStorage, getUpdatedPaths } from './utils/helpers.js'
+import { 
+    formatAccessor, 
+    getNestedRoutes, 
+    nestedSetterFactory, 
+    sanitizeState, 
+    restoreState, 
+    WindowManager, 
+    _localStorage, 
+    getUpdatedPaths,
+} from './utils/helpers'
+
 /* TYPES */
 type managerID = string;
 
@@ -190,7 +200,7 @@ export class StateManager {
 
     setState(updater: StateObject | Function, callback: StateUpdateCallback | null = null) {
         return new Promise(resolve => {
-            let updatedPaths: string[][];
+            let updatedPaths: string[][] = [];
             if (typeof updater === 'object') {
                 updatedPaths = getUpdatedPaths(updater, this.state)
                 this.state = { ...this.state, ...updater };
@@ -198,11 +208,14 @@ export class StateManager {
                 const updaterValue: StateObject = updater(this.state);
                 updatedPaths = getUpdatedPaths(updaterValue, this.state)
                 this.state = { ...this.state, ...updaterValue };
-            }
+            } 
             const updated = { ...this.state }
             resolve(updated);
             callback?.(updated);
             this.emitEvent("update", { state: updated })
+            for(let path of updatedPaths){
+                /* TODO: format event key and call */
+            }
             if (this._bindToLocalStorage && this.storageOptions.persistKey) {
                 this._persistToLocalStorage(this.state)
             }
@@ -259,6 +272,11 @@ export class StateManager {
         })
     }
 
+    private emitEventFromPath(path: string[]) {
+
+    }
+
+    /********** LOCAL STORAGE **********/
     connectToLocalStorage(storageOptions: StorageOptions) {
         this._bindToLocalStorage = true;
         this.storageOptions = { ...DEFAULT_STORAGE_OPTIONS, ...storageOptions };
