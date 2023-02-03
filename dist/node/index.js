@@ -54,7 +54,7 @@ class StateManager {
     }
     constructor(state = {}, options) {
         this.initOptions = Object.assign(Object.assign({}, DEFAULT_INIT_OPTIONS), options);
-        this.state = state;
+        this._state = state;
         this.getters = {};
         this.setters = {};
         this.methods = {};
@@ -66,6 +66,9 @@ class StateManager {
             exports.WINDOW === null || exports.WINDOW === void 0 ? void 0 : exports.WINDOW.addEventListener("onunload", this.handleUnload.bind(this));
         }
         this.constructor.registerManager(this);
+    }
+    get state() {
+        return Object.freeze(this._state);
     }
     init() {
         this._applyState();
@@ -120,7 +123,7 @@ class StateManager {
         if (this._bindToLocalStorage && !!this.storageOptions.persistKey) {
             const [sanitized, removed] = (0, helpers_1.sanitizeState)(state, this.storageOptions.privateState || []);
             (_a = exports.WINDOW === null || exports.WINDOW === void 0 ? void 0 : exports.WINDOW.localStorage) === null || _a === void 0 ? void 0 : _a.setItem(this.storageOptions.persistKey, JSON.stringify(sanitized));
-            this.state = (0, helpers_1.restoreState)(state, removed);
+            this._state = (0, helpers_1.restoreState)(state, removed);
         }
     }
     setState(updater, callback = null) {
@@ -128,12 +131,12 @@ class StateManager {
             let updatedPaths = [];
             if (typeof updater === 'object') {
                 updatedPaths = (0, helpers_1.getUpdatedPaths)(updater, this.state);
-                this.state = Object.assign(Object.assign({}, this.state), updater);
+                this._state = Object.assign(Object.assign({}, this.state), updater);
             }
             else if (typeof updater === 'function') {
                 const updaterValue = updater(this.state);
                 updatedPaths = (0, helpers_1.getUpdatedPaths)(updaterValue, this.state);
-                this.state = Object.assign(Object.assign({}, this.state), updaterValue);
+                this._state = Object.assign(Object.assign({}, this.state), updaterValue);
             }
             const updated = Object.freeze(Object.assign({}, this.state));
             resolve(updated);
@@ -221,14 +224,14 @@ class StateManager {
         if (this.storageOptions.initializeFromLocalStorage) {
             if (!!exports.WINDOW.localStorage.getItem(this.storageOptions.persistKey)) {
                 if (exports.WINDOW.name === this.storageOptions.providerID) {
-                    this.state = Object.assign(Object.assign({}, this.state), JSON.parse(exports.WINDOW.localStorage.getItem(this.storageOptions.persistKey)));
+                    this._state = Object.assign(Object.assign({}, this.state), JSON.parse(exports.WINDOW.localStorage.getItem(this.storageOptions.persistKey)));
                 }
                 else if (((_a = this.storageOptions.subscriberIDs) !== null && _a !== void 0 ? _a : []).includes(exports.WINDOW.name)) {
-                    this.state = JSON.parse(exports.WINDOW.localStorage.getItem(this.storageOptions.persistKey));
+                    this._state = JSON.parse(exports.WINDOW.localStorage.getItem(this.storageOptions.persistKey));
                 }
                 else {
                     IS_BROWSER && console.warn("window is not a provider and has not been identified as a subscriber. State will not be loaded. See docs on provider and subscriber roles");
-                    this.state = {};
+                    this._state = {};
                 }
             }
         }

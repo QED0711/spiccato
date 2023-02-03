@@ -70,7 +70,7 @@ export class StateManager {
 
     /* Instance Properties */
     private initOptions: InitializationOptions;
-    state: StateObject;
+    private _state: StateObject;
     getters: { [key: string]: Function };
     setters: { [key: string]: Function };
     methods: { [key: string]: Function };
@@ -81,7 +81,7 @@ export class StateManager {
 
     constructor(state: StateObject = {}, options: InitializationOptions) {
         this.initOptions = { ...DEFAULT_INIT_OPTIONS, ...options };
-        this.state = state;
+        this._state = state;
 
         this.getters = {}
         this.setters = {}
@@ -98,6 +98,10 @@ export class StateManager {
         }
 
         (this.constructor as typeof StateManager).registerManager(this)
+    }
+    
+    public get state(): StateObject {
+        return Object.freeze(this._state)
     }
 
     init() {
@@ -145,7 +149,7 @@ export class StateManager {
                 }
 
                 if (createNestedSetters) {
-                    this.setters[formatAccessor(path, "set")] = (v: any, callback: StateUpdateCallback | null) => {
+                    this.setters[formatAccessor(path, "set")] = (v: any, callback: StateUpdateCallback | null): Promise<StateObject> => {
                         const updatedState = nestedSetterFactory(this.state, path)(v);
                         return new Promise(async resolve => {
                             resolve(await this.setState(updatedState, callback));
@@ -160,7 +164,7 @@ export class StateManager {
         if (this._bindToLocalStorage && !!this.storageOptions.persistKey) {
             const [sanitized, removed] = sanitizeState(state, this.storageOptions.privateState || [])
             WINDOW?.localStorage?.setItem(this.storageOptions.persistKey, JSON.stringify(sanitized))
-            this.state = restoreState(state, removed);
+            this._state = restoreState(state, removed);
         }
     }
 
@@ -169,11 +173,11 @@ export class StateManager {
             let updatedPaths: string[][] = [];
             if (typeof updater === 'object') {
                 updatedPaths = getUpdatedPaths(updater, this.state)
-                this.state = { ...this.state, ...updater };
+                this._state = { ...this.state, ...updater };
             } else if (typeof updater === 'function') {
                 const updaterValue: StateObject = updater(this.state);
                 updatedPaths = getUpdatedPaths(updaterValue, this.state)
-                this.state = { ...this.state, ...updaterValue };
+                this._state = { ...this.state, ...updaterValue };
             }
             const updated = Object.freeze({ ...this.state })
             resolve(updated);
@@ -272,15 +276,15 @@ export class StateManager {
             
             if (!!WINDOW.localStorage.getItem(this.storageOptions.persistKey)) {
                 if(WINDOW.name === this.storageOptions.providerID){
-                    this.state = {
+                    this._state = {
                         ...this.state,
                         ...JSON.parse(WINDOW.localStorage.getItem(this.storageOptions.persistKey)),
                     }
                 } else if ((this.storageOptions.subscriberIDs ?? []).includes(WINDOW.name)){
-                    this.state = JSON.parse(WINDOW.localStorage.getItem(this.storageOptions.persistKey))
+                    this._state = JSON.parse(WINDOW.localStorage.getItem(this.storageOptions.persistKey))
                 } else {
                     IS_BROWSER && console.warn("window is not a provider and has not been identified as a subscriber. State will not be loaded. See docs on provider and subscriber roles");
-                    this.state = {}
+                    this._state = {}
                 }
             }
         }

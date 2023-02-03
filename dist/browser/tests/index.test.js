@@ -57,6 +57,23 @@ describe("Initialization:", () => {
     });
 });
 describe("State Interactions", () => {
+    describe("State Access", () => {
+        test("State is accessible", () => {
+            expect(testManager.state.myVal).toBeDefined();
+        });
+        test("Accessed state is immutable", () => {
+            function shouldFail() {
+                try {
+                    testManager.state.myVal = 50;
+                    return 1;
+                }
+                catch (err) {
+                    return 0;
+                }
+            }
+            expect(shouldFail()).toBe(0);
+        });
+    });
     describe("Getters", () => {
         test("Dynamic getters", () => {
             expect(testManager.getters.getMyVal()).toBe(1);

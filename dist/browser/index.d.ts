@@ -9,7 +9,7 @@ export declare class StateManager {
     static getManagerById(id: managerID): StateManager;
     static clear(): void;
     private initOptions;
-    state: StateObject;
+    private _state;
     getters: {
         [key: string]: Function;
     };
@@ -24,6 +24,7 @@ export declare class StateManager {
     private _eventListeners;
     [key: string]: any;
     constructor(state: StateObject | undefined, options: InitializationOptions);
+    get state(): StateObject;
     init(): void;
     private _applyState;
     private _persistToLocalStorage;
