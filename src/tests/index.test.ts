@@ -1,4 +1,5 @@
-import { StateManager, EventPayload, WINDOW } from '../index'
+import { StateManager, WINDOW } from '../index'
+import { EventPayload, StateObject } from '../types';
 
 const testManager = new StateManager(
     {
@@ -28,7 +29,7 @@ testManager.addCustomGetters({
 
 testManager.addCustomSetters({
     setBothNums(this: StateManager, num1: number, num2: number) {
-        this.setState((prevState: { [key: string]: any }) => {
+        this.setState((prevState: StateObject) => {
             return { num1, num2 };
         })
     }

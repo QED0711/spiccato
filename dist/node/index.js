@@ -11,12 +11,14 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.StateManager = exports.WINDOW = void 0;
 const helpers_1 = require("./utils/helpers");
+/* TYPES */
 const DEFAULT_INIT_OPTIONS = {
     id: "",
     dynamicGetters: true,
     dynamicSetters: true,
     nestedGetters: true,
     nestedSetters: true,
+    debug: false
 };
 const DEFAULT_STORAGE_OPTIONS = {
     persistKey: "",
@@ -133,7 +135,7 @@ class StateManager {
                 updatedPaths = (0, helpers_1.getUpdatedPaths)(updaterValue, this.state);
                 this.state = Object.assign(Object.assign({}, this.state), updaterValue);
             }
-            const updated = Object.assign({}, this.state);
+            const updated = Object.freeze(Object.assign({}, this.state));
             resolve(updated);
             callback === null || callback === void 0 ? void 0 : callback(updated);
             this.emitEvent("update", { state: updated });
@@ -211,24 +213,32 @@ class StateManager {
             exports.WINDOW.name = this.storageOptions.providerID;
         }
         if (!exports.WINDOW.name) {
-            console.error("If connecting to localStorage, storageOptions.providerID must be defined");
+            console.error("If connecting to localStorage, providerID must be defined in sotrageOptions passed to 'connectoToLocalStorage'");
             return;
         }
+        this.initOptions.debug && console.log("DEBUG: window.name", exports.WINDOW.name);
+        this.initOptions.debug && console.assert(!!exports.WINDOW.name);
         if (this.storageOptions.initializeFromLocalStorage) {
             if (!!exports.WINDOW.localStorage.getItem(this.storageOptions.persistKey)) {
-                this.state = exports.WINDOW.name === this.storageOptions.providerID
-                    ? Object.assign(Object.assign({}, this.state), JSON.parse(exports.WINDOW.localStorage.getItem(this.storageOptions.persistKey))) : ((_a = this.storageOptions.subscriberIDs) !== null && _a !== void 0 ? _a : []).includes(exports.WINDOW.name) // is a listed subscriber and is allowed to read this state
-                    ? JSON.parse(exports.WINDOW.localStorage.getItem(this.storageOptions.persistKey))
-                    : {};
+                if (exports.WINDOW.name === this.storageOptions.providerID) {
+                    this.state = Object.assign(Object.assign({}, this.state), JSON.parse(exports.WINDOW.localStorage.getItem(this.storageOptions.persistKey)));
+                }
+                else if (((_a = this.storageOptions.subscriberIDs) !== null && _a !== void 0 ? _a : []).includes(exports.WINDOW.name)) {
+                    this.state = JSON.parse(exports.WINDOW.localStorage.getItem(this.storageOptions.persistKey));
+                }
+                else {
+                    IS_BROWSER && console.warn("window is not a provider and has not been identified as a subscriber. State will not be loaded. See docs on provider and subscriber roles");
+                    this.state = {};
+                }
             }
         }
         if ("addEventListener" in exports.WINDOW) {
             exports.WINDOW.addEventListener("storage", () => {
-                this._udpateFromLocalStorage();
+                this._updateFromLocalStorage();
             });
         }
     }
-    _udpateFromLocalStorage() {
+    _updateFromLocalStorage() {
         this.setState(Object.assign(Object.assign({}, this.state), JSON.parse(exports.WINDOW.localStorage.getItem(this.storageOptions.persistKey))));
     }
     handleUnload(event) {

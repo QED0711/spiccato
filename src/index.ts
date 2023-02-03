@@ -9,24 +9,15 @@ import {
     getUpdatedPaths,
 } from './utils/helpers'
 
+import {
+    StateObject,
+    StateUpdateCallback,
+    InitializationOptions,
+    StorageOptions,
+    EventPayload,
+    managerID
+} from './types/index'
 /* TYPES */
-type managerID = string;
-
-interface StateObject {
-    [k: string]: any
-}
-
-interface StateUpdateCallback {
-    (state: { [key: string]: any }): void;
-}
-
-interface InitializationOptions {
-    id: managerID,
-    dynamicGetters?: boolean,
-    dynamicSetters?: boolean,
-    nestedGetters?: boolean,
-    nestedSetters?: boolean,
-}
 
 const DEFAULT_INIT_OPTIONS: InitializationOptions = {
     id: "",
@@ -34,16 +25,7 @@ const DEFAULT_INIT_OPTIONS: InitializationOptions = {
     dynamicSetters: true,
     nestedGetters: true,
     nestedSetters: true,
-}
-
-interface StorageOptions {
-    persistKey: string,
-    initializeFromLocalStorage?: boolean,
-    providerID?: string,
-    subscriberIDs?: string[],
-    clearStorageOnUnload?: boolean,
-    removeChildrenOnUnload?: boolean,
-    privateState?: (string | string[])[],
+    debug: false
 }
 
 const DEFAULT_STORAGE_OPTIONS: StorageOptions = {
@@ -54,12 +36,6 @@ const DEFAULT_STORAGE_OPTIONS: StorageOptions = {
     removeChildrenOnUnload: true,
     privateState: [],
 
-}
-
-export type EventPayload = {
-    path?: string | string[],
-    value?: any,
-    state?: StateObject
 }
 
 let IS_BROWSER: boolean;
@@ -188,7 +164,7 @@ export class StateManager {
         }
     }
 
-    setState(updater: StateObject | Function, callback: StateUpdateCallback | null = null) {
+    setState(updater: StateObject | Function, callback: StateUpdateCallback | null = null): Promise<StateObject> {
         return new Promise(resolve => {
             let updatedPaths: string[][] = [];
             if (typeof updater === 'object') {
@@ -199,7 +175,7 @@ export class StateManager {
                 updatedPaths = getUpdatedPaths(updaterValue, this.state)
                 this.state = { ...this.state, ...updaterValue };
             }
-            const updated = { ...this.state }
+            const updated = Object.freeze({ ...this.state })
             resolve(updated);
             callback?.(updated);
             this.emitEvent("update", { state: updated })
@@ -285,30 +261,37 @@ export class StateManager {
         }
 
         if (!WINDOW.name) {
-            console.error("If connecting to localStorage, storageOptions.providerID must be defined");
+            console.error("If connecting to localStorage, providerID must be defined in sotrageOptions passed to 'connectoToLocalStorage'");
             return;
         }
 
+        this.initOptions.debug && console.log("DEBUG: window.name", WINDOW.name)
+        this.initOptions.debug && console.assert(!!WINDOW.name)
+
         if (this.storageOptions.initializeFromLocalStorage) {
+            
             if (!!WINDOW.localStorage.getItem(this.storageOptions.persistKey)) {
-                this.state = WINDOW.name === this.storageOptions.providerID
-                    ? {
+                if(WINDOW.name === this.storageOptions.providerID){
+                    this.state = {
                         ...this.state,
                         ...JSON.parse(WINDOW.localStorage.getItem(this.storageOptions.persistKey)),
                     }
-                    : (this.storageOptions.subscriberIDs ?? []).includes(WINDOW.name) // is a listed subscriber and is allowed to read this state
-                        ? JSON.parse(WINDOW.localStorage.getItem(this.storageOptions.persistKey))
-                        : {}
+                } else if ((this.storageOptions.subscriberIDs ?? []).includes(WINDOW.name)){
+                    this.state = JSON.parse(WINDOW.localStorage.getItem(this.storageOptions.persistKey))
+                } else {
+                    IS_BROWSER && console.warn("window is not a provider and has not been identified as a subscriber. State will not be loaded. See docs on provider and subscriber roles");
+                    this.state = {}
+                }
             }
         }
         if ("addEventListener" in WINDOW) {
             WINDOW.addEventListener("storage", () => {
-                this._udpateFromLocalStorage()
+                this._updateFromLocalStorage()
             })
         }
     }
 
-    private _udpateFromLocalStorage() {
+    private _updateFromLocalStorage() {
         this.setState({ ...this.state, ...JSON.parse(WINDOW.localStorage.getItem(this.storageOptions.persistKey)) })
     }
 
