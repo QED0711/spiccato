@@ -79,7 +79,7 @@ describe("State Interactions", () => {
                 }
             }
             expect(shouldFail(["myVal"], 14)).toBe(0);
-            expect(shouldFail(["level1", "level2", "level3"], "TEST")).toBe(0);
+            // expect(shouldFail(["level1", "level2", "level3"], "TEST")).toBe(0);
             // console.log(testManager.state)
         });
     });

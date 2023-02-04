@@ -1,3 +1,35 @@
+import { StateObject } from "../types";
+
+const proxyHandlers: {[key: string]: Function} = {
+    // get(obj: {[key: string]: any}, property: any){
+        
+    // },
+    set(obj: {[key: string]: any}, property: any, value: any): void {
+       throw new Error("State is immutable. Use a setter instead")
+    }
+}
+
+export const createStateProxy = (state: StateObject): StateObject => {
+    const proxied: StateObject = {};
+
+    const traverse = (value: any) => {
+        if(typeof value !== "object" || Array.isArray(value)){
+            return value
+        }
+
+        for(let k of Object.keys(value)) {
+            value[k] = traverse(value[k]);
+            if(typeof value[k] === "object" && !Array.isArray(value[k])){
+                value[k] = new Proxy(value[k], proxyHandlers)
+            }
+        }
+    }
+
+    traverse(state);
+
+    return proxied;
+}
+
 export const formatAccessor = (path: string | string[], accessorType: string = "get") => {
     path = Array.isArray(path) ? path.join("_") : path;
     return accessorType + path[0].toUpperCase() + path.slice(1)
