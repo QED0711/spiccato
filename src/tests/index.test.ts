@@ -73,15 +73,26 @@ describe("State Interactions", () => {
         })
 
         test("Accessed state is immutable", () => {
-            function shouldFail(): number {
-                try{
-                    testManager.state.myVal = 50;
-                    return 1;
-                } catch(err){
+            function shouldFail(path: string[], update: any): number {
+                let val = testManager.state
+                try {
+                    for (let i = 0; i < path.length; i++) {
+                       if(i  === path.length - 1){
+                           val[path[i]] = update;
+                           return 1
+                       } 
+                       val = val[path[i]]
+                    }
+                    return 1
+                } catch (err) {
                     return 0
                 }
             }
-            expect(shouldFail()).toBe(0);
+
+            expect(shouldFail(["myVal"], 14)).toBe(0)
+            // expect(shouldFail(["level1", "level2", "level3"], "TEST")).toBe(0);
+
+            // console.log(testManager.state)
         })
     })
 
@@ -213,14 +224,14 @@ describe("Events", () => {
             const results: (EventPayload | null)[] = resolved.map((prom) => {
                 return prom.status === 'fulfilled' ? (prom.value as EventPayload) : null;
             })
-            
+
             expect(results[0]?.path).toEqual(["level1"])
-            expect(results[0]?.value).toEqual({level2: {level3: -1}, level2Val: "UPDATED!!!"})
+            expect(results[0]?.value).toEqual({ level2: { level3: -1 }, level2Val: "UPDATED!!!" })
             expect(results[1]?.path).toEqual(["level1", "level2"])
-            expect(results[1]?.value).toEqual({level3: -1})
+            expect(results[1]?.value).toEqual({ level3: -1 })
             expect(results[2]?.path).toEqual(["level1", "level2", "level3"])
             expect(results[2]?.value).toEqual(-1)
-            
+
         })
 
         test("Full State Update", async () => {

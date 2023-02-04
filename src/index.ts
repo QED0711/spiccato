@@ -99,8 +99,22 @@ export class StateManager {
 
         (this.constructor as typeof StateManager).registerManager(this)
     }
-    
+
     public get state(): StateObject {
+        // const self = this;
+        // const proxHandler: { [key: string]: Function } = {
+        //     set(obj: { [key: string]: any }, prop: any, val: any) {
+        //         throw new Error("State values are immutable. Use a setter instead")
+        //     },
+        //     get: (function (self) {
+        //         return (obj: any, prop: any, receiver: any) => {
+        //             console.log(arguments)
+        //             console.log(self)
+        //         }
+        //     })(this)
+        // }
+        // const prox = new Proxy(this._state, proxHandler)
+        // return prox;
         return Object.freeze(this._state)
     }
 
@@ -111,13 +125,13 @@ export class StateManager {
     private _applyState() {
 
         if (this._bindToLocalStorage) {
-            this._persistToLocalStorage(this.state)
+            this._persistToLocalStorage(this._state)
         }
 
-        for (let k in this.state) {
+        for (let k in this._state) {
             if (this.initOptions.dynamicGetters) {
                 this.getters[formatAccessor(k, "get")] = () => {
-                    return this.state[k];
+                    return this._state[k];
                 }
             }
 
@@ -135,12 +149,12 @@ export class StateManager {
         const createNestedGetters = this.initOptions.dynamicGetters && this.initOptions.nestedGetters;
         const createNestedSetters = this.initOptions.dynamicSetters && this.initOptions.nestedSetters;
         if (createNestedGetters || createNestedSetters) {
-            const nestedPaths: (string[])[] = getNestedRoutes(this.state);
+            const nestedPaths: (string[])[] = getNestedRoutes(this._state);
             for (let path of nestedPaths) {
 
                 if (createNestedGetters) {
                     this.getters[formatAccessor(path, "get")] = () => {
-                        let value = this.state[path[0]];
+                        let value = this._state[path[0]];
                         for (let i = 1; i < path.length; i++) {
                             value = value[path[i]];
                         }
@@ -150,7 +164,7 @@ export class StateManager {
 
                 if (createNestedSetters) {
                     this.setters[formatAccessor(path, "set")] = (v: any, callback: StateUpdateCallback | null): Promise<StateObject> => {
-                        const updatedState = nestedSetterFactory(this.state, path)(v);
+                        const updatedState = nestedSetterFactory(this._state, path)(v);
                         return new Promise(async resolve => {
                             resolve(await this.setState(updatedState, callback));
                         })
@@ -172,14 +186,14 @@ export class StateManager {
         return new Promise(resolve => {
             let updatedPaths: string[][] = [];
             if (typeof updater === 'object') {
-                updatedPaths = getUpdatedPaths(updater, this.state)
-                this._state = { ...this.state, ...updater };
+                updatedPaths = getUpdatedPaths(updater, this._state)
+                this._state = { ...this._state, ...updater };
             } else if (typeof updater === 'function') {
-                const updaterValue: StateObject = updater(this.state);
-                updatedPaths = getUpdatedPaths(updaterValue, this.state)
-                this._state = { ...this.state, ...updaterValue };
+                const updaterValue: StateObject = updater(this._state);
+                updatedPaths = getUpdatedPaths(updaterValue, this._state)
+                this._state = { ...this._state, ...updaterValue };
             }
-            const updated = Object.freeze({ ...this.state })
+            const updated = Object.freeze({ ...this._state })
             resolve(updated);
             callback?.(updated);
             this.emitEvent("update", { state: updated })
@@ -187,7 +201,7 @@ export class StateManager {
                 this.emitUpdateEventFromPath(path)
             }
             if (this._bindToLocalStorage && this.storageOptions.persistKey) {
-                this._persistToLocalStorage(this.state)
+                this._persistToLocalStorage(this._state)
             }
         })
     }
@@ -246,7 +260,7 @@ export class StateManager {
         let p: string[], v: any;
         for (let i = 0; i < path.length; i++) {
             p = path.slice(0, i + 1)
-            v = this.state
+            v = this._state
             for (let key of p) {
                 v = v[key]
             }
@@ -273,14 +287,14 @@ export class StateManager {
         this.initOptions.debug && console.assert(!!WINDOW.name)
 
         if (this.storageOptions.initializeFromLocalStorage) {
-            
+
             if (!!WINDOW.localStorage.getItem(this.storageOptions.persistKey)) {
-                if(WINDOW.name === this.storageOptions.providerID){
+                if (WINDOW.name === this.storageOptions.providerID) {
                     this._state = {
-                        ...this.state,
+                        ...this._state,
                         ...JSON.parse(WINDOW.localStorage.getItem(this.storageOptions.persistKey)),
                     }
-                } else if ((this.storageOptions.subscriberIDs ?? []).includes(WINDOW.name)){
+                } else if ((this.storageOptions.subscriberIDs ?? []).includes(WINDOW.name)) {
                     this._state = JSON.parse(WINDOW.localStorage.getItem(this.storageOptions.persistKey))
                 } else {
                     IS_BROWSER && console.warn("window is not a provider and has not been identified as a subscriber. State will not be loaded. See docs on provider and subscriber roles");
@@ -296,7 +310,7 @@ export class StateManager {
     }
 
     private _updateFromLocalStorage() {
-        this.setState({ ...this.state, ...JSON.parse(WINDOW.localStorage.getItem(this.storageOptions.persistKey)) })
+        this.setState({ ...this._state, ...JSON.parse(WINDOW.localStorage.getItem(this.storageOptions.persistKey)) })
     }
 
     private handleUnload(event: { [key: string]: any }) {

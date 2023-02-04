@@ -64,16 +64,25 @@ describe("State Interactions", () => {
             expect(testManager.state.myVal).toBeDefined();
         });
         test("Accessed state is immutable", () => {
-            function shouldFail() {
+            function shouldFail(path, update) {
+                let val = testManager.state;
                 try {
-                    testManager.state.myVal = 50;
+                    for (let i = 0; i < path.length; i++) {
+                        if (i === path.length - 1) {
+                            val[path[i]] = update;
+                            return 1;
+                        }
+                        val = val[path[i]];
+                    }
                     return 1;
                 }
                 catch (err) {
                     return 0;
                 }
             }
-            expect(shouldFail()).toBe(0);
+            expect(shouldFail(["myVal"], 14)).toBe(0);
+            expect(shouldFail(["level1", "level2", "level3"], "TEST")).toBe(0);
+            // console.log(testManager.state)
         });
     });
     describe("Getters", () => {
