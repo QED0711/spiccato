@@ -18,7 +18,8 @@ const testManager = new StateManager({
             level3: 3
         },
         level2Val: "hello"
-    }
+    },
+    arr: [1, 2, 3]
 }, {
     id: "TEST"
 });
@@ -57,6 +58,40 @@ describe("Initialization:", () => {
     });
 });
 describe("State Interactions", () => {
+    describe("State Access", () => {
+        test("State is accessible", () => {
+            expect(testManager.state.myVal).toBeDefined();
+        });
+        test("State is not directly mutable", () => {
+            function shouldFail(path, update, action = "set") {
+                let val = testManager.state;
+                try {
+                    for (let i = 0; i < path.length; i++) {
+                        if (i === path.length - 1) {
+                            switch (action) {
+                                case "set":
+                                    val[path[i]] = update;
+                                    return 1;
+                                case "delete":
+                                    delete val[path[i]];
+                                    return 1;
+                            }
+                        }
+                        val = val[path[i]];
+                    }
+                    return 1;
+                }
+                catch (err) {
+                    return 0;
+                }
+            }
+            expect(shouldFail(["myVal"], 14)).toBe(0);
+            expect(shouldFail(["myVal"], 14, "delete")).toBe(0);
+            expect(shouldFail(["level1", "level2", "level3"], "TEST")).toBe(0);
+            expect(shouldFail(["someNewVal"], "I'm New!!!")).toBe(0);
+            expect(shouldFail(["arr", "0"], "This should work")).toBe(1);
+        });
+    });
     describe("Getters", () => {
         test("Dynamic getters", () => {
             expect(testManager.getters.getMyVal()).toBe(1);
@@ -131,7 +166,7 @@ describe("Events", () => {
             expect(payload.path).toEqual(["level1", "level2Val"]);
             expect(payload.value).toBe("Goodbye");
         }));
-        test("Nested Payload Event Bubbles", () => __awaiter(void 0, void 0, void 0, function* () {
+        test("Events Bubble", () => __awaiter(void 0, void 0, void 0, function* () {
             const payload = yield new Promise(resolve => {
                 testManager.addEventListener("on_level1_update", (payload) => {
                     resolve(payload);
@@ -142,19 +177,8 @@ describe("Events", () => {
             expect(payload.value.level2Val).toBe("Hi there again!");
             expect(payload.value.level2.level3).toBeDefined();
         }));
-        test("Full State Update", () => __awaiter(void 0, void 0, void 0, function* () {
-            var _a;
-            const payload = yield new Promise(resolve => {
-                testManager.addEventListener("update", (payload) => {
-                    resolve(payload);
-                });
-                testManager.setState({ myVal: 84 });
-            });
-            expect(payload.state).toStrictEqual(testManager.state);
-            expect((_a = payload.state) === null || _a === void 0 ? void 0 : _a.myVal).toBe(84);
-        }));
         test("setState emits appropriate events", () => __awaiter(void 0, void 0, void 0, function* () {
-            var _b, _c, _d, _e, _f, _g;
+            var _a, _b, _c, _d, _e, _f;
             const resolved = yield Promise.allSettled([
                 new Promise(resolve => {
                     testManager.addEventListener("on_level1_update", (payload) => {
@@ -176,12 +200,22 @@ describe("Events", () => {
             const results = resolved.map((prom) => {
                 return prom.status === 'fulfilled' ? prom.value : null;
             });
-            expect((_b = results[0]) === null || _b === void 0 ? void 0 : _b.path).toEqual(["level1"]);
-            expect((_c = results[0]) === null || _c === void 0 ? void 0 : _c.value).toEqual({ level2: { level3: -1 }, level2Val: "UPDATED!!!" });
-            expect((_d = results[1]) === null || _d === void 0 ? void 0 : _d.path).toEqual(["level1", "level2"]);
-            expect((_e = results[1]) === null || _e === void 0 ? void 0 : _e.value).toEqual({ level3: -1 });
-            expect((_f = results[2]) === null || _f === void 0 ? void 0 : _f.path).toEqual(["level1", "level2", "level3"]);
-            expect((_g = results[2]) === null || _g === void 0 ? void 0 : _g.value).toEqual(-1);
+            expect((_a = results[0]) === null || _a === void 0 ? void 0 : _a.path).toEqual(["level1"]);
+            expect((_b = results[0]) === null || _b === void 0 ? void 0 : _b.value).toEqual({ level2: { level3: -1 }, level2Val: "UPDATED!!!" });
+            expect((_c = results[1]) === null || _c === void 0 ? void 0 : _c.path).toEqual(["level1", "level2"]);
+            expect((_d = results[1]) === null || _d === void 0 ? void 0 : _d.value).toEqual({ level3: -1 });
+            expect((_e = results[2]) === null || _e === void 0 ? void 0 : _e.path).toEqual(["level1", "level2", "level3"]);
+            expect((_f = results[2]) === null || _f === void 0 ? void 0 : _f.value).toEqual(-1);
+        }));
+        test("Full State Update", () => __awaiter(void 0, void 0, void 0, function* () {
+            var _g;
+            const payload = yield new Promise(resolve => {
+                testManager.addEventListener("update", (payload) => {
+                    resolve(payload);
+                });
+                testManager.setState({ myVal: 84 });
+            });
+            expect((_g = payload.state) === null || _g === void 0 ? void 0 : _g.myVal).toBe(84);
         }));
         test("removeEventListener", () => __awaiter(void 0, void 0, void 0, function* () {
             const value = yield new Promise((resolve) => __awaiter(void 0, void 0, void 0, function* () {

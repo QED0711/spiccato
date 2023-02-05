@@ -7,13 +7,15 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-import { formatAccessor, getNestedRoutes, nestedSetterFactory, sanitizeState, restoreState, WindowManager, _localStorage, getUpdatedPaths, } from './utils/helpers';
+import { formatAccessor, getNestedRoutes, nestedSetterFactory, sanitizeState, restoreState, WindowManager, _localStorage, getUpdatedPaths, createStateProxy, } from './utils/helpers';
+/* TYPES */
 const DEFAULT_INIT_OPTIONS = {
     id: "",
     dynamicGetters: true,
     dynamicSetters: true,
     nestedGetters: true,
     nestedSetters: true,
+    debug: false
 };
 const DEFAULT_STORAGE_OPTIONS = {
     persistKey: "",
@@ -50,7 +52,8 @@ export class StateManager {
     }
     constructor(state = {}, options) {
         this.initOptions = Object.assign(Object.assign({}, DEFAULT_INIT_OPTIONS), options);
-        this.state = state;
+        this._schema = Object.freeze(Object.assign({}, state));
+        this._state = state;
         this.getters = {};
         this.setters = {};
         this.methods = {};
@@ -63,17 +66,20 @@ export class StateManager {
         }
         this.constructor.registerManager(this);
     }
+    get state() {
+        return createStateProxy(this._state, this._schema);
+    }
     init() {
         this._applyState();
     }
     _applyState() {
         if (this._bindToLocalStorage) {
-            this._persistToLocalStorage(this.state);
+            this._persistToLocalStorage(this._state);
         }
-        for (let k in this.state) {
+        for (let k in this._state) {
             if (this.initOptions.dynamicGetters) {
                 this.getters[formatAccessor(k, "get")] = () => {
-                    return this.state[k];
+                    return this._state[k];
                 };
             }
             if (this.initOptions.dynamicSetters) {
@@ -89,11 +95,11 @@ export class StateManager {
         const createNestedGetters = this.initOptions.dynamicGetters && this.initOptions.nestedGetters;
         const createNestedSetters = this.initOptions.dynamicSetters && this.initOptions.nestedSetters;
         if (createNestedGetters || createNestedSetters) {
-            const nestedPaths = getNestedRoutes(this.state);
+            const nestedPaths = getNestedRoutes(this._state);
             for (let path of nestedPaths) {
                 if (createNestedGetters) {
                     this.getters[formatAccessor(path, "get")] = () => {
-                        let value = this.state[path[0]];
+                        let value = this._state[path[0]];
                         for (let i = 1; i < path.length; i++) {
                             value = value[path[i]];
                         }
@@ -102,7 +108,7 @@ export class StateManager {
                 }
                 if (createNestedSetters) {
                     this.setters[formatAccessor(path, "set")] = (v, callback) => {
-                        const updatedState = nestedSetterFactory(this.state, path)(v);
+                        const updatedState = nestedSetterFactory(this._state, path)(v);
                         return new Promise((resolve) => __awaiter(this, void 0, void 0, function* () {
                             resolve(yield this.setState(updatedState, callback));
                         }));
@@ -116,30 +122,30 @@ export class StateManager {
         if (this._bindToLocalStorage && !!this.storageOptions.persistKey) {
             const [sanitized, removed] = sanitizeState(state, this.storageOptions.privateState || []);
             (_a = WINDOW === null || WINDOW === void 0 ? void 0 : WINDOW.localStorage) === null || _a === void 0 ? void 0 : _a.setItem(this.storageOptions.persistKey, JSON.stringify(sanitized));
-            this.state = restoreState(state, removed);
+            this._state = restoreState(state, removed);
         }
     }
     setState(updater, callback = null) {
         return new Promise(resolve => {
             let updatedPaths = [];
             if (typeof updater === 'object') {
-                updatedPaths = getUpdatedPaths(updater, this.state);
-                this.state = Object.assign(Object.assign({}, this.state), updater);
+                updatedPaths = getUpdatedPaths(updater, this._state);
+                this._state = Object.assign(Object.assign({}, this._state), updater);
             }
             else if (typeof updater === 'function') {
-                const updaterValue = updater(this.state);
-                updatedPaths = getUpdatedPaths(updaterValue, this.state);
-                this.state = Object.assign(Object.assign({}, this.state), updaterValue);
+                const updaterValue = updater(this._state);
+                updatedPaths = getUpdatedPaths(updaterValue, this._state);
+                this._state = Object.assign(Object.assign({}, this._state), updaterValue);
             }
-            const updated = Object.assign({}, this.state);
+            const updated = Object.freeze(Object.assign({}, this._state));
             resolve(updated);
             callback === null || callback === void 0 ? void 0 : callback(updated);
-            this.emitEvent("update", { state: updated });
+            this.emitEvent("update", { state: createStateProxy(updated, this._schema) });
             for (let path of updatedPaths) {
                 this.emitUpdateEventFromPath(path);
             }
             if (this._bindToLocalStorage && this.storageOptions.persistKey) {
-                this._persistToLocalStorage(this.state);
+                this._persistToLocalStorage(this._state);
             }
         });
     }
@@ -192,7 +198,7 @@ export class StateManager {
         let p, v;
         for (let i = 0; i < path.length; i++) {
             p = path.slice(0, i + 1);
-            v = this.state;
+            v = this._state;
             for (let key of p) {
                 v = v[key];
             }
@@ -209,25 +215,33 @@ export class StateManager {
             WINDOW.name = this.storageOptions.providerID;
         }
         if (!WINDOW.name) {
-            console.error("If connecting to localStorage, storageOptions.providerID must be defined");
+            console.error("If connecting to localStorage, providerID must be defined in sotrageOptions passed to 'connectoToLocalStorage'");
             return;
         }
+        this.initOptions.debug && console.log("DEBUG: window.name", WINDOW.name);
+        this.initOptions.debug && console.assert(!!WINDOW.name);
         if (this.storageOptions.initializeFromLocalStorage) {
             if (!!WINDOW.localStorage.getItem(this.storageOptions.persistKey)) {
-                this.state = WINDOW.name === this.storageOptions.providerID
-                    ? Object.assign(Object.assign({}, this.state), JSON.parse(WINDOW.localStorage.getItem(this.storageOptions.persistKey))) : ((_a = this.storageOptions.subscriberIDs) !== null && _a !== void 0 ? _a : []).includes(WINDOW.name) // is a listed subscriber and is allowed to read this state
-                    ? JSON.parse(WINDOW.localStorage.getItem(this.storageOptions.persistKey))
-                    : {};
+                if (WINDOW.name === this.storageOptions.providerID) {
+                    this._state = Object.assign(Object.assign({}, this._state), JSON.parse(WINDOW.localStorage.getItem(this.storageOptions.persistKey)));
+                }
+                else if (((_a = this.storageOptions.subscriberIDs) !== null && _a !== void 0 ? _a : []).includes(WINDOW.name)) {
+                    this._state = JSON.parse(WINDOW.localStorage.getItem(this.storageOptions.persistKey));
+                }
+                else {
+                    IS_BROWSER && console.warn("window is not a provider and has not been identified as a subscriber. State will not be loaded. See docs on provider and subscriber roles");
+                    this._state = {};
+                }
             }
         }
         if ("addEventListener" in WINDOW) {
             WINDOW.addEventListener("storage", () => {
-                this._udpateFromLocalStorage();
+                this._updateFromLocalStorage();
             });
         }
     }
-    _udpateFromLocalStorage() {
-        this.setState(Object.assign(Object.assign({}, this.state), JSON.parse(WINDOW.localStorage.getItem(this.storageOptions.persistKey))));
+    _updateFromLocalStorage() {
+        this.setState(Object.assign(Object.assign({}, this._state), JSON.parse(WINDOW.localStorage.getItem(this.storageOptions.persistKey))));
     }
     handleUnload(event) {
         var _a;

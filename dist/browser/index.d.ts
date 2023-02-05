@@ -1,34 +1,5 @@
 import { WindowManager } from './utils/helpers';
-type managerID = string;
-interface StateObject {
-    [k: string]: any;
-}
-interface StateUpdateCallback {
-    (state: {
-        [key: string]: any;
-    }): void;
-}
-interface InitializationOptions {
-    id: managerID;
-    dynamicGetters?: boolean;
-    dynamicSetters?: boolean;
-    nestedGetters?: boolean;
-    nestedSetters?: boolean;
-}
-interface StorageOptions {
-    persistKey: string;
-    initializeFromLocalStorage?: boolean;
-    providerID?: string;
-    subscriberIDs?: string[];
-    clearStorageOnUnload?: boolean;
-    removeChildrenOnUnload?: boolean;
-    privateState?: (string | string[])[];
-}
-export type EventPayload = {
-    path?: string | string[];
-    value?: any;
-    state?: StateObject;
-};
+import { StateObject, StateUpdateCallback, InitializationOptions, StorageOptions, managerID } from './types/index';
 export declare let WINDOW: {
     [key: string]: any;
 };
@@ -38,7 +9,8 @@ export declare class StateManager {
     static getManagerById(id: managerID): StateManager;
     static clear(): void;
     private initOptions;
-    state: StateObject;
+    private _schema;
+    private _state;
     getters: {
         [key: string]: Function;
     };
@@ -53,10 +25,11 @@ export declare class StateManager {
     private _eventListeners;
     [key: string]: any;
     constructor(state: StateObject | undefined, options: InitializationOptions);
+    get state(): StateObject;
     init(): void;
     private _applyState;
     private _persistToLocalStorage;
-    setState(updater: StateObject | Function, callback?: StateUpdateCallback | null): Promise<unknown>;
+    setState(updater: StateObject | Function, callback?: StateUpdateCallback | null): Promise<StateObject>;
     addCustomGetters(getters: {
         [key: string]: Function;
     }): void;
@@ -78,7 +51,6 @@ export declare class StateManager {
     private emitUpdateEventFromPath;
     /********** LOCAL STORAGE **********/
     connectToLocalStorage(storageOptions: StorageOptions): void;
-    private _udpateFromLocalStorage;
+    private _updateFromLocalStorage;
     private handleUnload;
 }
-export {};

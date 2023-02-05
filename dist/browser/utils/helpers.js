@@ -1,3 +1,28 @@
+const proxyHandlers = {
+    set(obj, property, value) {
+        throw new Error("State cannot be mutated directly. Use `setState` or a dynamic setter instead.");
+    },
+    deleteProperty(obj, property) {
+        throw new Error("State properties cannot be removed after initialization.");
+    }
+};
+export const createStateProxy = (state, schema) => {
+    const proxied = {};
+    const traverse = (schemaVal, value, container) => {
+        if (typeof value !== "object" || Array.isArray(value)) {
+            return value;
+        }
+        for (let k of Object.keys(schemaVal)) {
+            container[k] = traverse(schemaVal[k], value[k], container[k] || {});
+            if (typeof container[k] === "object" && !Array.isArray(container[k])) {
+                container[k] = new Proxy(container[k], proxyHandlers);
+            }
+        }
+        return container;
+    };
+    traverse(schema, state, proxied);
+    return new Proxy(proxied, proxyHandlers);
+};
 export const formatAccessor = (path, accessorType = "get") => {
     path = Array.isArray(path) ? path.join("_") : path;
     return accessorType + path[0].toUpperCase() + path.slice(1);

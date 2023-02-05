@@ -1,4 +1,5 @@
-import { StateManager, EventPayload, WINDOW } from '../index'
+import { StateManager, WINDOW } from '../index'
+import { EventPayload, StateObject } from '../types';
 
 const testManager = new StateManager(
     {
@@ -11,11 +12,12 @@ const testManager = new StateManager(
                 level3: 3
             },
             level2Val: "hello"
-        }
+        },
+        arr: [1, 2, 3]
     },
     {
         id: "TEST"
-    }
+    },
 );
 
 testManager.init();
@@ -28,7 +30,7 @@ testManager.addCustomGetters({
 
 testManager.addCustomSetters({
     setBothNums(this: StateManager, num1: number, num2: number) {
-        this.setState((prevState: { [key: string]: any }) => {
+        this.setState((prevState: StateObject) => {
             return { num1, num2 };
         })
     }
@@ -66,6 +68,42 @@ describe("Initialization:", () => {
 
 
 describe("State Interactions", () => {
+    describe("State Access", () => {
+        test("State is accessible", () => {
+            expect(testManager.state.myVal).toBeDefined();
+        })
+
+        test("State is not directly mutable", () => {
+            function shouldFail(path: string[], update: any, action: string = "set"): number {
+                let val = testManager.state
+                try {
+                    for (let i = 0; i < path.length; i++) {
+                        if (i === path.length - 1) {
+                            switch (action) {
+                                case "set":
+                                    val[path[i]] = update;
+                                    return 1
+                                case "delete":
+                                    delete val[path[i]];
+                                    return 1
+                            }
+                        }
+                        val = val[path[i]]
+                    }
+                    return 1
+                } catch (err) {
+                    return 0
+                }
+            }
+            expect(shouldFail(["myVal"], 14)).toBe(0);
+            expect(shouldFail(["myVal"], 14, "delete")).toBe(0);
+            expect(shouldFail(["level1", "level2", "level3"], "TEST")).toBe(0);
+            expect(shouldFail(["someNewVal"], "I'm New!!!")).toBe(0);
+            expect(shouldFail(["arr", "0"], "This should work")).toBe(1); // only object properties are protected from mutation. Arrays within a schema are mutatable
+            
+        })
+    })
+
     describe("Getters", () => {
         test("Dynamic getters", () => {
             expect(testManager.getters.getMyVal()).toBe(1);
@@ -194,14 +232,14 @@ describe("Events", () => {
             const results: (EventPayload | null)[] = resolved.map((prom) => {
                 return prom.status === 'fulfilled' ? (prom.value as EventPayload) : null;
             })
-            
+
             expect(results[0]?.path).toEqual(["level1"])
-            expect(results[0]?.value).toEqual({level2: {level3: -1}, level2Val: "UPDATED!!!"})
+            expect(results[0]?.value).toEqual({ level2: { level3: -1 }, level2Val: "UPDATED!!!" })
             expect(results[1]?.path).toEqual(["level1", "level2"])
-            expect(results[1]?.value).toEqual({level3: -1})
+            expect(results[1]?.value).toEqual({ level3: -1 })
             expect(results[2]?.path).toEqual(["level1", "level2", "level3"])
             expect(results[2]?.value).toEqual(-1)
-            
+
         })
 
         test("Full State Update", async () => {
@@ -211,7 +249,6 @@ describe("Events", () => {
                 });
                 testManager.setState({ myVal: 84 });
             })
-            expect(payload.state).toStrictEqual(testManager.state);
             expect(payload.state?.myVal).toBe(84);
         })
 

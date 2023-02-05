@@ -1,3 +1,36 @@
+import { StateObject, StateSchema } from "../types";
+
+const proxyHandlers: {[key: string]: Function} = {
+    set(obj: {[key: string]: any}, property: any, value: any): void {
+       throw new Error("State cannot be mutated directly. Use `setState` or a dynamic setter instead.")
+    },
+    deleteProperty(obj: {[key: string]: any}, property: any ){
+       throw new Error("State properties cannot be removed after initialization.")
+    }
+}
+
+export const createStateProxy = (state: StateObject, schema: StateSchema): StateObject => {
+    const proxied: StateObject = {};
+
+    const traverse = (schemaVal: any, value: any, container: any) => {
+        if(typeof value !== "object" || Array.isArray(value)){
+            return value
+        }
+
+        for (let k of Object.keys(schemaVal)){
+            container[k] = traverse(schemaVal[k], value[k], container[k] || {})
+            if(typeof container[k] === "object" && !Array.isArray(container[k])){
+                container[k] = new Proxy(container[k], proxyHandlers)
+            }
+        }
+        return container
+    }
+
+    traverse(schema, state, proxied);
+    return new Proxy(proxied, proxyHandlers);
+
+}
+
 export const formatAccessor = (path: string | string[], accessorType: string = "get") => {
     path = Array.isArray(path) ? path.join("_") : path;
     return accessorType + path[0].toUpperCase() + path.slice(1)

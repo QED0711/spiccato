@@ -30,4 +30,22 @@ describe("Helpers", () => {
         expect((0, helpers_1.getUpdatedPaths)({ a: { x: 1 }, b: { y: 1 } }, { a: { x: 2 }, b: { y: 2 } })).toEqual([["a", "x"], ["b", "y"]]);
         expect((0, helpers_1.getUpdatedPaths)({ a: { b: { c: 1, d: 1 } } }, { a: { b: { c: 1 } } })).toEqual([["a", "b", "d"]]);
     });
+    test("createStateProxy", () => {
+        const schema = { a: 0, b: { c: 0 } };
+        const state = { a: 1, b: { c: 2 } };
+        const proxied = (0, helpers_1.createStateProxy)(state, schema);
+        function shouldFail() {
+            try {
+                proxied.a = 100;
+                return 1;
+            }
+            catch (err) {
+                return 0;
+            }
+        }
+        expect(state === proxied).toBe(false);
+        expect(proxied.a).toEqual(1);
+        expect(proxied.b.c).toEqual(2);
+        expect(shouldFail()).toEqual(0);
+    });
 });
