@@ -1,4 +1,5 @@
 export interface StateObject {[key: string]: any};
+export interface StateSchema {[key: string]: null | number | string | any[] | object}
 export interface StateUpdateCallback {
     (state: { [key: string]: any }): void;
 };

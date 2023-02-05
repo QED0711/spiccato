@@ -1,4 +1,4 @@
-import { StateObject } from "../types";
+import { StateObject, StateSchema } from "../types";
 
 const proxyHandlers: {[key: string]: Function} = {
     // get(obj: {[key: string]: any}, property: any){
@@ -9,25 +9,26 @@ const proxyHandlers: {[key: string]: Function} = {
     }
 }
 
-export const createStateProxy = (state: StateObject): StateObject => {
+export const createStateProxy = (state: StateObject, schema: StateSchema): StateObject => {
     const proxied: StateObject = {};
 
-    const traverse = (value: any) => {
+    const traverse = (schemaVal: any, value: any, container: any) => {
         if(typeof value !== "object" || Array.isArray(value)){
             return value
         }
 
-        for(let k of Object.keys(value)) {
-            value[k] = traverse(value[k]);
-            if(typeof value[k] === "object" && !Array.isArray(value[k])){
-                value[k] = new Proxy(value[k], proxyHandlers)
+        for (let k of Object.keys(schemaVal)){
+            container[k] = traverse(schemaVal[k], value[k], container[k] || {})
+            if(typeof container[k] === "object" && !Array.isArray(container[k])){
+                container[k] = new Proxy(container[k], proxyHandlers)
             }
         }
+        return container
     }
 
-    traverse(state);
+    traverse(schema, state, proxied);
+    return new Proxy(proxied, proxyHandlers);
 
-    return proxied;
 }
 
 export const formatAccessor = (path: string | string[], accessorType: string = "get") => {
