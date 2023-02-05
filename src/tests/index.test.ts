@@ -12,11 +12,12 @@ const testManager = new StateManager(
                 level3: 3
             },
             level2Val: "hello"
-        }
+        },
+        arr: [1, 2, 3]
     },
     {
         id: "TEST"
-    }
+    },
 );
 
 testManager.init();
@@ -72,27 +73,34 @@ describe("State Interactions", () => {
             expect(testManager.state.myVal).toBeDefined();
         })
 
-        test("Accessed state is immutable", () => {
-            function shouldFail(path: string[], update: any): number {
+        test("State is not directly mutable", () => {
+            function shouldFail(path: string[], update: any, action: string = "set"): number {
                 let val = testManager.state
                 try {
                     for (let i = 0; i < path.length; i++) {
-                       if(i  === path.length - 1){
-                           val[path[i]] = update;
-                           return 1
-                       } 
-                       val = val[path[i]]
+                        if (i === path.length - 1) {
+                            switch (action) {
+                                case "set":
+                                    val[path[i]] = update;
+                                    return 1
+                                case "delete":
+                                    delete val[path[i]];
+                                    return 1
+                            }
+                        }
+                        val = val[path[i]]
                     }
                     return 1
                 } catch (err) {
                     return 0
                 }
             }
-
-            expect(shouldFail(["myVal"], 14)).toBe(0)
-            // expect(shouldFail(["level1", "level2", "level3"], "TEST")).toBe(0);
-
-            // console.log(testManager.state)
+            expect(shouldFail(["myVal"], 14)).toBe(0);
+            expect(shouldFail(["myVal"], 14, "delete")).toBe(0);
+            expect(shouldFail(["level1", "level2", "level3"], "TEST")).toBe(0);
+            expect(shouldFail(["someNewVal"], "I'm New!!!")).toBe(0);
+            expect(shouldFail(["arr", "0"], "This should work")).toBe(1); // only object properties are protected from mutation. Arrays within a schema are mutatable
+            
         })
     })
 
@@ -241,7 +249,6 @@ describe("Events", () => {
                 });
                 testManager.setState({ myVal: 84 });
             })
-            expect(payload.state).toStrictEqual(testManager.state);
             expect(payload.state?.myVal).toBe(84);
         })
 

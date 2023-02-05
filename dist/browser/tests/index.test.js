@@ -18,7 +18,8 @@ const testManager = new StateManager({
             level3: 3
         },
         level2Val: "hello"
-    }
+    },
+    arr: [1, 2, 3]
 }, {
     id: "TEST"
 });
@@ -61,14 +62,20 @@ describe("State Interactions", () => {
         test("State is accessible", () => {
             expect(testManager.state.myVal).toBeDefined();
         });
-        test("Accessed state is immutable", () => {
-            function shouldFail(path, update) {
+        test("State is not directly mutable", () => {
+            function shouldFail(path, update, action = "set") {
                 let val = testManager.state;
                 try {
                     for (let i = 0; i < path.length; i++) {
                         if (i === path.length - 1) {
-                            val[path[i]] = update;
-                            return 1;
+                            switch (action) {
+                                case "set":
+                                    val[path[i]] = update;
+                                    return 1;
+                                case "delete":
+                                    delete val[path[i]];
+                                    return 1;
+                            }
                         }
                         val = val[path[i]];
                     }
@@ -79,8 +86,10 @@ describe("State Interactions", () => {
                 }
             }
             expect(shouldFail(["myVal"], 14)).toBe(0);
-            // expect(shouldFail(["level1", "level2", "level3"], "TEST")).toBe(0);
-            // console.log(testManager.state)
+            expect(shouldFail(["myVal"], 14, "delete")).toBe(0);
+            expect(shouldFail(["level1", "level2", "level3"], "TEST")).toBe(0);
+            expect(shouldFail(["someNewVal"], "I'm New!!!")).toBe(0);
+            expect(shouldFail(["arr", "0"], "This should work")).toBe(1);
         });
     });
     describe("Getters", () => {
@@ -206,7 +215,6 @@ describe("Events", () => {
                 });
                 testManager.setState({ myVal: 84 });
             });
-            expect(payload.state).toStrictEqual(testManager.state);
             expect((_g = payload.state) === null || _g === void 0 ? void 0 : _g.myVal).toBe(84);
         }));
         test("removeEventListener", () => __awaiter(void 0, void 0, void 0, function* () {

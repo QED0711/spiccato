@@ -1,8 +1,9 @@
 const proxyHandlers = {
-    // get(obj: {[key: string]: any}, property: any){
-    // },
     set(obj, property, value) {
-        throw new Error("State is immutable. Use a setter instead");
+        throw new Error("State cannot be mutated directly. Use `setState` or a dynamic setter instead.");
+    },
+    deleteProperty(obj, property) {
+        throw new Error("State properties cannot be removed after initialization.");
     }
 };
 export const createStateProxy = (state, schema) => {

@@ -9,6 +9,7 @@ export declare class StateManager {
     static getManagerById(id: managerID): StateManager;
     static clear(): void;
     private initOptions;
+    private _schema;
     private _state;
     getters: {
         [key: string]: Function;

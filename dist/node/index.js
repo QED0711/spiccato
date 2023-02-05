@@ -54,6 +54,7 @@ class StateManager {
     }
     constructor(state = {}, options) {
         this.initOptions = Object.assign(Object.assign({}, DEFAULT_INIT_OPTIONS), options);
+        this._schema = Object.freeze(Object.assign({}, state));
         this._state = state;
         this.getters = {};
         this.setters = {};
@@ -68,21 +69,7 @@ class StateManager {
         this.constructor.registerManager(this);
     }
     get state() {
-        // const self = this;
-        // const proxHandler: { [key: string]: Function } = {
-        //     set(obj: { [key: string]: any }, prop: any, val: any) {
-        //         throw new Error("State values are immutable. Use a setter instead")
-        //     },
-        //     get: (function (self) {
-        //         return (obj: any, prop: any, receiver: any) => {
-        //             console.log(arguments)
-        //             console.log(self)
-        //         }
-        //     })(this)
-        // }
-        // const prox = new Proxy(this._state, proxHandler)
-        // return prox;
-        return Object.freeze(this._state);
+        return (0, helpers_1.createStateProxy)(this._state, this._schema);
     }
     init() {
         this._applyState();
@@ -155,7 +142,7 @@ class StateManager {
             const updated = Object.freeze(Object.assign({}, this._state));
             resolve(updated);
             callback === null || callback === void 0 ? void 0 : callback(updated);
-            this.emitEvent("update", { state: updated });
+            this.emitEvent("update", { state: (0, helpers_1.createStateProxy)(updated, this._schema) });
             for (let path of updatedPaths) {
                 this.emitUpdateEventFromPath(path);
             }

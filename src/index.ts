@@ -7,6 +7,7 @@ import {
     WindowManager,
     _localStorage,
     getUpdatedPaths,
+    createStateProxy,
 } from './utils/helpers'
 
 import {
@@ -15,7 +16,8 @@ import {
     InitializationOptions,
     StorageOptions,
     EventPayload,
-    managerID
+    managerID,
+    StateSchema
 } from './types/index'
 /* TYPES */
 
@@ -70,6 +72,7 @@ export class StateManager {
 
     /* Instance Properties */
     private initOptions: InitializationOptions;
+    private _schema: StateSchema
     private _state: StateObject;
     getters: { [key: string]: Function };
     setters: { [key: string]: Function };
@@ -81,6 +84,7 @@ export class StateManager {
 
     constructor(state: StateObject = {}, options: InitializationOptions) {
         this.initOptions = { ...DEFAULT_INIT_OPTIONS, ...options };
+        this._schema = Object.freeze({...state})
         this._state = state;
 
         this.getters = {}
@@ -101,21 +105,7 @@ export class StateManager {
     }
 
     public get state(): StateObject {
-        // const self = this;
-        // const proxHandler: { [key: string]: Function } = {
-        //     set(obj: { [key: string]: any }, prop: any, val: any) {
-        //         throw new Error("State values are immutable. Use a setter instead")
-        //     },
-        //     get: (function (self) {
-        //         return (obj: any, prop: any, receiver: any) => {
-        //             console.log(arguments)
-        //             console.log(self)
-        //         }
-        //     })(this)
-        // }
-        // const prox = new Proxy(this._state, proxHandler)
-        // return prox;
-        return Object.freeze(this._state)
+        return createStateProxy(this._state, this._schema);
     }
 
     init() {
@@ -196,7 +186,7 @@ export class StateManager {
             const updated = Object.freeze({ ...this._state })
             resolve(updated);
             callback?.(updated);
-            this.emitEvent("update", { state: updated })
+            this.emitEvent("update", { state: createStateProxy(updated, this._schema) })
             for (let path of updatedPaths) {
                 this.emitUpdateEventFromPath(path)
             }
