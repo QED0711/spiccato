@@ -91,7 +91,7 @@ describe("State Interactions", () => {
             expect(shouldFail(["myVal"], 14, "delete")).toBe(0);
             expect(shouldFail(["level1", "level2", "level3"], "TEST")).toBe(0);
             expect(shouldFail(["someNewVal"], "I'm New!!!")).toBe(0);
-            expect(shouldFail(["arr", "0"], "This should work")).toBe(1);
+            expect(shouldFail(["arr", "0"], "This should work")).toBe(1); // only object properties are protected from mutation. Arrays within a schema are mutatable
         });
     });
     describe("Getters", () => {
