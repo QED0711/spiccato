@@ -27,6 +27,7 @@ export const createStateProxy = (state: StateObject, schema: StateSchema): State
     }
 
     traverse(schema, state, proxied);
+    console.log(proxied)
     return new Proxy(proxied, proxyHandlers);
 
 }

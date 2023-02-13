@@ -138,6 +138,7 @@ describe("State Interactions", () => {
         });
         test("Namespaced Methods", () => {
             testManager.api.getUser(1);
+            console.log(testManager.state.user);
             const user = testManager.getters.getUser();
             expect(user.name).toBe("test");
             expect(user.id).toBe(1);

@@ -81,6 +81,7 @@ class StateManager {
         for (let k in this._state) {
             if (this.initOptions.dynamicGetters) {
                 this.getters[(0, helpers_1.formatAccessor)(k, "get")] = () => {
+                    // this accesses `this.state` and NOT `this._state`. If the getter returns a higher level object, that object should be immutable
                     return this._state[k];
                 };
             }
