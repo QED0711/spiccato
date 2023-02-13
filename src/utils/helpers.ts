@@ -1,11 +1,11 @@
 import { StateObject, StateSchema } from "../types";
 
-const proxyHandlers: {[key: string]: Function} = {
-    set(obj: {[key: string]: any}, property: any, value: any): void {
-       throw new Error("State cannot be mutated directly. Use `setState` or a dynamic setter instead.")
+const proxyHandlers: { [key: string]: Function } = {
+    set(obj: { [key: string]: any }, property: any, value: any): void {
+        throw new Error("State cannot be mutated directly. Use `setState` or a dynamic setter instead.")
     },
-    deleteProperty(obj: {[key: string]: any}, property: any ){
-       throw new Error("State properties cannot be removed after initialization.")
+    deleteProperty(obj: { [key: string]: any }, property: any) {
+        throw new Error("State properties cannot be removed after initialization.")
     }
 }
 
@@ -13,13 +13,17 @@ export const createStateProxy = (state: StateObject, schema: StateSchema): State
     const proxied: StateObject = {};
 
     const traverse = (schemaVal: any, value: any, container: any) => {
-        if(typeof value !== "object" || Array.isArray(value)){
+        if (
+            typeof value !== "object" ||
+            Array.isArray(value) ||
+            (typeof schemaVal === "object" && !Array.isArray(schema) && !Object.keys(schemaVal).length) // checks when schema initializes an empty object
+        ) {
             return value
         }
 
-        for (let k of Object.keys(schemaVal)){
+        for (let k of Object.keys(schemaVal)) {
             container[k] = traverse(schemaVal[k], value[k], container[k] || {})
-            if(typeof container[k] === "object" && !Array.isArray(container[k])){
+            if (typeof container[k] === "object" && !Array.isArray(container[k])) {
                 container[k] = new Proxy(container[k], proxyHandlers)
             }
         }
@@ -27,7 +31,6 @@ export const createStateProxy = (state: StateObject, schema: StateSchema): State
     }
 
     traverse(schema, state, proxied);
-    console.log(proxied)
     return new Proxy(proxied, proxyHandlers);
 
 }
@@ -95,14 +98,14 @@ export const sanitizeState = (state: { [key: string]: any }, privatePaths: (stri
 }
 
 
-export const restoreState = (state: {[key: string]: any}, removed: {[key: string]: any} ) => {
-    const restored = {...state}
+export const restoreState = (state: { [key: string]: any }, removed: { [key: string]: any }) => {
+    const restored = { ...state }
     let copy;
-    for(let [path, value] of removed.entries()){
+    for (let [path, value] of removed.entries()) {
         path = Array.isArray(path) ? path : [path]
         copy = restored;
-        for(let i = 0; i < path.length; i++){
-            if(i == path.length - 1) {
+        for (let i = 0; i < path.length; i++) {
+            if (i == path.length - 1) {
                 copy[path[i]] = value;
             } else {
                 copy = copy[path[i]];
@@ -112,19 +115,19 @@ export const restoreState = (state: {[key: string]: any}, removed: {[key: string
     return restored
 }
 
-export const getUpdatedPaths = (update: {[key: string]: any}, prevState: {[key: string]: any}): string[][] => {
+export const getUpdatedPaths = (update: { [key: string]: any }, prevState: { [key: string]: any }): string[][] => {
     const paths: string[][] = [];
 
     const traverse = (updatedVal: any, prevVal: any, path: string[] = []) => {
-        if(typeof updatedVal !== "object" || Array.isArray(updatedVal) || !updatedVal){
-            if(updatedVal !== prevVal){
+        if (typeof updatedVal !== "object" || Array.isArray(updatedVal) || !updatedVal) {
+            if (updatedVal !== prevVal) {
                 path.length > 0 && paths.push(path);
-            } 
+            }
             return
         }
 
         // path.length > 0 && paths.push(path)
-        for(let key of Object.keys(updatedVal)){
+        for (let key of Object.keys(updatedVal)) {
             traverse(updatedVal[key], ((!!prevVal && key in prevVal) ? prevVal[key] : null), [...path, key])
         }
     }
@@ -134,7 +137,7 @@ export const getUpdatedPaths = (update: {[key: string]: any}, prevState: {[key: 
 }
 
 
-const createParamsString = (params: {[key: string]: any}): string => {
+const createParamsString = (params: { [key: string]: any }): string => {
     let str = ""
     for (let param of Object.keys(params)) {
         str += (param + "=" + params[param] + ",")
@@ -144,30 +147,30 @@ const createParamsString = (params: {[key: string]: any}): string => {
 
 
 /* CLASSES */
-export class WindowManager{
+export class WindowManager {
 
     /* Instance Properties */
-    private subscribers: {[key: string]: any};
-    window: {[key: string]: any} | null;
+    private subscribers: { [key: string]: any };
+    window: { [key: string]: any } | null;
 
-    constructor(window: {[key: string]: any} | null){
+    constructor(window: { [key: string]: any } | null) {
         this.subscribers = [];
         this.window = window;
     }
 
-    open(url: string, name: string, queryParams: {[key: string]: any}){
-        if(this.window){
-             this.subscribers[name] = this.window.open(url, name, createParamsString(queryParams) )
+    open(url: string, name: string, queryParams: { [key: string]: any }) {
+        if (this.window) {
+            this.subscribers[name] = this.window.open(url, name, createParamsString(queryParams))
         }
     }
 
-    close(name: string){
+    close(name: string) {
         this.subscribers[name]?.close();
         delete this.subscribers[name]
     }
 
-    removeSubscribers(){
-        for(let subscriber of Object.values(this.subscribers)){
+    removeSubscribers() {
+        for (let subscriber of Object.values(this.subscribers)) {
             subscriber.close()
         }
     }
@@ -175,8 +178,8 @@ export class WindowManager{
 }
 
 export class _localStorage {
-    private state: {[key: string]: string}
-    constructor(){
+    private state: { [key: string]: string }
+    constructor() {
         this.state = {}
     }
 
@@ -184,15 +187,15 @@ export class _localStorage {
         return this.state[key]
     }
 
-    setItem(key:string, value:string){
+    setItem(key: string, value: string) {
         this.state[key] = value;
     }
 
-    removeItem(key:string){
+    removeItem(key: string) {
         delete this.state[key]
     }
 
-    clear(){
+    clear() {
         this.state = {};
     }
 }

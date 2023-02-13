@@ -100,7 +100,7 @@ describe("State Interactions", () => {
             expect(shouldFail(["level1", "level2", "level3"], "TEST")).toBe(0);
             expect(shouldFail(["someNewVal"], "I'm New!!!")).toBe(0);
             expect(shouldFail(["arr", "0"], "This should work")).toBe(1); // only object properties are protected from mutation. Arrays within a schema are mutatable
-            
+
         })
     })
 
@@ -117,6 +117,19 @@ describe("State Interactions", () => {
             expect(testManager.getters.getLevel1()).toStrictEqual({ level2: { level3: 3 }, level2Val: "hello" });
             expect(testManager.getters.getLevel1_level2()).toStrictEqual({ level3: 3 });
             expect(testManager.getters.getLevel1_level2_level3()).toBe(3);
+        })
+
+        test("Getters return immutable state", () => {
+            function shouldFail() {
+                try {
+                    const level1Obj = testManager.getters.getLevel1();
+                    level1Obj.level2 = "This shouldn't be allowed";
+                    return 0
+                } catch(err){
+                    return 1
+                }
+            }
+            expect(shouldFail()).toEqual(1)
         })
     })
 
@@ -160,8 +173,6 @@ describe("State Interactions", () => {
 
         test("Namespaced Methods", () => {
             testManager.api.getUser(1);
-
-            console.log(testManager.state.user)
             const user = testManager.getters.getUser();
             expect(user.name).toBe("test");
             expect(user.id).toBe(1);

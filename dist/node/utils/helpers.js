@@ -12,7 +12,10 @@ const proxyHandlers = {
 const createStateProxy = (state, schema) => {
     const proxied = {};
     const traverse = (schemaVal, value, container) => {
-        if (typeof value !== "object" || Array.isArray(value)) {
+        if (typeof value !== "object" ||
+            Array.isArray(value) ||
+            (typeof schemaVal === "object" && !Array.isArray(schema) && !Object.keys(schemaVal).length) // checks when schema initializes an empty object
+        ) {
             return value;
         }
         for (let k of Object.keys(schemaVal)) {
@@ -24,7 +27,6 @@ const createStateProxy = (state, schema) => {
         return container;
     };
     traverse(schema, state, proxied);
-    console.log(proxied);
     return new Proxy(proxied, proxyHandlers);
 };
 exports.createStateProxy = createStateProxy;

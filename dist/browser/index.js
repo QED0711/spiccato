@@ -80,7 +80,7 @@ export class StateManager {
             if (this.initOptions.dynamicGetters) {
                 this.getters[formatAccessor(k, "get")] = () => {
                     // this accesses `this.state` and NOT `this._state`. If the getter returns a higher level object, that object should be immutable
-                    return this._state[k];
+                    return this.state[k];
                 };
             }
             if (this.initOptions.dynamicSetters) {
