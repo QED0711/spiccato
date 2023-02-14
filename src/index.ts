@@ -1,3 +1,4 @@
+/************************************* IMPORTS **************************************/
 import {
     formatAccessor,
     getNestedRoutes,
@@ -19,8 +20,8 @@ import {
     managerID,
     StateSchema
 } from './types/index'
-/* TYPES */
 
+/************************************* DEFAULTS **************************************/
 const DEFAULT_INIT_OPTIONS: InitializationOptions = {
     id: "",
     dynamicGetters: true,
@@ -51,11 +52,11 @@ try {
 }
 if (!("localStorage" in WINDOW)) WINDOW.localStorage = new _localStorage
 
-export class StateManager {
+export class Spiccato {
     /* Class Properties */
-    private static managers: { [key: string]: StateManager } = {};
+    private static managers: { [key: string]: Spiccato } = {};
 
-    private static registerManager(instance: StateManager) {
+    private static registerManager(instance: Spiccato) {
         if (instance.initOptions.id in this.managers) {
             console.warn(`State Manager with id: '${instance.initOptions.id}' already exists. It has been overwritten`)
         }
@@ -101,7 +102,7 @@ export class StateManager {
             WINDOW?.addEventListener("onunload", this.handleUnload.bind(this))
         }
 
-        (this.constructor as typeof StateManager).registerManager(this)
+        (this.constructor as typeof Spiccato).registerManager(this)
     }
 
     public get state(): StateObject {
@@ -229,7 +230,10 @@ export class StateManager {
 
     /********** EVENTS **********/
 
-    addEventListener(eventType: string, callback: Function) {
+    addEventListener(eventType: string | string[], callback: Function) {
+        if(Array.isArray(eventType)) {
+            eventType = "on_" + eventType.join("_") + "_update"
+        }
         if (eventType in this._eventListeners) {
             this._eventListeners[eventType].push(callback);
         } else {

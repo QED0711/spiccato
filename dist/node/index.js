@@ -9,9 +9,10 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.StateManager = exports.WINDOW = void 0;
+exports.Spiccato = exports.WINDOW = void 0;
+/************************************* IMPORTS **************************************/
 const helpers_1 = require("./utils/helpers");
-/* TYPES */
+/************************************* DEFAULTS **************************************/
 const DEFAULT_INIT_OPTIONS = {
     id: "",
     dynamicGetters: true,
@@ -39,7 +40,7 @@ catch (err) {
 }
 if (!("localStorage" in exports.WINDOW))
     exports.WINDOW.localStorage = new helpers_1._localStorage;
-class StateManager {
+class Spiccato {
     static registerManager(instance) {
         if (instance.initOptions.id in this.managers) {
             console.warn(`State Manager with id: '${instance.initOptions.id}' already exists. It has been overwritten`);
@@ -180,6 +181,9 @@ class StateManager {
     }
     /********** EVENTS **********/
     addEventListener(eventType, callback) {
+        if (Array.isArray(eventType)) {
+            eventType = "on_" + eventType.join("_") + "_update";
+        }
         if (eventType in this._eventListeners) {
             this._eventListeners[eventType].push(callback);
         }
@@ -258,6 +262,6 @@ class StateManager {
         }
     }
 }
-exports.StateManager = StateManager;
+exports.Spiccato = Spiccato;
 /* Class Properties */
-StateManager.managers = {};
+Spiccato.managers = {};

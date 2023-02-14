@@ -7,8 +7,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-import { StateManager, WINDOW } from '../index';
-const testManager = new StateManager({
+import { Spiccato, WINDOW } from '../index';
+const testManager = new Spiccato({
     user: {},
     myVal: 1,
     num1: 5,
@@ -51,10 +51,10 @@ testManager.addNamespacedMethods({
 });
 describe("Initialization:", () => {
     test("Init", () => {
-        expect(testManager).toBeInstanceOf(StateManager);
+        expect(testManager).toBeInstanceOf(Spiccato);
     });
     test("getManagerByID", () => {
-        expect(testManager).toBe(StateManager.getManagerById("TEST"));
+        expect(testManager).toBe(Spiccato.getManagerById("TEST"));
     });
 });
 describe("State Interactions", () => {
@@ -161,7 +161,7 @@ describe("Events", () => {
     describe("Payload", () => {
         test("Standard Payload", () => __awaiter(void 0, void 0, void 0, function* () {
             const payload = yield new Promise(resolve => {
-                testManager.addEventListener("on_myVal_update", (payload) => {
+                testManager.addEventListener(["myVal"], (payload) => {
                     resolve(payload);
                 });
                 testManager.setters.setMyVal(42);
@@ -171,7 +171,7 @@ describe("Events", () => {
         }));
         test("Nested Payload", () => __awaiter(void 0, void 0, void 0, function* () {
             const payload = yield new Promise(resolve => {
-                testManager.addEventListener("on_level1_level2Val_update", (payload) => {
+                testManager.addEventListener(["level1", "level2Val"], (payload) => {
                     resolve(payload);
                 });
                 testManager.setters.setLevel1_level2Val("Goodbye");
@@ -249,7 +249,7 @@ describe("Events", () => {
 });
 describe("Local Storage Peristance", () => {
     test("Provider window name is set correctly", () => {
-        const manager = new StateManager({}, {
+        const manager = new Spiccato({}, {
             id: "main",
         });
         manager.connectToLocalStorage({
@@ -261,8 +261,8 @@ describe("Local Storage Peristance", () => {
         expect(WINDOW.name).toEqual("windowTest");
     });
     test("Persistance doesn't mutate local state", () => {
-        StateManager.clear();
-        const manager = new StateManager({
+        Spiccato.clear();
+        const manager = new Spiccato({
             a: {
                 b: {
                     c: 3
@@ -285,10 +285,10 @@ describe("Local Storage Peristance", () => {
         expect(manager.state.e).toBe(5);
     });
     test("Initialize provider from local storage", () => {
-        StateManager.clear();
+        Spiccato.clear();
         WINDOW.name = "provider";
         WINDOW.localStorage.setItem("init", JSON.stringify({ a: 100 }));
-        const manager = new StateManager({ a: 1, b: 2 }, { id: "localStorageInit" });
+        const manager = new Spiccato({ a: 1, b: 2 }, { id: "localStorageInit" });
         manager.connectToLocalStorage({
             persistKey: "init",
             initializeFromLocalStorage: true,
@@ -300,10 +300,10 @@ describe("Local Storage Peristance", () => {
         expect(manager.state.b).toEqual(2);
     });
     test("Initialize subscriber from local storage", () => {
-        StateManager.clear();
+        Spiccato.clear();
         WINDOW.name = "someSubscriber";
         WINDOW.localStorage.setItem("init", JSON.stringify({ a: 100 }));
-        const manager = new StateManager({ a: 1, b: 2 }, { id: "localStorageInit" });
+        const manager = new Spiccato({ a: 1, b: 2 }, { id: "localStorageInit" });
         manager.connectToLocalStorage({
             persistKey: "init",
             subscriberIDs: ["someSubscriber"],

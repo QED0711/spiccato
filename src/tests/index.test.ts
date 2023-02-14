@@ -1,7 +1,7 @@
-import { StateManager, WINDOW } from '../index'
+import { Spiccato, WINDOW } from '../index'
 import { EventPayload, StateObject } from '../types';
 
-const testManager = new StateManager(
+const testManager = new Spiccato(
     {
         user: {},
         myVal: 1,
@@ -23,13 +23,13 @@ const testManager = new StateManager(
 testManager.init();
 
 testManager.addCustomGetters({
-    getAddedNums: function (this: StateManager) {
+    getAddedNums: function (this: Spiccato) {
         return this.state.num1 + this.state.num2;
     }
 })
 
 testManager.addCustomSetters({
-    setBothNums(this: StateManager, num1: number, num2: number) {
+    setBothNums(this: Spiccato, num1: number, num2: number) {
         this.setState((prevState: StateObject) => {
             return { num1, num2 };
         })
@@ -37,14 +37,14 @@ testManager.addCustomSetters({
 })
 
 testManager.addCustomMethods({
-    deriveAdditionToNum1(this: StateManager, num: number) {
+    deriveAdditionToNum1(this: Spiccato, num: number) {
         return this.getters.getNum1() + num;
     }
 })
 
 testManager.addNamespacedMethods({
     api: {
-        getUser(this: StateManager, userID: number) {
+        getUser(this: Spiccato, userID: number) {
             const user = { name: "test", id: 1 };
             this.setters.setUser(user);
         }
@@ -55,11 +55,11 @@ testManager.addNamespacedMethods({
 
 describe("Initialization:", () => {
     test("Init", () => {
-        expect(testManager).toBeInstanceOf(StateManager);
+        expect(testManager).toBeInstanceOf(Spiccato);
     });
 
     test("getManagerByID", () => {
-        expect(testManager).toBe(StateManager.getManagerById("TEST"));
+        expect(testManager).toBe(Spiccato.getManagerById("TEST"));
     });
 })
 
@@ -187,7 +187,7 @@ describe("Events", () => {
     describe("Payload", () => {
         test("Standard Payload", async () => {
             const payload: EventPayload = await new Promise(resolve => {
-                testManager.addEventListener("on_myVal_update", (payload: EventPayload) => {
+                testManager.addEventListener(["myVal"], (payload: EventPayload) => {
                     resolve(payload)
                 })
                 testManager.setters.setMyVal(42);
@@ -199,7 +199,7 @@ describe("Events", () => {
 
         test("Nested Payload", async () => {
             const payload: EventPayload = await new Promise(resolve => {
-                testManager.addEventListener("on_level1_level2Val_update", (payload: EventPayload) => {
+                testManager.addEventListener(["level1", "level2Val"], (payload: EventPayload) => {
                     resolve(payload);
                 })
                 testManager.setters.setLevel1_level2Val("Goodbye")
@@ -290,7 +290,7 @@ describe("Events", () => {
 describe("Local Storage Peristance", () => {
 
     test("Provider window name is set correctly", () => {
-        const manager = new StateManager({}, {
+        const manager = new Spiccato({}, {
             id: "main",
         })
         manager.connectToLocalStorage({
@@ -305,8 +305,8 @@ describe("Local Storage Peristance", () => {
     })
 
     test("Persistance doesn't mutate local state", () => {
-        StateManager.clear()
-        const manager = new StateManager({
+        Spiccato.clear()
+        const manager = new Spiccato({
             a: {
                 b: {
                     c: 3
@@ -334,10 +334,10 @@ describe("Local Storage Peristance", () => {
 
 
     test("Initialize provider from local storage", () => {
-        StateManager.clear()
+        Spiccato.clear()
         WINDOW.name = "provider"
         WINDOW.localStorage.setItem("init", JSON.stringify({ a: 100 }))
-        const manager = new StateManager({ a: 1, b: 2 }, { id: "localStorageInit" })
+        const manager = new Spiccato({ a: 1, b: 2 }, { id: "localStorageInit" })
         manager.connectToLocalStorage({
             persistKey: "init",
             initializeFromLocalStorage: true,
@@ -351,10 +351,10 @@ describe("Local Storage Peristance", () => {
     })
 
     test("Initialize subscriber from local storage", () => {
-        StateManager.clear()
+        Spiccato.clear()
         WINDOW.name = "someSubscriber"
         WINDOW.localStorage.setItem("init", JSON.stringify({ a: 100 }))
-        const manager = new StateManager({ a: 1, b: 2 }, { id: "localStorageInit" })
+        const manager = new Spiccato({ a: 1, b: 2 }, { id: "localStorageInit" })
         manager.connectToLocalStorage({
             persistKey: "init",
             subscriberIDs: ["someSubscriber"],

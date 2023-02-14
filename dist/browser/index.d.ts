@@ -1,12 +1,13 @@
+/************************************* IMPORTS **************************************/
 import { WindowManager } from './utils/helpers';
 import { StateObject, StateUpdateCallback, InitializationOptions, StorageOptions, managerID } from './types/index';
 export declare let WINDOW: {
     [key: string]: any;
 };
-export declare class StateManager {
+export declare class Spiccato {
     private static managers;
     private static registerManager;
-    static getManagerById(id: managerID): StateManager;
+    static getManagerById(id: managerID): Spiccato;
     static clear(): void;
     private initOptions;
     private _schema;
@@ -45,7 +46,7 @@ export declare class StateManager {
         };
     }): void;
     /********** EVENTS **********/
-    addEventListener(eventType: string, callback: Function): void;
+    addEventListener(eventType: string | string[], callback: Function): void;
     removeEventListener(eventType: string, callback: Function): void;
     private emitEvent;
     private emitUpdateEventFromPath;

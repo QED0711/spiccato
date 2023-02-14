@@ -7,8 +7,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+/************************************* IMPORTS **************************************/
 import { formatAccessor, getNestedRoutes, nestedSetterFactory, sanitizeState, restoreState, WindowManager, _localStorage, getUpdatedPaths, createStateProxy, } from './utils/helpers';
-/* TYPES */
+/************************************* DEFAULTS **************************************/
 const DEFAULT_INIT_OPTIONS = {
     id: "",
     dynamicGetters: true,
@@ -37,7 +38,7 @@ catch (err) {
 }
 if (!("localStorage" in WINDOW))
     WINDOW.localStorage = new _localStorage;
-export class StateManager {
+export class Spiccato {
     static registerManager(instance) {
         if (instance.initOptions.id in this.managers) {
             console.warn(`State Manager with id: '${instance.initOptions.id}' already exists. It has been overwritten`);
@@ -178,6 +179,9 @@ export class StateManager {
     }
     /********** EVENTS **********/
     addEventListener(eventType, callback) {
+        if (Array.isArray(eventType)) {
+            eventType = "on_" + eventType.join("_") + "_update";
+        }
         if (eventType in this._eventListeners) {
             this._eventListeners[eventType].push(callback);
         }
@@ -257,4 +261,4 @@ export class StateManager {
     }
 }
 /* Class Properties */
-StateManager.managers = {};
+Spiccato.managers = {};
