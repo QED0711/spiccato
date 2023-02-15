@@ -69,7 +69,58 @@ const stateSchema = {
 | Array | [] |
 | Object | {} |
 
+---
+### State Accessors
+#### Immutable Access
+Each `spiccato` instance has a `state` property. You can access values through this property, but you cannot modify any value directly from this property. 
+
+```
+const manager = Spiccato({myVal: 0}, {id: "immutability"})
+manager.state.myVal // => 0
+
+manager.state.myVal = 1 // This will throw an error
+```
+#### Dynamic Accessors
+An alternative way to access and set state values is through dynamically generated accessors. 
+
+The default initialization behavior of a `spiccato` instance automatically creates accessor methods (getters and setters) for the each parameter in the associated state. In the case of nested values, nested accessors are also create. This behavior can be modified at the time of initialization. See [Initialization Options](#Initilization-Options) for more information on how to modify this behavior.
+
+For example, take the following state schema and initialization:
+```
+const stateSchema = {
+    num: 0,
+    user: {
+        name: "",
+        age: 0 
+    }
+}
+
+const manager = new Spiccato(stateSchema, {
+    id: "dynamicAccessors",
+    dynamicGetters: true,
+    dynamicSetters: true,
+    nestedGetters: true,
+    nextedSetters: true,
+})
+```
+
+For this schema, dynamically generated accessor methods are stored in `setters` and `getters` in the following way.
+
+```
+// getters
+manager.getters.getNum() // => state.num
+manager.setters.getUser() // => state.user
+manager.getters.getUser_name() // => state.user.name
+manager.getters.getUser_age() // => state.user.age
+
+// setters
+manager.setters.setNum(1)
+manager.setters.setUser({name: "name", age: 10})
+manager.setters.setUser_name("some string")
+manager.setters.setUser_age(1)
+```
 ### Customization
+
 #### Getters
 #### Setters
 #### Methods
