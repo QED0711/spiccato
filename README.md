@@ -119,11 +119,79 @@ manager.setters.setUser({name: "name", age: 10})
 manager.setters.setUser_name("some string")
 manager.setters.setUser_age(1)
 ```
+---
 ### Customization
 
-#### Getters
-#### Setters
-#### Methods
+You will likely find it necessary to extend the functionality of your state management beyond the dynamic getter and setter patterns described above. This is easily achieved with a number of customization options that are available on any `spiccato` instance.  
+
+The following four methods follow a similar pattern. They each take in an object where the keys are the custom function names, and the values are the functions themselves (`addNamespacedMethods` is slightly different, see below). The custom functions get bound to your `spiccato` instance, and can access the `this` parameter within their body. Because of this binding procedure, it is important that you do not pass in *arrow functions* to these methods, as they cannot be bound like typical JavaScript functions. 
+
+As an example:
+
+```
+{
+    someFunction(){
+        /* This is the recommended format */
+    },
+
+    someOtherFunction: function (){
+        /* This will also work */
+    },
+
+    badIdea: () => {
+        /* This will not work */
+    }
+}
+```
+#### addCustomGetters
+The `addCustomGetters` method allows you to append customized getter function to the `getters` parameter of your state manager. 
+
+In the example below, you would get dynamic getters for a `user` `firstName` and `lastName`. The custom getter function that is added, `getUserFullName`, allows you to derive a new value based on existing state. Getting derived values from you state is the primary purpose of these custom getter methods.
+
+```
+const stateSchema = {user: {firstName: "Foo", lastName: "Bar"}}
+
+/* initialize manager code here ... */
+
+manager.addCustomGetters({
+    getUserFullName(){
+        return this.state.user.firstName + " " + this.state.user.lastName;
+    }
+})
+
+manager.getters.getUserFullName() // "Foo Bar"
+```
+
+#### addCustomSetters
+The `addCustomSetters` method allows you to append customized setter functions to the `setters` paramter of you state manager. Custom setters should call the `this.setState` method in their body.
+
+In the example below, we have an initialized state with a `cart` array. If you used the dynamic setter called `setCart`, you would have to first get the array, add an item to it, and then pass the new array to the setter. The custom setter, `addOrderToCart` encapsulates this logic and makes it easier to reuse in the future. 
+
+Custom setters are often helpful when dealing with arrays and objects, or when some logic is needed prior to setting a state value.
+
+```
+const stateSchema = {cart: []};
+
+/* initialize manager code here ... */
+
+manager.addCustomSetters({
+    addOrderToCart(order){
+        this.setState(prevState => {
+            const updatedCart = [...this.state.cart, order];
+            return {cart: updatedCart}
+        })
+    }
+})
+
+
+const order = {/* some order definition here */}
+manager.setters.addOrderToCart(order)
+
+```
+
+
+#### addCustomMethods
+#### addNamespacedMethods
 ---
 ### Events
 
@@ -151,9 +219,27 @@ manager.addEventListener("update", function(payload){
 })
 ```
 
-For the general `update` event, the payload differs slightly. Since there is no single path being subscribed to, the payload for this event type only has a `state` property with the current values for the entire state. 
+For the general `update` event, the payload differs slightly. Since there is no single path being subscribed to, the payload for this event type only has a `state` property with the current values for the entire state object. 
 
 #### RemoveEventListener
+
+You can remove an event listener wit ha familiar pattern as well.
+
+```
+// define your callback
+const callback = (payload) => {
+    /* do something here */
+}
+
+// add your callback to a particular event
+manager.addEventListener("update", callback)
+
+// remove callback/event listener when it is no longer needed
+manager.removeEventListener("update", callback)
+```
+
+Note that it is important you pass in the same function reference when you remove a listener as you did when you originally subscribed. 
+
 ---
 
 ## Connect to Local Storage
