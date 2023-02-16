@@ -17,19 +17,48 @@ Creating a new state manager is accomplished in two simple steps.
 import AdaptiveState from 'adaptive-state';
 
 // Defined State Schema
-const state = {
+const stateSchema = {
     num: 1,
     str: "Hello, world!"
 }
 
-// Pass the schema to the initialize of the instance
-const manager = new AdaptiveState(state, {id: "myState"})
+// Pass the schema to the initialization of the instance
+const manager = new Spiccato(stateSchema, {id: "myState"})
 
 console.log(manager.state.num) // 1
-manager.setters.setNum(2)
+manager.setState({num: 2})
 console.log(manager.state.num) // 2 
 ```
+#### **setState**
 
+`setState` is a low level method that can be used to set all properties of an associated state, but more commonly just a subset of properties . This method can take in one of two types for its first argument: an `object` or a `function`
+
+When an object is passed in, the state will update just the properties indicated in the object without modifying/removing any of the other properties in the state. However, be cautious when using an object to update nested structures. You will need to make sure that every call to `setState` updates every property in the nested structure or else the fundamental structure will change. In situations like this, it is better to use a `function` as an input (see below), or a [dynamic nested setter](#dynamic-accessors) (detailed below).
+
+```
+const stateSchema = {
+    someBool: true,
+    user: {
+        name: "",
+        address: "",
+        phone: "",
+    }
+}
+
+const manager = new Spiccato(stateSchema, {id: "setStateDemo"})
+
+// this is fine and doesn't change any other state
+manager.setState({someBool: false}) 
+
+// This is also fine because it sets all the defined properties of the nested object
+manager.setState({user: {name: "John Doe", address: "123 Main st", phone: "555-5555"}})
+
+// Watch out here! This fundamentally changes the state schema because it only sets some properties of the nested state
+manager.setState({user: {name: "Jane Doe"}})
+```
+
+
+---
 ### Initialization Options
 | Property | Type  | Default | Description  |  
 |---|---|---|---|
@@ -167,7 +196,7 @@ The `addCustomSetters` method allows you to append customized setter functions t
 
 In the example below, we have an initialized state with a `cart` array. If you used the dynamic setter called `setCart`, you would have to first get the array, add an item to it, and then pass the new array to the setter. The custom setter, `addOrderToCart` encapsulates this logic and makes it easier to reuse in the future. 
 
-Custom setters are often helpful when dealing with arrays and objects, or when some logic is needed prior to setting a state value.
+Custom setters are often helpful when dealing with arrays and objects and you want to set a particular index or property without modifying the entire structure. They are also usefuly when some logic is needed prior to setting a state value.
 
 ```
 const stateSchema = {cart: []};
@@ -177,21 +206,76 @@ const stateSchema = {cart: []};
 manager.addCustomSetters({
     addOrderToCart(order){
         this.setState(prevState => {
-            const updatedCart = [...this.state.cart, order];
+            const updatedCart = [...prevState.cart, order];
             return {cart: updatedCart}
         })
     }
 })
-
 
 const order = {/* some order definition here */}
 manager.setters.addOrderToCart(order)
 
 ```
 
-
 #### addCustomMethods
+
+The `addCustomMethods` method allows you to add functionality and flexability to your state manager. Where `getters` and `setters` have specific and well defined purposes for accessing and modifying state, methods are less strictly defined. In essence, whenever you want to have simple and direct access to your state and all its built in functionality (setters/getters) within a function call, methods may provide a good option. 
+
+Some common uses for custom methods are: 
+- Making a network request and then using the response as an input for a setter.
+- Accessing state values and then using them to perform an external action such as updating the DOM. 
+
+```
+const stateSchema = {isAdmin: false};
+
+/* initialize manager code here ... */
+
+manager.addCustomMethods({
+
+    // This method shows/hides content in the page based on certain state configurations. All the logic is self contained, and so this method can be called from anywhere in your application and you can expect it to perform correctly
+    showOrHideAdminOptions(){
+        const adminOptions = document.querySelector("#admin-options-container")
+        adminOptions.style.visiblity = this.state.isAdmin ? "visible" : "hidden" 
+    },
+
+    // This method makes a network call and sets the state according to the response. Notice how it also calls the previous custom method we defined.
+    getUserFromID(userID){
+        fetch(`https://some_endpoint/user/${userID}`)
+            .then(response => response.json())
+            .then(data => {
+                this.setters.setIsAdmin(data.role === "admin")
+                this.methods.showOrHideAdminOptions()
+            })
+    },
+})
+
+manager.methods.getUserFromID(1);
+```
+
 #### addNamespacedMethods
+
+Namespaced methods are essentially custom methods, but that can be logically organized based on their purpose. The argument to `addNamespacedMethods` is also an object, but the first level of keys are the namespaces pointing nested objects, and the nested objects are the function names and function definitions. 
+
+```
+const stateSchema = {orderHistory: []};
+
+/* initialize manager code here ... */
+
+manager.addNamespacedMethods({
+    // 'API' becomes a new namespace we can access directly on the manager 
+    API: {
+        getOrderHistory(userID){
+            fetch(`https://orderHistoryEndpoint/${userID}/orders)
+                .then(response => response.json())
+                .then(data => {
+                    this.setters.setOrderHistory(data.orders)
+                })
+        }
+    }
+})
+
+manager.API.getOrderHistory(1);
+```
 ---
 ### Events
 
