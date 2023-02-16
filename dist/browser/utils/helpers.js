@@ -1,9 +1,10 @@
+import { ImmutableStateError } from "../errors";
 const proxyHandlers = {
     set(obj, property, value) {
-        throw new Error("State cannot be mutated directly. Use `setState` or a dynamic setter instead.");
+        throw new ImmutableStateError("State cannot be mutated directly. Use `setState` or a dynamic setter instead.");
     },
     deleteProperty(obj, property) {
-        throw new Error("State properties cannot be removed after initialization.");
+        throw new ImmutableStateError("State properties cannot be removed after initialization.");
     }
 };
 export const createStateProxy = (state, schema) => {

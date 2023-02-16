@@ -1,12 +1,13 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports._localStorage = exports.WindowManager = exports.getUpdatedPaths = exports.restoreState = exports.sanitizeState = exports.nestedSetterFactory = exports.getNestedRoutes = exports.formatAccessor = exports.createStateProxy = void 0;
+const errors_1 = require("../errors");
 const proxyHandlers = {
     set(obj, property, value) {
-        throw new Error("State cannot be mutated directly. Use `setState` or a dynamic setter instead.");
+        throw new errors_1.ImmutableStateError("State cannot be mutated directly. Use `setState` or a dynamic setter instead.");
     },
     deleteProperty(obj, property) {
-        throw new Error("State properties cannot be removed after initialization.");
+        throw new errors_1.ImmutableStateError("State properties cannot be removed after initialization.");
     }
 };
 const createStateProxy = (state, schema) => {

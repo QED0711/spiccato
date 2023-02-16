@@ -9,6 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 /************************************* IMPORTS **************************************/
 import { formatAccessor, getNestedRoutes, nestedSetterFactory, sanitizeState, restoreState, WindowManager, _localStorage, getUpdatedPaths, createStateProxy, } from './utils/helpers';
+import { ProtectedNamespaceError } from './errors';
 /************************************* DEFAULTS **************************************/
 const DEFAULT_INIT_OPTIONS = {
     id: "",
@@ -38,6 +39,19 @@ catch (err) {
 }
 if (!("localStorage" in WINDOW))
     WINDOW.localStorage = new _localStorage;
+const PROTECTED_NAMESPACES = {
+    state: true,
+    setters: true,
+    getters: true,
+    methods: true,
+    initOptions: true,
+    _schema: true,
+    _state: true,
+    _bindToLocalStorage: true,
+    windowManager: true,
+    eventListeners: true
+};
+/* SPICCATO */
 export class Spiccato {
     static registerManager(instance) {
         if (instance.initOptions.id in this.managers) {
@@ -171,6 +185,9 @@ export class Spiccato {
     }
     addNamespacedMethods(namespaces) {
         for (let ns in namespaces) {
+            if (PROTECTED_NAMESPACES[ns]) {
+                throw new ProtectedNamespaceError(`The namespace '${ns}' is protected. Please choose a different namespace for you methods.`);
+            }
             this[ns] = {};
             for (let [key, callback] of Object.entries(namespaces[ns])) {
                 this[ns][key] = callback.bind(this);

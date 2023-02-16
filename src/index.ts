@@ -20,6 +20,7 @@ import {
     managerID,
     StateSchema
 } from './types/index'
+import { ProtectedNamespaceError } from './errors';
 
 /************************************* DEFAULTS **************************************/
 const DEFAULT_INIT_OPTIONS: InitializationOptions = {
@@ -52,6 +53,21 @@ try {
 }
 if (!("localStorage" in WINDOW)) WINDOW.localStorage = new _localStorage
 
+const PROTECTED_NAMESPACES: {[key: string]: any} = {
+    state: true, 
+    setters: true, 
+    getters: true, 
+    methods: true,
+    initOptions: true,
+    _schema: true,
+    _state: true,
+    _bindToLocalStorage: true,
+    windowManager: true,
+    eventListeners: true
+}
+
+
+/* SPICCATO */
 export class Spiccato {
     /* Class Properties */
     private static managers: { [key: string]: Spiccato } = {};
@@ -221,6 +237,9 @@ export class Spiccato {
 
     addNamespacedMethods(namespaces: { [key: string]: { [key: string]: Function } }) {
         for (let ns in namespaces) {
+            if(PROTECTED_NAMESPACES[ns]) {
+                throw new ProtectedNamespaceError(`The namespace '${ns}' is protected. Please choose a different namespace for you methods.`)
+            } 
             this[ns] = {}
             for (let [key, callback] of Object.entries(namespaces[ns])) {
                 this[ns][key] = callback.bind(this);

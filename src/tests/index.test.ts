@@ -42,14 +42,25 @@ testManager.addCustomMethods({
     }
 })
 
-testManager.addNamespacedMethods({
-    api: {
-        getUser(this: Spiccato, userID: number) {
-            const user = { name: "test", id: 1 };
-            this.setters.setUser(user);
+try {
+    testManager.addNamespacedMethods({
+        state: {
+            test() { }
         }
+    })
+} catch (err: any) {
+    if (err.name === "ProtectedNamespaceError") {
+        testManager.addNamespacedMethods({
+            api: {
+                getUser(this: Spiccato, userID: number) {
+                    const user = { name: "test", id: 1 };
+                    this.setters.setUser(user);
+                }
+            },
+        })
+
     }
-})
+}
 
 
 
@@ -91,8 +102,12 @@ describe("State Interactions", () => {
                         val = val[path[i]]
                     }
                     return 1
-                } catch (err) {
-                    return 0
+                } catch (err: any) {
+                    if (err.name === "ImmutableStateError") {
+                        return 0
+                    } else {
+                        return 1
+                    }
                 }
             }
             expect(shouldFail(["myVal"], 14)).toBe(0);
@@ -125,8 +140,12 @@ describe("State Interactions", () => {
                     const level1Obj = testManager.getters.getLevel1();
                     level1Obj.level2 = "This shouldn't be allowed";
                     return 0
-                } catch(err){
-                    return 1
+                } catch (err: any) {
+                    if(err.name === "ImmutableStateError") {
+                        return 1
+                    } else {
+                        return 0
+                    }
                 }
             }
             expect(shouldFail()).toEqual(1)

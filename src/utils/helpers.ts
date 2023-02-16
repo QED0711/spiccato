@@ -1,11 +1,12 @@
+import { ImmutableStateError } from "../errors";
 import { StateObject, StateSchema } from "../types";
 
 const proxyHandlers: { [key: string]: Function } = {
     set(obj: { [key: string]: any }, property: any, value: any): void {
-        throw new Error("State cannot be mutated directly. Use `setState` or a dynamic setter instead.")
+        throw new ImmutableStateError("State cannot be mutated directly. Use `setState` or a dynamic setter instead.")
     },
     deleteProperty(obj: { [key: string]: any }, property: any) {
-        throw new Error("State properties cannot be removed after initialization.")
+        throw new ImmutableStateError("State properties cannot be removed after initialization.")
     }
 }
 

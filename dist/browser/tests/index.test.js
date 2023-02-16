@@ -41,14 +41,25 @@ testManager.addCustomMethods({
         return this.getters.getNum1() + num;
     }
 });
-testManager.addNamespacedMethods({
-    api: {
-        getUser(userID) {
-            const user = { name: "test", id: 1 };
-            this.setters.setUser(user);
+try {
+    testManager.addNamespacedMethods({
+        state: {
+            test() { }
         }
+    });
+}
+catch (err) {
+    if (err.name === "ProtectedNamespaceError") {
+        testManager.addNamespacedMethods({
+            api: {
+                getUser(userID) {
+                    const user = { name: "test", id: 1 };
+                    this.setters.setUser(user);
+                }
+            },
+        });
     }
-});
+}
 describe("Initialization:", () => {
     test("Init", () => {
         expect(testManager).toBeInstanceOf(Spiccato);
@@ -82,7 +93,12 @@ describe("State Interactions", () => {
                     return 1;
                 }
                 catch (err) {
-                    return 0;
+                    if (err.name === "ImmutableStateError") {
+                        return 0;
+                    }
+                    else {
+                        return 1;
+                    }
                 }
             }
             expect(shouldFail(["myVal"], 14)).toBe(0);
@@ -112,7 +128,12 @@ describe("State Interactions", () => {
                     return 0;
                 }
                 catch (err) {
-                    return 1;
+                    if (err.name === "ImmutableStateError") {
+                        return 1;
+                    }
+                    else {
+                        return 0;
+                    }
                 }
             }
             expect(shouldFail()).toEqual(1);
