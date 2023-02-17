@@ -31,9 +31,11 @@ console.log(manager.state.num) // 2
 ```
 #### **setState**
 
-`setState` is a low level method that can be used to set all properties of an associated state, but more commonly just a subset of properties . This method can take in one of two types for its first argument: an `object` or a `function`
+`setState` is a low level method the you can access on your `spiccato` instance. It is used to set all properties of an associated state, but more commonly just a subset of properties . This method can take in one of two types for its first argument: an `object` or a `function`. It can take an optional second argument of a `callback` called after the state has been set. `setState` returns a promise that will resolve to an updated state. 
 
-When an object is passed in, the state will update just the properties indicated in the object without modifying/removing any of the other properties in the state. However, be cautious when using an object to update nested structures. You will need to make sure that every call to `setState` updates every property in the nested structure or else the fundamental structure will change. In situations like this, it is better to use a `function` as an input (see below), or a [dynamic nested setter](#dynamic-accessors) (detailed below).
+##### **Object Input**
+
+When an object is passed, the state will update just the properties indicated in the object without modifying/removing any of the other properties in the state. However, be cautious when using an object to update nested structures. You will need to make sure that every call to `setState` updates every property in the nested structure or else the fundamental structure will change. In situations like this, it is better to use a `function` as an input (see below), or a [dynamic nested setter](#dynamic-accessors).
 
 ```
 const stateSchema = {
@@ -57,6 +59,55 @@ manager.setState({user: {name: "John Doe", address: "123 Main st", phone: "555-5
 manager.setState({user: {name: "Jane Doe"}})
 ```
 
+##### **Function Input**
+As described above, object inputs to `setState` have some drawbacks when working with more complex state values like *objects* and *arrays*. In these situations, it is recommended that you use a function as the initial input. This function will receive one argument, which is the `state` at the time the function is called, and it must return an object with the necessary updated values. Like the object input, values in the returned object from this function are updated, and anything omitted is not updated. 
+
+```
+const stateSchema = {
+    someBool: true,
+    user: {
+        name: "",
+        address: "",
+        phone: "",
+    }
+}
+
+const manager = new Spiccato(stateSchema, {id: "setStateWithFunction"})
+
+manager.setState(function(prevState){
+    return {someBool: !prevState.someBool}
+})
+
+manager.setState(function(prevState){
+    return {user: {...prevState.user, name: "John Doe"}};
+})
+```
+In this example, we call `setState` twice, each time with a function as an argument. In the first call, we take a boolean value and return its inverse. This could also be accomplished with an object input, but you would then have to access the boolean value outside the set state call so you could determine its inverse. 
+
+In the second call, we take the more complex *user* object and set just a subset of its nested values. With `...prevState.user`, we are effectively creating a new user object with all the same properties as the incoming state's user object. We then change just the *name* parameter in this new object we have created. This way we are sure that we have completely preserved all the parameters we haven't touched in the *user* object.
+
+##### **Asynchronous Behavior & Callback Argument**
+
+After `setState` has been called, you may want to access the newly updated state. You have two options for this, and they are *not* mutially exclusive. 
+
+`setState` returns a `promise` that will resolve the updated state. Therefore, `setState` can be awaited in an async block. Alternatively (or in addition to), you can pass an optional callback as a second argument to `setState`. This callback will receive the updated state as its only argument. 
+
+```
+const stateSchema = {myVal: 0}
+
+const manager = new Spiccato(stateSchema, {id: "asyncAndCallback"})
+
+// Async/Await functionality
+const someAsyncFunc = async () => {
+    const updatedState = await manager.setState({myVal: 1})
+    console.log(updatedState.myVal) // => 1
+}
+
+// Callback functionality
+manager.setState({myVal: 2}, (updatedState) => {
+    console.log(updatedState.myVal) // => 2
+})
+```
 
 ---
 ### Initialization Options
@@ -71,7 +122,7 @@ manager.setState({user: {name: "Jane Doe"}})
 
 ### State Schema
 
-**State Schemas** define the default key value pairs of the internal state for a `Spiccato` instance. Schemas are used during initialization of the instance to create dynamic setters and getters (if prescribed by the user in the initialization options), as well as throughout of the life of the instance whenever state is accessed. 
+**State Schemas** define the default key value pairs of the internal state for a `Spiccato` instance. Schemas are used during initialization of the instance to create dynamic setters and getters (if prescribed by the user in the initialization options), as well as throughout the life of the instance whenever state is accessed. 
 
 It is important that schemas are *complete* at time of initialization. This means that all the key value pairs that will need to exist at some point in the execution of the code *do* exist in the schema definition. Any key value pairs added after initialization will not be processed by the `Spiccato` instance and will have limited functionality in terms of dynamic setters, getters, and events.  
 
@@ -112,7 +163,7 @@ manager.state.myVal = 1 // This will throw an error
 #### Dynamic Accessors
 An alternative way to access and set state values is through dynamically generated accessors. 
 
-The default initialization behavior of a `spiccato` instance automatically creates accessor methods (getters and setters) for the each parameter in the associated state. In the case of nested values, nested accessors are also create. This behavior can be modified at the time of initialization. See [Initialization Options](#Initilization-Options) for more information on how to modify this behavior.
+The default initialization behavior of a `spiccato` instance automatically creates accessor methods (getters and setters) for the each parameter in the associated state. In the case of nested values, nested accessors are also create. This behavior can be modified at the time of initialization. See [Initialization Options](#initialization-options) for more information on how to modify this behavior.
 
 For example, take the following state schema and initialization:
 ```
@@ -223,7 +274,7 @@ The `addCustomMethods` method allows you to add functionality and flexability to
 
 Some common uses for custom methods are: 
 - Making a network request and then using the response as an input for a setter.
-- Accessing state values and then using them to perform an external action such as updating the DOM. 
+- Accessing state values and then using them to perform an external action such as updating the DOM or some other external variable. 
 
 ```
 const stateSchema = {isAdmin: false};
@@ -232,13 +283,19 @@ const stateSchema = {isAdmin: false};
 
 manager.addCustomMethods({
 
-    // This method shows/hides content in the page based on certain state configurations. All the logic is self contained, and so this method can be called from anywhere in your application and you can expect it to perform correctly
+    / *
+      * This method shows/hides content in the page based on certain state configurations.
+      * All the logic is self contained, and so this method can be called from anywhere in your application and you can expect it to perform correctly
+    * /
     showOrHideAdminOptions(){
         const adminOptions = document.querySelector("#admin-options-container")
         adminOptions.style.visiblity = this.state.isAdmin ? "visible" : "hidden" 
     },
 
-    // This method makes a network call and sets the state according to the response. Notice how it also calls the previous custom method we defined.
+    / * 
+      * This method makes a network call and sets the state according to the response. 
+      * Notice how it also calls the previous custom method we defined.
+    * /
     getUserFromID(userID){
         fetch(`https://some_endpoint/user/${userID}`)
             .then(response => response.json())
@@ -254,7 +311,7 @@ manager.methods.getUserFromID(1);
 
 #### addNamespacedMethods
 
-Namespaced methods are essentially custom methods, but that can be logically organized based on their purpose. The argument to `addNamespacedMethods` is also an object, but the first level of keys are the namespaces pointing nested objects, and the nested objects are the function names and function definitions. 
+Namespaced methods are essentially custom methods, but that can be logically organized based on their purpose. The argument to `addNamespacedMethods` is also an object, but the first level of keys are the namespaces pointing to nested objects, and the nested objects are the function names and function definitions. 
 
 ```
 const stateSchema = {orderHistory: []};
@@ -287,12 +344,27 @@ You can add event liseners to a `Spiccato` instance. In keeping with common JS e
 
 Event names conform to the following format: "on_" + PATH_TO_STATE_PROPERTY + "_update". If you have a state property named "myVal", the associated event that would trigger when that property changes would be "on_myVal_update". In the case of nested properties, it follows the same format with each level of nesting being separated by an underscore "\_". E.G. "on_level1_level2_value_update".
 ```
-const manager = new AdaptiveState({num: 1}, {id: "main"})
+const manager = new AdaptiveState({
+        num: 1,
+        user: {
+            phone: {
+                cell: "555-5555",
+                "work": "123-4567"
+            }
+        }
+    }, 
+    {id: "main"}
+)
+
 manager.addEventLisener("on_num_update", function(payload) {
     /* do something here */
 })
-```
 
+manager.addEventListener(["user", "phone", "cell"], function(payload){
+    /* do something here */
+})
+```
+#### Event Payload
 The event `payload` is an object with two properties, `path` and `value`. The `path` property is the full path to the state resource from the top level of your state object. The `value` property is the value after the update. 
 
 You can also subscribe for *any* updates to your state object with the `"update"` event type.
@@ -307,7 +379,7 @@ For the general `update` event, the payload differs slightly. Since there is no 
 
 #### RemoveEventListener
 
-You can remove an event listener wit ha familiar pattern as well.
+You can remove an event listener with a familiar pattern as well.
 
 ```
 // define your callback
@@ -329,5 +401,11 @@ Note that it is important you pass in the same function reference when you remov
 ## Connect to Local Storage
 
 ### Storage Options
+
+| Property | Type | Default | Description |
+| --- | --- | --- | --- |
+| persistKey | string (required) | null | A unique key within the domain. This is the key under which the state will be stored in localStorage. |
+| initializeFromLocalStorage | bool | false | Whether or not to take the default state values from local storage at time of initialization |
+| 
 
 ## CLI
