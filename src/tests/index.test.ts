@@ -159,7 +159,7 @@ describe("State Interactions", () => {
         });
 
         test("setState with functional argument", () => {
-            testManager.setState((prevState: { [key: string]: any }) => {
+            testManager.setState(function(prevState: { [key: string]: any }) {
                 const myVal = prevState.myVal;
                 return { myVal: myVal + 1 }
             })

@@ -197,14 +197,15 @@ export class Spiccato {
                 updatedPaths = getUpdatedPaths(updater, this._state)
                 this._state = { ...this._state, ...updater };
             } else if (typeof updater === 'function') {
-                const updaterValue: StateObject = updater(this._state);
+                const updaterValue: StateObject = updater(this.state);
                 updatedPaths = getUpdatedPaths(updaterValue, this._state)
                 this._state = { ...this._state, ...updaterValue };
             }
-            const updated = Object.freeze({ ...this._state })
+            // const updated = Object.freeze({ ...this._state })
+            const updated = createStateProxy(this._state, this._schema)
             resolve(updated);
             callback?.(updated);
-            this.emitEvent("update", { state: createStateProxy(updated, this._schema) })
+            this.emitEvent("update", {state: updated})
             for (let path of updatedPaths) {
                 this.emitUpdateEventFromPath(path)
             }

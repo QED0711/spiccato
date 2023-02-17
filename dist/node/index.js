@@ -151,14 +151,16 @@ class Spiccato {
                 this._state = Object.assign(Object.assign({}, this._state), updater);
             }
             else if (typeof updater === 'function') {
-                const updaterValue = updater(this._state);
+                const updaterValue = updater(this.state);
                 updatedPaths = (0, helpers_1.getUpdatedPaths)(updaterValue, this._state);
                 this._state = Object.assign(Object.assign({}, this._state), updaterValue);
             }
-            const updated = Object.freeze(Object.assign({}, this._state));
+            // const updated = Object.freeze({ ...this._state })
+            const updated = (0, helpers_1.createStateProxy)(this._state, this._schema);
             resolve(updated);
             callback === null || callback === void 0 ? void 0 : callback(updated);
-            this.emitEvent("update", { state: (0, helpers_1.createStateProxy)(updated, this._schema) });
+            console.log(updated);
+            this.emitEvent("update", { state: updated });
             for (let path of updatedPaths) {
                 this.emitUpdateEventFromPath(path);
             }

@@ -147,7 +147,7 @@ describe("State Interactions", () => {
             expect(testManager.getters.getMyVal()).toBe(2);
         });
         test("setState with functional argument", () => {
-            testManager.setState((prevState) => {
+            testManager.setState(function (prevState) {
                 const myVal = prevState.myVal;
                 return { myVal: myVal + 1 };
             });
