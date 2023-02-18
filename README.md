@@ -14,7 +14,7 @@ Creating a new state manager is accomplished in two simple steps.
 2. **Initialize a StateManager instance**: Pass the defined state schema to the `AdaptiveState` constructor call. 
 
 ```
-import AdaptiveState from 'adaptive-state';
+import Spiccato from 'spiccato';
 
 // Defined State Schema
 const stateSchema = {
@@ -24,6 +24,7 @@ const stateSchema = {
 
 // Pass the schema to the initialization of the instance
 const manager = new Spiccato(stateSchema, {id: "myState"})
+manager.init()
 
 console.log(manager.state.num) // 1
 manager.setState({num: 2})
@@ -48,6 +49,7 @@ const stateSchema = {
 }
 
 const manager = new Spiccato(stateSchema, {id: "setStateDemo"})
+manager.init()
 
 // this is fine and doesn't change any other state
 manager.setState({someBool: false}) 
@@ -73,6 +75,7 @@ const stateSchema = {
 }
 
 const manager = new Spiccato(stateSchema, {id: "setStateWithFunction"})
+manager.init()
 
 manager.setState(function(prevState){
     return {someBool: !prevState.someBool}
@@ -96,6 +99,7 @@ After `setState` has been called, you may want to access the newly updated state
 const stateSchema = {myVal: 0}
 
 const manager = new Spiccato(stateSchema, {id: "asyncAndCallback"})
+manager.init()
 
 // Async/Await functionality
 const someAsyncFunc = async () => {
@@ -156,6 +160,8 @@ Each `spiccato` instance has a `state` property. You can access values through t
 
 ```
 const manager = Spiccato({myVal: 0}, {id: "immutability"})
+manager.init()
+
 manager.state.myVal // => 0
 
 manager.state.myVal = 1 // This will throw an error
@@ -182,6 +188,7 @@ const manager = new Spiccato(stateSchema, {
     nestedGetters: true,
     nextedSetters: true,
 })
+manager.init()
 ```
 
 For this schema, dynamically generated accessor methods are stored in `setters` and `getters` in the following way.
@@ -344,7 +351,7 @@ You can add event liseners to a `Spiccato` instance. In keeping with common JS e
 
 Event names conform to the following format: "on_" + PATH_TO_STATE_PROPERTY + "_update". If you have a state property named "myVal", the associated event that would trigger when that property changes would be "on_myVal_update". In the case of nested properties, it follows the same format with each level of nesting being separated by an underscore "\_". E.G. "on_level1_level2_value_update".
 ```
-const manager = new AdaptiveState({
+const manager = new Spiccato({
         num: 1,
         user: {
             phone: {
@@ -355,6 +362,7 @@ const manager = new AdaptiveState({
     }, 
     {id: "main"}
 )
+manager.init();
 
 manager.addEventLisener("on_num_update", function(payload) {
     /* do something here */
@@ -400,12 +408,109 @@ Note that it is important you pass in the same function reference when you remov
 
 ## Connect to Local Storage
 
+When deployed in a browser environment, you will have access to the `localStorage` API. `localStorage` allows you to save key value pairs to a specific domain and retrieve those values at a later time, even after page reloads. 
+
+`Spiccato` allows you to easily mirror your state in `localStorage`. There are two main reasons you may want to do this: 
+
+- Persist state on a certain domain that survives page reloads
+- Synchronize state updates between two or more windows on the same domain. 
+
+### LocalStorage Concepts
+
+The browser's `localStorage` API allows you to store key value pairs specific to a domain. However, the values in these pairs must always be strings. The browser will coerce non-string types into strings. In the case of primitives, they simply become their string representation (e.g. 5 becomes '5', true becomes 'true', etc. ). However, for non-primitives like objects and arrays, they become *"[object Object]"*. Therefore, when mirroring your state in `localStorage`, you must first `stringify` it, or all your data will be lost. 
+
+`Spiccato` handles this process for you, but is still bound by the limits of JavaScript object stringification. For instance, you cannot have circular structures or functions in your state if it is being connected to `localStorage`. To learn more about stringification, see [here](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify). In situations where your state does have a value that cannot be stringified, you can omit that specific value though `privateState` (see [storageOptions](#storage-options)).
+
+You should also be aware that placing state in `localStorage` makes it easily accessible to the end user. Any `localStorage` value can be accessed and modified without any special permisions, and so you should refrain from placing any values in there that you do not want the end user to have complete control over. 
+
+---
+### Basic Usage
+
+```
+cosnt stateSchema = {
+    user: {name: "", isAdmin: false},
+    cart: [],
+}
+
+const manager = new Spiccato(stateSchemea, {id: "localStorageDemo"});
+
+manager.connectToLocalStorage({
+    persistKey: "lsDemo", // this is the key under which the state will be saved in localStorage
+    iniitalizeFromLocalStorage: false, // store in localStorage only for this session
+    privateState: [["user", "isAdmin"]] // keep some state private so the end user cannot access it. 
+    providerID: "stateProvider"
+})
+
+manager.init()
+
+localStorage.getItem("lsDemo") // => '{user: {name: ""}, cart: []}'
+manager.setters.setUser_name("Sally");
+localStorage.getItem("lsDemo") // => '{user: {name: "Sally"}, cart: []}'
+```
+
+Note in this example how the `init` method is called *after* `connectToLocalStorage`. This is necessary to setup all the required functionality that will handle `localStorage` persistence and updates.  
+
 ### Storage Options
 
 | Property | Type | Default | Description |
 | --- | --- | --- | --- |
 | persistKey | string (required) | null | A unique key within the domain. This is the key under which the state will be stored in localStorage. |
 | initializeFromLocalStorage | bool | false | Whether or not to take the default state values from local storage at time of initialization |
-| 
+| providerID | string (required) | null | The id of the window that is desginated as the state provider. |  
+| subscriberIDs | string[] | [] | An array of IDs indicating which spawned windows may subscribe to and receive state updates. |  
+| clearStorageOnUnload | bool | true | Whether of not to clear the state loaded to `localStorage` when the provider window is closed. |
+| removeChildrenOnUnload | bool | true | Whether of not to recurrsively close spawnd children windows when the provider window (or relative parent window) is closed. |
+| privateState | string[] or string[][] | [] | An array of strings or array of nested string arrays. Indicates state paths that will not be persisted to local storage. Provider windows will have access to all state regardless, but subscriber windows will only have access to state not defined within this option. | 
+
+---
+
+### State Persistence
+
+The following configuration shows how to persist your state in a browser in such a way that it will survive a page reload. 
+
+```
+const stateSchema = {
+    colorMode: "light",
+    accessKey: ""
+};
+
+const manager = new Spiccato(stateSchema, {id: "persistDemo"});
+
+manager.connectToLocalStorage({
+    persistKey: "statePersistDemo",
+    initializeFromLocalStorage: true,
+    providerID: "persistProvider",
+    clearStorageOnUnload: false,
+    privateState: ["accessKey"]
+})
+
+manager.init();
+
+manager.setters.setColorMode("dark");
+manager.setters.setAccessKey("12345");
+manager.state // => {colorMode: "dark", accessKey: "12345"}
+
+```
+
+The main options to pay attention to here are the `initializeFromLocalStorage` and `clearStorageOnUnload`. 
+
+When `initializeFromLocalStorage` is set to true, the `spiccato` instance will first look in local storage to get its default state values. Anything not found in `localStorage` but that exists in the `stateSchema` will be initialized in their usual way. In this instance, we don't want the end user having total control over the `accessKey` parameter, but we do want to persist their choice in `colorMode`. We have setup our `privateState` accordingly.
+
+Second, we want to make sure we don't reset the `localStorage` state when we reload the page, so we set `clearStorageOnUnload` to false. This is the main parameter that allows us to persist state over page reloads. 
+
+When the user reloads the page, this is what their state will look like:
+
+```
+manager.state // => {colorMode: "dark", accessKey: ""}
+```
+
+### Inter Window Communication
+
+`localStorage` can be used to share state between two or more windows on the same domain that are open at the same time. However, synchronizing state across windows can be a complex task that requires you to consider many contingencies. `Spiccato` abstracts this complexity behind the `connectToLocalStorage` functionality and a `windowManager` API. 
+
+#### windowManager
+
+
+---
 
 ## CLI
