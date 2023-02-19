@@ -510,7 +510,50 @@ manager.state // => {colorMode: "dark", accessKey: ""}
 
 #### windowManager
 
+If you're using `Spiccato` inside a browser environment, your state manager instance will be initialized with a `windowManager` property. At a basic level, the `windowManager` wraps `window.open` and `window.close` methods. However, it also adds functionality to track references to spawned windows, send initialization parameters to those windows, and synchronize the lifecycle of spawned windows relative to thir immediate parent. 
 
+**!!!IMPORTANT!!!** - If youre are using `spiccato` to manage state between multiple windows, you should use this `windowManager` API to open/close those windows. If you use the browser's standard methods for managing spawned windows, you will miss out on some additional functionality that `spiccato` provides. 
+
+Spawning a new window and managing its state from the parent (or the other way around) is simple:
+
+```
+const stateSchema = {
+    backgroundColor: "#FFF",
+    superSecretKey: ""
+};
+const manager = new Spiccato(stateSchema, {id: "multiWindowDemo"});
+manager.connectToLocalStorage({
+    persistKey: "config",
+    initializeFromLocalStorage: false,
+    clearStorageOnUnload: true,
+    removeChildrenOnUnload: false,
+    providerWindow: "main", // defines the originating state provider window
+    subscriberWindows: ["config"], // defines what windows may receive state updates
+    privateState: ["superSecretKey"],
+});
+
+manager.init();
+manager.windowManager.open("/settings", "config", {height: 500, width: 500});
+```
+In this example we initialize a new `spiccato` state manager and connect it to local storage. When managing state between multiple windows, there are a few important options that must be passed to the `connectToLocalStorage` call. 
+
+First, you must define a `providerWindow`. At time of initialization, if the window that is open doesn't have a `window.name` property set, it will be assigned this `providerName`. There can only be one provider window at a time. The provider window can access all state properties even if some of those properties have been marked as private. 
+
+Second, you must provide an inclusive array of all subscriber window names that you intend to recognize throughout the lifecycle of your application. If the example above, our call to `connectToLocalStorage` says that it will recognize one subscriber window named `config`.
+
+Finally, in our `manager.windowManager.open` call, we tie everything together. Here, we're saying *"open a window at the route '/settings', name that window 'config', and pass it the following init params."* When that window opens and initializes its local `spiccato` instance, since its name links it to the approved list of subscribers, it will look at the current state given by the provider window and set that as the default value. Note that it will not receive the *superSecretKey* state parameter because that is marked as private and only the provider will have access to it. 
+
+To programatically close a spawned window, you only need to call the `windowManager.close` method. 
+
+```
+manager.windowManager.close("config");
+```
+
+Since the `windowManager` tracks references to all spawned windows, you only need to provide the name of the window to the `close` method and it will remotely close that instance. You can also close all spawned instances like this:
+
+```
+manager.windowManager.removeSubscribers();
+```
 ---
 
 ## CLI
