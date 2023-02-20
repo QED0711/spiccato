@@ -1,4 +1,5 @@
 const fs = require("fs");
+const path = require("path");
 
 const readline = require('readline');
 const rl = readline.createInterface({
@@ -10,9 +11,10 @@ const rl = readline.createInterface({
 const argString = process.argv.slice(2).join(" ")
 
 // const nameSearch = /\s?\w+\s?/g
+const rootSearch = /--root=\w+/
 const nameSearch = /--name=\w+/
-const chainSearch = /\-[scmr]+/g
-const keywordSearch = /(state|setters|constants|methods|reducers)=\w+/g
+const chainSearch = /\-[Sgsm]+/g
+const keywordSearch = /(state|getters|setters|methods)=\w+/g
 
 /* 
 ::::::::::::::::
@@ -22,26 +24,24 @@ const keywordSearch = /(state|setters|constants|methods|reducers)=\w+/g
 const argParser = () => {
 
     const FILES = {
-        state: null,
+        stateSchema: null,
+        getters: null,
         setters: null,
         methods: null,
-        reducers: null,
-        constants: null,
     }
 
     const FLAG_MAP = {
-        s: "state",
-        c: "setters",
+        S: "stateSchema",
+        g: "getters",
+        s: "setters",
         m: "methods",
-        r: "reducers",
-        k: "constants"
     }
 
     // 1. Search for flags
     let foundFlags = argString.match(chainSearch)
 
-    foundFlags = foundFlags ? 
-        foundFlags    
+    foundFlags = foundFlags ?
+        foundFlags
             .map(f => f.replace(/-/g, ""))
             .join("")
             .split("")
@@ -78,55 +78,65 @@ const argParser = () => {
 ::::::::::::::::::
 */
 
-const writeProvider = (name, supportFiles) => {
+const writeManager = (root, name, supportFiles) => {
     let supportImports = ""
     let sf;
-    for(let sfKey of Object.keys(supportFiles)){
+    for (let sfKey of Object.keys(supportFiles)) {
         sf = supportFiles[sfKey]
         // if(sf) supportImports += `const ${sf} = require('./${sf}')\n`
-        if(sf) supportImports += `import ${sf} from './${sf}'\n`
+        if (sf) supportImports += `import ${sf} from './${sf}'\n`
     }
-    
+
     const fileContents = `
-import AdaptiveState from 'adaptive-state';
+import Spiccato from 'spiccato';
 
 ${supportImports}
 
-${supportFiles.state ? `const ${name} = new AdaptiveState(${supportFiles.state})` : `const ${name} = new AdaptiveState({})`}
+${supportFiles.stateSchema ? `const ${name}Manager = new Spiccato(${supportFiles.stateSchema}, {id: "${name}"})` : `const ${name}Manager = new Spiccato({}, {id: "${name}"})`}
 
-${supportFiles.setters ? `${name}.addCustomSetters(${supportFiles.setters})`: ""}
-${supportFiles.methods ? `${name}.addMethods(${supportFiles.methods})`: ""}
-${supportFiles.reducers ? `${name}.addReducers(${supportFiles.reducers})`: ""}
-${supportFiles.constants ? `${name}.addConstants(${supportFiles.constants})`: ""}
+${supportFiles.getters ? `${name}.addCustomGetters(${supportFiles.getters})` : ""}
+${supportFiles.setters ? `${name}.addCustomSetters(${supportFiles.setters})` : ""}
+${supportFiles.methods ? `${name}.addCustomMethods(${supportFiles.methods})` : ""}
 
-export const ${capName(name)}Context = ${name}.context;
-export const ${capName(name)}Provider = ${name}.createProvider();
+// Uncomment below to connect state to localStorage
+/*
+${name}Manager.connectToLocalStorage({ 
+    persistKey: ${name}
+})
+*/
 
+${name}Manager.init();
+
+export default ${name}Manager; 
 `
     // create state directory if it doesn't exist
-    !fs.existsSync("./src/state/") && fs.mkdirSync("./src/state")
+    !fs.existsSync(root) && fs.mkdirSync(root, { recursive: true })
 
     // create/overwrite previous directory of named resource
-    fs.mkdirSync(`./src/state/${name}`)
+    try {
+        fs.mkdirSync(`${root}/${name}`)
+    } catch(err){
+        if(err.code === "EEXIST") {
+            console.log("\n=== Root directory already exists ===\n")
+        }
+    }
 
-    // create provider file
-    fs.writeFileSync(`./src/state/${name}/${name}Provider.js`, fileContents)
-    console.log(`created ./src/state/${name}/${name}Provider.js`)
+    // create manager file
+    fs.writeFileSync(`${root}/${name}/${name}Manager.js`, fileContents)
+    console.log(`created ${root}/${name}/${name}Manager.js`)
 }
 
 
-const writeSupportFiles = (name, files) => {
-    
-    
+const writeSupportFiles = (root, name, files) => {
     let sf,
         fileContents
 
-    for (let sfKey of Object.keys(files)){
+    for (let sfKey of Object.keys(files)) {
         sf = files[sfKey]
-        if(sf){
+        if (sf) {
             fileContents = genSupportFileTemplate(sf, sfKey)
-            fs.writeFileSync(`./src/state/${name}/${sf}.js`, fileContents)
-            console.log(`created ./src/state/${name}/${sf}.js`)
+            fs.writeFileSync(`${root}/${name}/${sf}.js`, fileContents)
+            console.log(`created ${root}/${name}/${sf}.js`)
         }
     }
 }
@@ -158,14 +168,14 @@ export default ${supportFile};
 }
 
 const capName = (name) => {
-    let newName =  name.split("")
+    let newName = name.split("")
     newName[0] = newName[0].toUpperCase()
     return newName.join("")
 }
 
 const noFiles = (files) => {
-    for(let file of Object.keys(files)){
-        if(files[file]) return false
+    for (let file of Object.keys(files)) {
+        if (files[file]) return false
     }
     return true
 }
@@ -177,36 +187,40 @@ const noFiles = (files) => {
 :::::::::::::::::::::
 */
 const run = async () => {
-    
-    // 1. get the name of the state resource from the user (either from the --name flag or from prompt)
-    let name = argString.match(nameSearch)
 
+    // 1a. get the root of the preject destination from the user (either from the --root flag or from prompt)
+    let root = argString.match(rootSearch)
+    root = root ? root[0].split("=")[1] : await prompt("Where would you like to save this state resource: ")
+    root = path.normalize(root);
+
+    // 1b. get the name of the state resource from the user (either from the --name flag or from prompt)
+    let name = argString.match(nameSearch)
     name = name ? name[0].split("=")[1] : await prompt("What would you like to name this state resource: ")
-    
+
     console.log("State Resource: ", name)
 
     // 2a. find any flags or keyword arguments in the argument string
     let filesToMake = argParser()
-    
+
     // 2b. If no arguments given, walk through assigning values
-    if(noFiles(filesToMake)){
+    if (noFiles(filesToMake)) {
         console.log("\n=== No arguments detected ===")
         console.log("Initializing Setup Wizard")
         console.log("\nFor each support file listed, provide a name. If you want the default name, just press ENTER. If you do not want to include the support file, type '-'.\n")
         let currentFile;
-        for(let file of Object.keys(filesToMake)){
+        for (let file of Object.keys(filesToMake)) {
             currentFile = await prompt(file + ": ")
             filesToMake[file] = currentFile.toLowerCase() === "-" ? null : currentFile.length ? currentFile : file
         }
     }
-    
+
     rl.close()
-    
+
     // 3. write the main provider file
-    writeProvider(name, filesToMake)
+    writeManager(root, name, filesToMake)
 
     // 4. write support files
-    writeSupportFiles(name, filesToMake)
+    writeSupportFiles(root, name, filesToMake)
 
 }
 

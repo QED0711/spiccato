@@ -556,4 +556,84 @@ manager.windowManager.removeSubscribers();
 ```
 ---
 
-## CLI
+## Command Line Interface
+
+A CLI is included with the `Spiccato` install, and it allows you to quickly create a `spiccato` state manager instance and associated support files (getters, setters, methods, etc.). 
+
+## Package.json Script
+
+The easiest way to execute the CLI script is to add a shortcut to your `package.json` file. 
+
+```
+"scripts": {
+    "spiccato-cli": "node ./node_modules/spiccato/cli.js"
+}
+```
+
+## Keyword Arguments & File Structure
+
+The CLI allows you to specify a root directory in which to save all your state management resources. This is done with the `--root=` argument. You can also specify a name for your manager with the `--name=` argument. If you don't provide a `root` or `name` argument in your call to the CLI, a setup wizard will prompt you to enter values for each. 
+
+As an example:
+```
+node ./node_moduels/spiccato/cli.js --root=./path/to/root --name=main
+```
+```
+<ROOT>
+|___<NAME>
+    |___<NAME>Manager.js (Spiccato initialization & configuration)
+    |___stateSchema.js (required: default state for Spiccato instance)
+    |___getters.js (optional: custom getter definitions)
+    |___setters.js (optional: custom setter definitions)
+    |___methods.js (optional: custom method definitions)
+```
+## CLI Flags & Options
+
+> Note: the examples below assume you have setup a `package.json` script like the one shown above. Replace `spiccato-cli` with your script name, or simply run directly through node. If you are running through a `package.json` script, make sure to include the `--` before any arguments/flags so they get passed to the script.
+
+If you run the CLI without any options or flags set, you will be taken to a setup wizard which will walk you through setting up your Spiccato instance. Simply follow the instructions printed to your terminal. 
+
+### Support File Flags
+
+If you indicate any of the flags below, a support file for that item will be created, and it will automatically be added to your Spiccato instance. 
+
+| Flag | Support File | Description |
+| --- | --- | --- |
+| -S | stateSchema.js | Default state | 
+| -g | getters.js | Custom getters |  
+| -s | setters.js | Custom setters |  
+| -m | methods.js | Custom methods | 
+
+**Example:**
+
+In the example below, a file called `mainManager.js` will be created for you housing the Spiccato instance configuration, as well as three support files, `stateSchema.js`, `setters.js`, and `methods.js`. These will all be saved into a directory called `main`. Since this call did not specify a `root`, you will be prompted to supply one.
+
+```
+npm run spiccato-cli -- --name=main -Ssm
+```
+
+### Changing Default Names
+
+If you want to change the name of a support file to be more syntactically correct based on your usage, you can do that by specifying `--<SUPPORT_FILE_NAME>=<DESIRED_NAME>`. If you specify a support file in this way, you do not need to include its flag also.  
+
+Possible support file names are `state`, `getters`, `setters`, and `methods`. 
+
+**Example:**
+
+```
+npm run spiccato-cli -- --name=main -Sgs --methods=API 
+```
+
+Now, rather than a file named `methods.js`, you will have a file called `API.js`. Note that this only changes the file name, and not the name within your Spiccato instance. 
+
+As the example above shows, you can combine flags and rename files in the same command. The above will create the following state management resource for you:
+
+```
+<ROOT>
+|___main
+    |___mainManager.js
+    |___stateSchema.js
+    |___getters.js
+    |___setters.js
+    |___API.js
+```
