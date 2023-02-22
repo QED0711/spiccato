@@ -52,7 +52,7 @@ const PROTECTED_NAMESPACES = {
     eventListeners: true
 };
 /* SPICCATO */
-export class Spiccato {
+export default class Spiccato {
     static registerManager(instance) {
         if (instance.initOptions.id in this.managers) {
             console.warn(`State Manager with id: '${instance.initOptions.id}' already exists. It has been overwritten`);
@@ -157,7 +157,6 @@ export class Spiccato {
             const updated = createStateProxy(this._state, this._schema);
             resolve(updated);
             callback === null || callback === void 0 ? void 0 : callback(updated);
-            console.log(updated);
             this.emitEvent("update", { state: updated });
             for (let path of updatedPaths) {
                 this.emitUpdateEventFromPath(path);

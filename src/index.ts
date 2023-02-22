@@ -68,7 +68,7 @@ const PROTECTED_NAMESPACES: {[key: string]: any} = {
 
 
 /* SPICCATO */
-export class Spiccato {
+export default class Spiccato {
     /* Class Properties */
     private static managers: { [key: string]: Spiccato } = {};
 

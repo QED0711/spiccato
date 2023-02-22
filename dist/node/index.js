@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Spiccato = exports.WINDOW = void 0;
+exports.WINDOW = void 0;
 /************************************* IMPORTS **************************************/
 const helpers_1 = require("./utils/helpers");
 const errors_1 = require("./errors");
@@ -159,7 +159,6 @@ class Spiccato {
             const updated = (0, helpers_1.createStateProxy)(this._state, this._schema);
             resolve(updated);
             callback === null || callback === void 0 ? void 0 : callback(updated);
-            console.log(updated);
             this.emitEvent("update", { state: updated });
             for (let path of updatedPaths) {
                 this.emitUpdateEventFromPath(path);
@@ -281,6 +280,6 @@ class Spiccato {
         }
     }
 }
-exports.Spiccato = Spiccato;
+exports.default = Spiccato;
 /* Class Properties */
 Spiccato.managers = {};

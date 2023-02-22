@@ -4,7 +4,7 @@ import { StateObject, StateUpdateCallback, InitializationOptions, StorageOptions
 export declare let WINDOW: {
     [key: string]: any;
 };
-export declare class Spiccato {
+export default class Spiccato {
     private static managers;
     private static registerManager;
     static getManagerById(id: managerID): Spiccato;

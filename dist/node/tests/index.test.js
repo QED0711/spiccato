@@ -1,4 +1,27 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -9,8 +32,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const index_1 = require("../index");
-const testManager = new index_1.Spiccato({
+const index_1 = __importStar(require("../index"));
+const testManager = new index_1.default({
     user: {},
     myVal: 1,
     num1: 5,
@@ -64,10 +87,10 @@ catch (err) {
 }
 describe("Initialization:", () => {
     test("Init", () => {
-        expect(testManager).toBeInstanceOf(index_1.Spiccato);
+        expect(testManager).toBeInstanceOf(index_1.default);
     });
     test("getManagerByID", () => {
-        expect(testManager).toBe(index_1.Spiccato.getManagerById("TEST"));
+        expect(testManager).toBe(index_1.default.getManagerById("TEST"));
     });
 });
 describe("State Interactions", () => {
@@ -272,7 +295,7 @@ describe("Events", () => {
 });
 describe("Local Storage Peristance", () => {
     test("Provider window name is set correctly", () => {
-        const manager = new index_1.Spiccato({}, {
+        const manager = new index_1.default({}, {
             id: "main",
         });
         manager.connectToLocalStorage({
@@ -284,8 +307,8 @@ describe("Local Storage Peristance", () => {
         expect(index_1.WINDOW.name).toEqual("windowTest");
     });
     test("Persistance doesn't mutate local state", () => {
-        index_1.Spiccato.clear();
-        const manager = new index_1.Spiccato({
+        index_1.default.clear();
+        const manager = new index_1.default({
             a: {
                 b: {
                     c: 3
@@ -308,10 +331,10 @@ describe("Local Storage Peristance", () => {
         expect(manager.state.e).toBe(5);
     });
     test("Initialize provider from local storage", () => {
-        index_1.Spiccato.clear();
+        index_1.default.clear();
         index_1.WINDOW.name = "provider";
         index_1.WINDOW.localStorage.setItem("init", JSON.stringify({ a: 100 }));
-        const manager = new index_1.Spiccato({ a: 1, b: 2 }, { id: "localStorageInit" });
+        const manager = new index_1.default({ a: 1, b: 2 }, { id: "localStorageInit" });
         manager.connectToLocalStorage({
             persistKey: "init",
             initializeFromLocalStorage: true,
@@ -323,10 +346,10 @@ describe("Local Storage Peristance", () => {
         expect(manager.state.b).toEqual(2);
     });
     test("Initialize subscriber from local storage", () => {
-        index_1.Spiccato.clear();
+        index_1.default.clear();
         index_1.WINDOW.name = "someSubscriber";
         index_1.WINDOW.localStorage.setItem("init", JSON.stringify({ a: 100 }));
-        const manager = new index_1.Spiccato({ a: 1, b: 2 }, { id: "localStorageInit" });
+        const manager = new index_1.default({ a: 1, b: 2 }, { id: "localStorageInit" });
         manager.connectToLocalStorage({
             persistKey: "init",
             subscriberIDs: ["someSubscriber"],

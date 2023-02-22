@@ -11,7 +11,7 @@ const rl = readline.createInterface({
 const argString = process.argv.slice(2).join(" ")
 
 // const nameSearch = /\s?\w+\s?/g
-const rootSearch = /--root=\w+/
+const rootSearch = /--root=[\w\.\/]+/
 const nameSearch = /--name=\w+/
 const chainSearch = /\-[Sgsm]+/g
 const keywordSearch = /(state|getters|setters|methods)=\w+/g
@@ -94,14 +94,14 @@ ${supportImports}
 
 ${supportFiles.stateSchema ? `const ${name}Manager = new Spiccato(${supportFiles.stateSchema}, {id: "${name}"})` : `const ${name}Manager = new Spiccato({}, {id: "${name}"})`}
 
-${supportFiles.getters ? `${name}.addCustomGetters(${supportFiles.getters})` : ""}
-${supportFiles.setters ? `${name}.addCustomSetters(${supportFiles.setters})` : ""}
-${supportFiles.methods ? `${name}.addCustomMethods(${supportFiles.methods})` : ""}
+${supportFiles.getters ? `${name}Manager.addCustomGetters(${supportFiles.getters})` : ""}
+${supportFiles.setters ? `${name}Manager.addCustomSetters(${supportFiles.setters})` : ""}
+${supportFiles.methods ? `${name}Manager.addCustomMethods(${supportFiles.methods})` : ""}
 
 // Uncomment below to connect state to localStorage
 /*
 ${name}Manager.connectToLocalStorage({ 
-    persistKey: ${name}
+    persistKey: "${name}"
 })
 */
 

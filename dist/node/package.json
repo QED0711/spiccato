@@ -1,5 +1,8 @@
 {
   "name": "spiccato",
+  "version": "0.0.1",
+  "description": "A general purpose state management library that provides high level automation and of common state management tasks and is easily extendible and customizable.",
+  "main": "index.js",
   "devDependencies": {
     "@types/jest": "^29.2.4",
     "jest": "^29.3.1",
@@ -8,7 +11,7 @@
   },
   "scripts": {
     "start": "npx tsc; node index.js",
-    "build": "npx tsc -p tsconfig.node.json && npx tsc -p tsconfig.browser.json && cp package.json ./dist/node && cp package.json ./dist/browser",
+    "build": "npx tsc -p tsconfig.node.json && npx tsc -p tsconfig.browser.json && cp package.json ./dist/node && cp package.json ./dist/browser && cp src/cli.js dist/browser && cp src/cli.js dist/node",
     "test": "npm run build && ./node_modules/.bin/jest"
   }
 }

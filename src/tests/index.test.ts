@@ -1,4 +1,4 @@
-import { Spiccato, WINDOW } from '../index'
+import Spiccato, { WINDOW } from '../index'
 import { EventPayload, StateObject } from '../types';
 
 const testManager = new Spiccato(
