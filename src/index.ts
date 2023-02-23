@@ -147,7 +147,6 @@ export default class Spiccato {
                 this.setters[formatAccessor(k, "set")] = (v: any, callback: StateUpdateCallback | null) => {
                     return new Promise(async resolve => {
                         resolve(await this.setState({ [k]: v }, callback));
-                        this.emitEvent("on_" + k + "_update", { path: k, value: v })
                     })
                 }
             }

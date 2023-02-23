@@ -104,7 +104,6 @@ class Spiccato {
                 this.setters[(0, helpers_1.formatAccessor)(k, "set")] = (v, callback) => {
                     return new Promise((resolve) => __awaiter(this, void 0, void 0, function* () {
                         resolve(yield this.setState({ [k]: v }, callback));
-                        this.emitEvent("on_" + k + "_update", { path: k, value: v });
                     }));
                 };
             }
