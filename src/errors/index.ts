@@ -11,3 +11,10 @@ export class ProtectedNamespaceError extends Error {
         this.name = "ProtectedNamespaceError";
     }
 }
+
+export class ManagerNotFoundError extends Error {
+    constructor(message: string){
+        super(message);
+        this.name = "ManagerNotFoundError"
+    }
+}
