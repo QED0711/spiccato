@@ -30,6 +30,7 @@ export default class Spiccato {
     init(): void;
     private _applyState;
     private _persistToLocalStorage;
+    getStateFromPath(path: string | string[]): any | undefined;
     setState(updater: StateObject | Function, callback?: StateUpdateCallback | null): Promise<StateObject>;
     addCustomGetters(getters: {
         [key: string]: Function;
@@ -47,7 +48,7 @@ export default class Spiccato {
     }): void;
     /********** EVENTS **********/
     addEventListener(eventType: string | string[], callback: Function): void;
-    removeEventListener(eventType: string, callback: Function): void;
+    removeEventListener(eventType: string | string[], callback: Function): void;
     private emitEvent;
     private emitUpdateEventFromPath;
     /********** LOCAL STORAGE **********/

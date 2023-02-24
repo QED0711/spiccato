@@ -163,6 +163,29 @@ describe("State Interactions", () => {
             }
             expect(shouldFail()).toEqual(1);
         });
+        test("getStateFromPath", () => {
+            const val1 = testManager.getStateFromPath("myVal");
+            const val2 = testManager.getStateFromPath(["level1", "level2", "level3"]);
+            const stillNested = testManager.getStateFromPath(["level1", "level2"]);
+            function shouldFail(val) {
+                try {
+                    val.test = "this should not work";
+                    return 0;
+                }
+                catch (err) {
+                    if (err.name === "ImmutableStateError") {
+                        return 1;
+                    }
+                    else {
+                        return 0;
+                    }
+                }
+            }
+            expect(val1).toEqual(1);
+            expect(val2).toEqual(3);
+            expect(stillNested.level3).toBe(3);
+            expect(shouldFail(stillNested)).toBe(1);
+        });
     });
     describe("Setters", () => {
         test("setState", () => {
@@ -282,10 +305,10 @@ describe("Events", () => {
                     if (payload.value > 2)
                         resolve(payload.value); // if it makes it to the third call this will resolve to '3' and will fail the test
                 };
-                testManager.addEventListener("on_my_val_update", callback);
+                testManager.addEventListener("on_myVal_update", callback);
                 yield testManager.setters.setMyVal(1);
                 yield testManager.setters.setMyVal(2);
-                testManager.removeEventListener("on_myVal_update", callback);
+                testManager.removeEventListener(["myVal"], callback);
                 yield testManager.setters.setMyVal(3);
                 resolve(0);
             }));

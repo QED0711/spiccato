@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ProtectedNamespaceError = exports.ImmutableStateError = void 0;
+exports.ManagerNotFoundError = exports.ProtectedNamespaceError = exports.ImmutableStateError = void 0;
 class ImmutableStateError extends Error {
     constructor(message) {
         super(message);
@@ -15,3 +15,10 @@ class ProtectedNamespaceError extends Error {
     }
 }
 exports.ProtectedNamespaceError = ProtectedNamespaceError;
+class ManagerNotFoundError extends Error {
+    constructor(message) {
+        super(message);
+        this.name = "ManagerNotFoundError";
+    }
+}
+exports.ManagerNotFoundError = ManagerNotFoundError;
