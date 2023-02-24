@@ -189,6 +189,19 @@ export default class Spiccato {
         }
     }
 
+    getStateFromPath(path: string | string[]): any | undefined {
+        if(typeof path === "string"){
+            return this.state[path]
+        } else if (Array.isArray(path)){
+            let val = this.state;
+            for(let p of path) {
+                val = val[p];
+                if(val === undefined) return undefined
+            }
+            return val
+        }
+    }
+
     setState(updater: StateObject | Function, callback: StateUpdateCallback | null = null): Promise<StateObject> {
         return new Promise(resolve => {
             let updatedPaths: string[][] = [];
@@ -260,7 +273,10 @@ export default class Spiccato {
         }
     }
 
-    removeEventListener(eventType: string, callback: Function) {
+    removeEventListener(eventType: string | string[], callback: Function) {
+        if(Array.isArray(eventType)) {
+            eventType = "on_" + eventType.join("_") + "_update"
+        }
         this._eventListeners[eventType] = this._eventListeners[eventType]?.filter(cb => cb !== callback);
     }
 
