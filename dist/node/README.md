@@ -3,10 +3,49 @@
 `Spiccato` is a simple, lightweight, and efficient state management library built for both browser and backend applications. It automates several common state management patterns, is easily extendible and customizable, and makes typically complex tasks like state persistence simple to implement. It is written in typescript and has no dependencies. 
 
 ## Index
+- [Installation](#installation)
+- [Basic Usage](#basic-usage)
+    - [setState](#setstate)
+        - [Object Input](#object-input)
+        - [Function Input](#function-input)
+        - [Asynchronous Behavior & Callback Argument](#asynchronous-behavior--callback-argument)
+    - [Initialization Options](#initialization-options)
+    - [Project Wide State Management](#project-wide-state-management)
+    - [State Schema](#state-schema)
+    - [State Accessors](#state-accessors)
+        - [Immutable Access](#immutable-access)
+        - [Dynamic Accessors](#dynamic-accessors)
+        - [When to Use Dynamic Accessors](#when-to-use-dynamic-accessors)
+    - [Customization](#customization)
+        - [addCustomGetters](#addcustomgetters)
+        - [addCustomSetters](#addcustomsetters)
+        - [addCustomMethods](#addcustommethods)
+        - [addNamespacedMethod](#addnamespacedmethods)
+    - [events](#events)
+        - [addEventListener](#addeventlistener)
+        - [Event Payload](#event-payload)
+        - [removeEventListener](#removeeventlistener)
+- [Connect To Local Storage](#connect-to-local-storage)
+    - [LocalStorage Concepts](#localstorage-concepts)
+    - [Basic Usage](#basic-usage-1)
+    - [Storage Options](#storage-options)
+    - [State Persistence](#state-persistence)
+    - [Inter window Communication](#inter-window-communication)
+        - [windowManager](#windowmanager)
+- [Command Line Interface](#command-line-interface)  
+    - [package.json Script](#packagejson-script)  
+    - [Keyword Arguments & File Structure](#keyword-arguments--file-structure)  
+    - [CLI Flags & Options](#cli-flags--options)  
+    - [Support File Flags](#support-file-flags)  
+    - [Changing Default Names](#changing-default-names)  
+---
+## Installation
 
-### Installation
+```
+npm i spiccato 
+```
 
-### Basic Usage
+## Basic Usage
 
 Creating a new state manager is accomplished in two simple steps. 
 
@@ -126,6 +165,7 @@ manager.setState({myVal: 2}, (updatedState) => {
 | nestedGetters | boolean | true | Whether or not to dynamically generate nested getter methods based on the initialized state schema |
 | nestedSetters | boolean | true | Whether or not to dynamically generate nested setter methods based on the initialized state schema |
 | debug | boolean | false | Whether or not to log out debug messages when utilizing the initialized manager |
+| performanceMode | boolean | false |**WARNING**: *Activating this removes safeguards that disallow direct state mutation. Use only when absolutely necessary.* When active, makes state updates more performant by removing a recursive copying operation that ensures directly accessed state is immutable.  |
 
 ---
 ### Project Wide State Management
@@ -188,7 +228,7 @@ const stateSchema = {
 ---
 ### State Accessors
 #### Immutable Access
-Each `spiccato` instance has a `state` property. You can access values through this property, but you cannot modify any value directly from this property. 
+Each `spiccato` instance has a `state` property. You can access values through this property, but you cannot modify any value directly from this property. The exception to this is when the manager has been placed in `performanceMode`, which removes a safeguard preventing direct mutability in favor of more performant state access.  
 
 ```
 const manager = Spiccato({myVal: 0}, {id: "immutability"})
@@ -636,7 +676,7 @@ A CLI is included with the `Spiccato` install, and it allows you to quickly crea
 
 > **Note**: The CLI is only implemented for UNIX systems at this time. 
 
-## Package.json Script
+### Package.json Script
 
 The easiest way to execute the CLI script is to add a shortcut to your `package.json` file. 
 
@@ -646,7 +686,7 @@ The easiest way to execute the CLI script is to add a shortcut to your `package.
 }
 ```
 
-## Keyword Arguments & File Structure
+### Keyword Arguments & File Structure
 
 The CLI allows you to specify a root directory in which to save all your state management resources. This is done with the `--root=` argument. You can also specify a name for your manager with the `--name=` argument. If you don't provide a `root` or `name` argument in your call to the CLI, a setup wizard will prompt you to enter values for each. 
 
@@ -663,7 +703,7 @@ node ./node_modules/spiccato/cli.js --root=./path/to/root --name=main
     |___setters.js (optional: custom setter definitions)
     |___methods.js (optional: custom method definitions)
 ```
-## CLI Flags & Options
+### CLI Flags & Options
 
 > **Note**: the examples below assume you have setup a `package.json` script like the one shown above. Replace `spiccato-cli` with your script name, or simply run directly through node. If you are running through a `package.json` script, make sure to include the `--` before any arguments/flags so they get passed to the script.
 
