@@ -107,6 +107,20 @@ describe("State Interactions", () => {
             expect(shouldFail(["someNewVal"], "I'm New!!!")).toBe(0);
             expect(shouldFail(["arr", "0"], "This should work")).toBe(1); // only object properties are protected from mutation. Arrays within a schema are mutatable
         });
+        describe("performanceMode", () => {
+            const performanceManager = new Spiccato({ myVal: 1 }, { id: "performanceManager", performanceMode: true });
+            performanceManager.init();
+            test("allows normal state operations", () => {
+                performanceManager.setters.setMyVal(100);
+                expect(performanceManager.getters.getMyVal()).toBe(100);
+                performanceManager.setState({ myVal: 1 });
+                expect(performanceManager.getters.getMyVal()).toBe(1);
+            });
+            test("allows unsafe mutation", () => {
+                performanceManager.state.myVal = 2;
+                expect(performanceManager.state.myVal).toBe(2);
+            });
+        });
     });
     describe("Getters", () => {
         test("Dynamic getters", () => {

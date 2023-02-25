@@ -17,7 +17,8 @@ const DEFAULT_INIT_OPTIONS = {
     dynamicSetters: true,
     nestedGetters: true,
     nestedSetters: true,
-    debug: false
+    debug: false,
+    performanceMode: false,
 };
 const DEFAULT_STORAGE_OPTIONS = {
     persistKey: "",
@@ -82,7 +83,7 @@ export default class Spiccato {
         this.constructor.registerManager(this);
     }
     get state() {
-        return createStateProxy(this._state, this._schema);
+        return this.initOptions.performanceMode ? this._state : createStateProxy(this._state, this._schema);
     }
     init() {
         this._applyState();
@@ -167,7 +168,7 @@ export default class Spiccato {
                 this._state = Object.assign(Object.assign({}, this._state), updaterValue);
             }
             // const updated = Object.freeze({ ...this._state })
-            const updated = createStateProxy(this._state, this._schema);
+            const updated = this.initOptions.performanceMode ? this._state : createStateProxy(this._state, this._schema);
             resolve(updated);
             callback === null || callback === void 0 ? void 0 : callback(updated);
             this.emitEvent("update", { state: updated });

@@ -17,6 +17,7 @@ export interface InitializationOptions {
     nestedGetters?: boolean;
     nestedSetters?: boolean;
     debug?: boolean;
+    performanceMode?: boolean;
 }
 export interface StorageOptions {
     persistKey: string;

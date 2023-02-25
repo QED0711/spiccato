@@ -29,7 +29,8 @@ const DEFAULT_INIT_OPTIONS: InitializationOptions = {
     dynamicSetters: true,
     nestedGetters: true,
     nestedSetters: true,
-    debug: false
+    debug: false,
+    performanceMode: false,
 }
 
 const DEFAULT_STORAGE_OPTIONS: StorageOptions = {
@@ -122,7 +123,7 @@ export default class Spiccato {
     }
 
     public get state(): StateObject {
-        return createStateProxy(this._state, this._schema);
+        return this.initOptions.performanceMode ? this._state : createStateProxy(this._state, this._schema);
     }
 
     init() {
@@ -214,7 +215,7 @@ export default class Spiccato {
                 this._state = { ...this._state, ...updaterValue };
             }
             // const updated = Object.freeze({ ...this._state })
-            const updated = createStateProxy(this._state, this._schema)
+            const updated = this.initOptions.performanceMode ? this._state : createStateProxy(this._state, this._schema);
             resolve(updated);
             callback?.(updated);
             this.emitEvent("update", {state: updated})
