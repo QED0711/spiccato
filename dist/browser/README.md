@@ -21,10 +21,12 @@
         - [addCustomSetters](#addcustomsetters)
         - [addCustomMethods](#addcustommethods)
         - [addNamespacedMethod](#addnamespacedmethods)
-    - [events](#events)
+    - [Events](#events)
         - [addEventListener](#addeventlistener)
         - [Event Payload](#event-payload)
         - [removeEventListener](#removeeventlistener)
+    - [Errors](#errors)
+    - [Using With Typescript](#using-with-typescript)
 - [Connect To Local Storage](#connect-to-local-storage)
     - [LocalStorage Concepts](#localstorage-concepts)
     - [Basic Usage](#basic-usage-1)
@@ -515,6 +517,41 @@ manager.removeEventListener("update", callback)
 ```
 
 > **Note**: It is important you pass in the same function reference when you remove a listener as you did when you originally subscribed. 
+
+---
+### Errors
+
+`Spiccato` exposes custom errors that you can import into your project.
+
+```
+import {/* SOME_ERROR_TYPE */} from 'spiccato/errors';
+```
+
+| Error | Reason | Remediation |
+| --- | --- | --- |
+| ProtectedNamespaceError | The user has added a namespaced method that overwrites an existing `spiccato` property (e.g. state, getters, setters, etc.) | Select a different namespace for your namespaced method |
+| ImmutableStateError | The user has attempted to modify state directly without a setter. This error is not thrown when in `performanceMode`. | Use `setState`, or a setter (dynamic or custom) to modify state. Alternatively, set `performanceMode` in initialization options to true (*dangerous!!!*). |
+| ReservedStateKeyError | The user has supplied a key in state that is reserved by `spiccato` to perform additional functionality. | Select a different key name for the indicated state resource |
+| ManagerNotFoundError | The class method, `getManagerByID`, returns `undefined`. This error must be thrown manually. | Check that the ID supplied is associated with an existing manager ID. |
+
+---
+### Using with Typescript
+
+`Spiccato` can be used with typescript, and exposes various types to be utilized in your project.
+
+```
+import {/* SOME TYPE HERE */} from 'spiccato/types';
+```
+
+| Type | Description |
+| --- | --- |
+| StateSchema | Type for the state schema passed into a `spiccato` initialization. |
+| StateObject | Type for the manifestation of state after `spiccato` instance is initialized |
+| managerID | Type for ID associated with a specific manager | 
+| EventPayload | Type for payload that is passed as an argument to the callback of a fired event |
+| InitializationOptions | Interface for initialization options passed to a `spiccato` initialization. |
+| StorageOptions | Interface for storage options passed to `connectToLocalStorage` call. |
+
 
 ---
 

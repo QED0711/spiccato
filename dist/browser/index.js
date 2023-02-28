@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 /************************************* IMPORTS **************************************/
 import { formatAccessor, getNestedRoutes, nestedSetterFactory, sanitizeState, restoreState, WindowManager, _localStorage, getUpdatedPaths, createStateProxy, } from './utils/helpers';
-import { ProtectedNamespaceError } from './errors';
+import { ProtectedNamespaceError, ReservedStateKeyError } from './errors';
 /************************************* DEFAULTS **************************************/
 const DEFAULT_INIT_OPTIONS = {
     id: "",
@@ -52,6 +52,9 @@ const PROTECTED_NAMESPACES = {
     windowManager: true,
     eventListeners: true
 };
+const RESERVED_STATE_KEYS = [
+    "*"
+];
 /* SPICCATO */
 export default class Spiccato {
     static registerManager(instance) {
@@ -66,10 +69,14 @@ export default class Spiccato {
     static clear() {
         this.managers = {};
     }
-    constructor(state = {}, options) {
+    constructor(stateSchema = {}, options) {
         this.initOptions = Object.assign(Object.assign({}, DEFAULT_INIT_OPTIONS), options);
-        this._schema = Object.freeze(Object.assign({}, state));
-        this._state = state;
+        this._schema = Object.freeze(Object.assign({}, stateSchema));
+        this._state = stateSchema;
+        const stateKeyViolations = RESERVED_STATE_KEYS.filter(k => Object.keys(this._state).includes(k));
+        if (stateKeyViolations.length) {
+            throw new ReservedStateKeyError(`The key: '${stateKeyViolations[0]}' is reserved at this level. Please select a different key for this state resource.`);
+        }
         this.getters = {};
         this.setters = {};
         this.methods = {};
@@ -248,7 +255,6 @@ export default class Spiccato {
     /********** LOCAL STORAGE **********/
     connectToLocalStorage(storageOptions) {
         var _a;
-        this._bindToLocalStorage = true;
         this.storageOptions = Object.assign(Object.assign({}, DEFAULT_STORAGE_OPTIONS), storageOptions);
         // if window does not have a "name" peroperty, default to the provider window id
         if (!WINDOW.name && this.storageOptions.providerID) {
@@ -264,17 +270,19 @@ export default class Spiccato {
             if (!!WINDOW.localStorage.getItem(this.storageOptions.persistKey)) {
                 if (WINDOW.name === this.storageOptions.providerID) {
                     this._state = Object.assign(Object.assign({}, this._state), JSON.parse(WINDOW.localStorage.getItem(this.storageOptions.persistKey)));
+                    this._bindToLocalStorage = true;
                 }
                 else if (((_a = this.storageOptions.subscriberIDs) !== null && _a !== void 0 ? _a : []).includes(WINDOW.name)) {
                     this._state = JSON.parse(WINDOW.localStorage.getItem(this.storageOptions.persistKey));
+                    this._bindToLocalStorage = true;
                 }
                 else {
                     IS_BROWSER && console.warn("window is not a provider and has not been identified as a subscriber. State will not be loaded. See docs on provider and subscriber roles");
-                    this._state = {};
+                    this._bindToLocalStorage = false;
                 }
             }
         }
-        if ("addEventListener" in WINDOW) {
+        if ("addEventListener" in WINDOW && this._bindToLocalStorage) {
             WINDOW.addEventListener("storage", () => {
                 this._updateFromLocalStorage();
             });

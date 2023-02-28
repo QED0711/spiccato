@@ -54,6 +54,9 @@ const PROTECTED_NAMESPACES = {
     windowManager: true,
     eventListeners: true
 };
+const RESERVED_STATE_KEYS = [
+    "*"
+];
 /* SPICCATO */
 class Spiccato {
     static registerManager(instance) {
@@ -68,10 +71,14 @@ class Spiccato {
     static clear() {
         this.managers = {};
     }
-    constructor(state = {}, options) {
+    constructor(stateSchema = {}, options) {
         this.initOptions = Object.assign(Object.assign({}, DEFAULT_INIT_OPTIONS), options);
-        this._schema = Object.freeze(Object.assign({}, state));
-        this._state = state;
+        this._schema = Object.freeze(Object.assign({}, stateSchema));
+        this._state = stateSchema;
+        const stateKeyViolations = RESERVED_STATE_KEYS.filter(k => Object.keys(this._state).includes(k));
+        if (stateKeyViolations.length) {
+            throw new errors_1.ReservedStateKeyError(`The key: '${stateKeyViolations[0]}' is reserved at this level. Please select a different key for this state resource.`);
+        }
         this.getters = {};
         this.setters = {};
         this.methods = {};
@@ -250,7 +257,6 @@ class Spiccato {
     /********** LOCAL STORAGE **********/
     connectToLocalStorage(storageOptions) {
         var _a;
-        this._bindToLocalStorage = true;
         this.storageOptions = Object.assign(Object.assign({}, DEFAULT_STORAGE_OPTIONS), storageOptions);
         // if window does not have a "name" peroperty, default to the provider window id
         if (!exports.WINDOW.name && this.storageOptions.providerID) {
@@ -266,17 +272,19 @@ class Spiccato {
             if (!!exports.WINDOW.localStorage.getItem(this.storageOptions.persistKey)) {
                 if (exports.WINDOW.name === this.storageOptions.providerID) {
                     this._state = Object.assign(Object.assign({}, this._state), JSON.parse(exports.WINDOW.localStorage.getItem(this.storageOptions.persistKey)));
+                    this._bindToLocalStorage = true;
                 }
                 else if (((_a = this.storageOptions.subscriberIDs) !== null && _a !== void 0 ? _a : []).includes(exports.WINDOW.name)) {
                     this._state = JSON.parse(exports.WINDOW.localStorage.getItem(this.storageOptions.persistKey));
+                    this._bindToLocalStorage = true;
                 }
                 else {
                     IS_BROWSER && console.warn("window is not a provider and has not been identified as a subscriber. State will not be loaded. See docs on provider and subscriber roles");
-                    this._state = {};
+                    this._bindToLocalStorage = false;
                 }
             }
         }
-        if ("addEventListener" in exports.WINDOW) {
+        if ("addEventListener" in exports.WINDOW && this._bindToLocalStorage) {
             exports.WINDOW.addEventListener("storage", () => {
                 this._updateFromLocalStorage();
             });

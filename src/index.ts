@@ -20,7 +20,7 @@ import {
     managerID,
     StateSchema
 } from './types/index'
-import { ProtectedNamespaceError } from './errors';
+import { ProtectedNamespaceError, ReservedStateKeyError } from './errors';
 
 /************************************* DEFAULTS **************************************/
 const DEFAULT_INIT_OPTIONS: InitializationOptions = {
@@ -67,6 +67,10 @@ const PROTECTED_NAMESPACES: {[key: string]: any} = {
     eventListeners: true
 }
 
+const RESERVED_STATE_KEYS: string[] = [
+    "*"
+]
+
 
 /* SPICCATO */
 export default class Spiccato {
@@ -100,10 +104,15 @@ export default class Spiccato {
     private _eventListeners: { [key: string]: Function[] }
     [key: string]: any; /* for runtime added properties */
 
-    constructor(state: StateObject = {}, options: InitializationOptions) {
+    constructor(stateSchema: StateObject = {}, options: InitializationOptions) {
         this.initOptions = { ...DEFAULT_INIT_OPTIONS, ...options };
-        this._schema = Object.freeze({...state})
-        this._state = state;
+        this._schema = Object.freeze({...stateSchema})
+        this._state = stateSchema;
+
+        const stateKeyViolations = RESERVED_STATE_KEYS.filter(k => Object.keys(this._state).includes(k));
+        if(stateKeyViolations.length){
+            throw new ReservedStateKeyError(`The key: '${stateKeyViolations[0]}' is reserved at this level. Please select a different key for this state resource.`) 
+        }
 
         this.getters = {}
         this.setters = {}
@@ -301,7 +310,6 @@ export default class Spiccato {
 
     /********** LOCAL STORAGE **********/
     connectToLocalStorage(storageOptions: StorageOptions) {
-        this._bindToLocalStorage = true;
         this.storageOptions = { ...DEFAULT_STORAGE_OPTIONS, ...storageOptions };
 
         // if window does not have a "name" peroperty, default to the provider window id
@@ -325,15 +333,17 @@ export default class Spiccato {
                         ...this._state,
                         ...JSON.parse(WINDOW.localStorage.getItem(this.storageOptions.persistKey)),
                     }
+                    this._bindToLocalStorage = true;
                 } else if ((this.storageOptions.subscriberIDs ?? []).includes(WINDOW.name)) {
                     this._state = JSON.parse(WINDOW.localStorage.getItem(this.storageOptions.persistKey))
+                    this._bindToLocalStorage = true;
                 } else {
                     IS_BROWSER && console.warn("window is not a provider and has not been identified as a subscriber. State will not be loaded. See docs on provider and subscriber roles");
-                    this._state = {}
+                    this._bindToLocalStorage = false;
                 }
             }
         }
-        if ("addEventListener" in WINDOW) {
+        if ("addEventListener" in WINDOW && this._bindToLocalStorage) {
             WINDOW.addEventListener("storage", () => {
                 this._updateFromLocalStorage()
             })

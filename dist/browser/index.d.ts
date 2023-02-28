@@ -25,7 +25,7 @@ export default class Spiccato {
     windowManager: (WindowManager | null);
     private _eventListeners;
     [key: string]: any;
-    constructor(state: StateObject | undefined, options: InitializationOptions);
+    constructor(stateSchema: StateObject | undefined, options: InitializationOptions);
     get state(): StateObject;
     init(): void;
     private _applyState;
