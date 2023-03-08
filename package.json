@@ -1,7 +1,7 @@
 {
   "name": "spiccato",
-  "version": "0.0.1",
-  "description": "A general purpose state management library that provides high level automation and of common state management tasks and is easily extendible and customizable.",
+  "version": "0.1.2",
+  "description": "A general purpose state management library that provides high level automation of common state management tasks and is easily extendible and customizable.",
   "license": "MIT",
   "main": "index.js",
   "devDependencies": {

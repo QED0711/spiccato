@@ -135,6 +135,10 @@ export default class Spiccato {
         return this.initOptions.performanceMode ? this._state : createStateProxy(this._state, this._schema);
     }
 
+    public get id(): managerID {
+        return this.initOptions.id;
+    }
+
     init() {
         this._applyState();
     }
@@ -325,6 +329,8 @@ export default class Spiccato {
         this.initOptions.debug && console.log("DEBUG: window.name", WINDOW.name)
         this.initOptions.debug && console.assert(!!WINDOW.name)
 
+        this._bindToLocalStorage = true;
+
         if (this.storageOptions.initializeFromLocalStorage) {
 
             if (!!WINDOW.localStorage.getItem(this.storageOptions.persistKey)) {
@@ -333,16 +339,15 @@ export default class Spiccato {
                         ...this._state,
                         ...JSON.parse(WINDOW.localStorage.getItem(this.storageOptions.persistKey)),
                     }
-                    this._bindToLocalStorage = true;
                 } else if ((this.storageOptions.subscriberIDs ?? []).includes(WINDOW.name)) {
                     this._state = JSON.parse(WINDOW.localStorage.getItem(this.storageOptions.persistKey))
-                    this._bindToLocalStorage = true;
                 } else {
                     IS_BROWSER && console.warn("window is not a provider and has not been identified as a subscriber. State will not be loaded. See docs on provider and subscriber roles");
                     this._bindToLocalStorage = false;
                 }
             }
         }
+
         if ("addEventListener" in WINDOW && this._bindToLocalStorage) {
             WINDOW.addEventListener("storage", () => {
                 this._updateFromLocalStorage()

@@ -1,8 +1,13 @@
 #!/bin/bash
 
+LOGIN = ${1:-"no_login"};
+
 npm run build;
 
-npm login;
+if ["$LOGIN" = "login" ]; then
+    npm login;
+fi
 
 cd ./dist/browser;
+
 npm publish;

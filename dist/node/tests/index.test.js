@@ -92,6 +92,9 @@ describe("Initialization:", () => {
     test("getManagerByID", () => {
         expect(testManager).toBe(index_1.default.getManagerById("TEST"));
     });
+    test("Instance ID", () => {
+        expect(testManager.id).toBe("TEST");
+    });
 });
 describe("State Interactions", () => {
     describe("State Access", () => {

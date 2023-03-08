@@ -72,6 +72,10 @@ describe("Initialization:", () => {
     test("getManagerByID", () => {
         expect(testManager).toBe(Spiccato.getManagerById("TEST"));
     });
+
+    test("Instance ID", () => {
+        expect(testManager.id).toBe("TEST");
+    })
 })
 
 
