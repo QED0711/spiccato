@@ -54,7 +54,7 @@ Creating a new state manager is accomplished in two simple steps.
 1. **Define a State Schema**: State schemas are the default values for a state object. It contains all key value pairs that are expected to exist over the lifetime of the manager. 
 2. **Initialize a StateManager instance**: Pass the defined state schema to the `Spiccato` constructor call. 
 
-```
+```javascript
 import Spiccato from 'spiccato';
 
 // Defined State Schema
@@ -81,7 +81,7 @@ console.log(manager.getters.getNum()) // => 5; dynamic getter
 
 When an object is passed, the state will update just the properties indicated in the object without modifying/removing any of the other properties in the state. However, be cautious when using an object to update nested structures. You will need to make sure that every call to `setState` updates every property in the nested structure or else the fundamental structure will change. In situations like this, it is better to use a `function` as an input (see below), or a [dynamic nested setter](#dynamic-accessors).
 
-```
+```javascript
 const stateSchema = {
     someBool: true,
     user: {
@@ -108,7 +108,7 @@ console.log(manager.state.user) // => {name: "Jane Doe"}; address and phone prop
 ##### **Function Input**
 As described above, object inputs to `setState` have some drawbacks when working with more complex state values like *objects* and *arrays*. In these situations, it is recommended that you use a function as the initial input. This function will receive one argument, which is the `state` at the time the function is called, and it must return an object with the necessary updated values. Like the object input, values in the returned object from this function are updated, and anything omitted is not updated. 
 
-```
+```javascript
 const stateSchema = {
     someBool: true,
     user: {
@@ -139,7 +139,7 @@ After `setState` has been called, you may want to access the newly updated state
 
 `setState` returns a `promise` that will resolve the updated state. Therefore, `setState` can be awaited in an async block. Alternatively (or in addition to), you can pass an optional callback as a second argument to `setState`. This callback will receive the updated state as its only argument. 
 
-```
+```javascript
 const stateSchema = {myVal: 0}
 
 const manager = new Spiccato(stateSchema, {id: "asyncAndCallback"})
@@ -175,7 +175,7 @@ manager.setState({myVal: 2}, (updatedState) => {
 After a `Spiccato` manager has been initialized, you may want to access that same manager in several parts of your project. This can be achieved with standard JavaScript import/exports, or through the `Spiccato` class. 
 
 **JS Import/Export**
-```
+```javascript
 const manager = new Spiccato({/* stateSchema here */}, {id: "managerAccess"})
 manager.init()
 
@@ -187,7 +187,7 @@ import manager from 'path/to/manager/init/file';
 ```
 
 **Reference Lookup**
-```
+```javascript
 const manager = new Spiccato({/* stateSchema here */}, {id: "managerAccess"})
 manager.init()
 
@@ -208,7 +208,7 @@ Schemas are not inherently typed. When you define your schema and you have "null
 
 For Example:
 
-```
+```javascript
 const stateSchema = {
     isAdmin: false, // boolean false
     count: 0, // zero for number type
@@ -232,7 +232,7 @@ const stateSchema = {
 #### Immutable Access
 Each `spiccato` instance has a `state` property. You can access values through this property, but you cannot modify any value directly from this property. The exception to this is when the manager has been placed in `performanceMode`, which removes a safeguard preventing direct mutability in favor of more performant state access.  
 
-```
+```javascript
 const manager = Spiccato({myVal: 0}, {id: "immutability"})
 manager.init()
 
@@ -246,7 +246,7 @@ An alternative way to access and set state values is through dynamically generat
 The default initialization behavior of a `spiccato` instance automatically creates accessor methods (getters and setters) for the each parameter in the associated state. In the case of nested values, nested accessors are also created. This behavior can be modified at the time of initialization. See [Initialization Options](#initialization-options) for more information on how to modify this behavior.
 
 For example, take the following state schema and initialization:
-```
+```javascript
 const stateSchema = {
     num: 0,
     user: {
@@ -267,7 +267,7 @@ manager.init()
 
 For this schema, dynamically generated accessor methods are stored in `setters` and `getters` in the following way.
 
-```
+```javascript
 // getters
 manager.getters.getNum() // => state.num
 manager.setters.getUser() // => state.user
@@ -284,7 +284,7 @@ manager.setters.setUser_age(1)
 #### When to Use Dynamic Accessors
 Dynamic getters are particularly useful in closures. In a closure, when you access a state property directly, that value gets burned into the closure. A dynamic getter will always fetch a fresh version of the state property so your closure can know if it has updated.
 
-```
+```javascript
 // This will cause an issue because `manager.state.myBool` is now burned into this closure and will not update. 
 setInterval(() => {
     if(manager.state.myBool) {
@@ -302,7 +302,7 @@ setInterval(() => {
 
 Dynamic setters offer a shortcut to the more low level `setState` functionality. They have all the same behavior as `setState` (in fact, they call `setState` under the hood) including asynchronous functionality and callbacks. If you are ever performing a simple state update operation on a single parameter, dynamic setters are the easiest solution.
 
-```
+```javascript
 // with `setState` you are responsible for ensuring only the state you want updated gets updated.
 manager.setState({...manager.state.complexObject, value: 1}, (updatedState) => {
     /* do something with callback here */
@@ -323,7 +323,7 @@ The following four methods follow a similar pattern. They each take in an object
 
 As an example:
 
-```
+```javascript
 {
     someFunction(){
         /* This is the recommended format */
@@ -345,7 +345,7 @@ The `addCustomGetters` method allows you to append customized getter function to
 
 In the example below, you would get dynamic getters for a `user` `firstName` and `lastName`. The custom getter function that is added, `getUserFullName`, allows you to derive a new value based on existing state. Getting derived values from you state is the primary purpose of these custom getter methods.
 
-```
+```javascript
 const stateSchema = {user: {firstName: "Foo", lastName: "Bar"}}
 
 /* initialize manager code here ... */
@@ -370,7 +370,7 @@ In the example below, we have an initialized state with a `cart` array. If you u
 
 Custom setters are often helpful when dealing with arrays and objects and you want to set a particular index or property without modifying the entire structure. They are also useful when some logic is needed prior to setting a state value.
 
-```
+```javascript
 const stateSchema = {cart: []};
 
 /* initialize manager code here ... */
@@ -397,7 +397,7 @@ Some common uses for custom methods are:
 - Making a network request and then using the response as an input for a setter.
 - Accessing state values and then using them to perform an external action such as updating the DOM or some other external variable. 
 
-```
+```javascript
 const stateSchema = {isAdmin: false};
 
 /* initialize manager code here ... */
@@ -434,7 +434,7 @@ manager.methods.getUserFromID(1);
 
 Namespaced methods are essentially custom methods, but that can be logically organized based on their purpose. The argument to `addNamespacedMethods` is also an object, but the first level of keys are the namespaces pointing to nested objects, and the nested objects are the function names and function definitions. 
 
-```
+```javascript
 const stateSchema = {orderHistory: []};
 
 /* initialize manager code here ... */
@@ -443,7 +443,7 @@ manager.addNamespacedMethods({
     // 'API' becomes a new namespace we can access directly on the manager 
     API: {
         getOrderHistory(userID){
-            fetch(`https://orderHistoryEndpoint/${userID}/orders)
+            fetch(`https://orderHistoryEndpoint/${userID}/orders`)
                 .then(response => response.json())
                 .then(data => {
                     this.setters.setOrderHistory(data.orders)
@@ -464,7 +464,7 @@ When a `Spiccato` instance is initialized, it dynamically creates events for all
 You can add event listeners to a `Spiccato` instance. In keeping with common JS event subscriptions patterns, you simply call the `addEventListener` method on your instance, passing in either an event name *or* a `string[]` array denoting the path to a state property and a callback to be executed when that event triggers. You can add multiple event listeners to the same event. 
 
 Event names conform to the following format: "on_" + PATH_TO_STATE_PROPERTY + "_update". If you have a state property named "myVal", the associated event that would trigger when that property changes would be "on_myVal_update". In the case of nested properties, it follows the same format with each level of nesting being separated by an underscore "\_". E.G. "on_level1_level2_value_update".
-```
+```javascript
 const manager = new Spiccato({
         num: 1,
         user: {
@@ -491,7 +491,7 @@ The event `payload` is an object with two properties, `path` and `value`. The `p
 
 You can also subscribe for *any* updates to your state object with the `"update"` event type.
 
-```
+```javascript
 manager.addEventListener("update", function(payload){
     /* do something here */
 })
@@ -503,7 +503,7 @@ For the general `update` event, the payload differs slightly. Since there is no 
 
 You can remove an event listener with a familiar pattern as well.
 
-```
+```javascript
 // define your callback
 const callback = (payload) => {
     /* do something here */
@@ -523,7 +523,7 @@ manager.removeEventListener("update", callback)
 
 `Spiccato` exposes custom errors that you can import into your project.
 
-```
+```javascript
 import {/* SOME_ERROR_TYPE */} from 'spiccato/errors';
 ```
 
@@ -539,7 +539,7 @@ import {/* SOME_ERROR_TYPE */} from 'spiccato/errors';
 
 `Spiccato` can be used with typescript, and exposes various types to be utilized in your project.
 
-```
+```javascript
 import {/* SOME TYPE HERE */} from 'spiccato/types';
 ```
 
@@ -575,7 +575,7 @@ You should also be aware that placing state in `localStorage` makes it easily ac
 ---
 ### Basic Usage
 
-```
+```javascript
 const stateSchema = {
     user: {name: "", isAdmin: false},
     cart: [],
@@ -617,7 +617,7 @@ Note in this example how the `init` method is called *after* `connectToLocalStor
 
 The following configuration shows how to persist your state in a browser in such a way that it will survive a page reload. 
 
-```
+```javascript
 const stateSchema = {
     colorMode: "light",
     accessKey: ""
@@ -649,7 +649,7 @@ Second, we want to make sure we don't reset the `localStorage` state when we rel
 
 When the user reloads the page, this is what their state will look like:
 
-```
+```javascript
 manager.state // => {colorMode: "dark", accessKey: ""}
 ```
 
@@ -665,7 +665,7 @@ If you're using `Spiccato` inside a browser environment, your state manager inst
 
 Spawning a new window and managing its state from the parent (or the other way around) is simple:
 
-```
+```javascript
 const stateSchema = {
     backgroundColor: "#FFF",
     superSecretKey: ""
@@ -694,17 +694,18 @@ Finally, in our `manager.windowManager.open` call, we tie everything together. H
 
 To programmatically close a spawned window, you only need to call the `windowManager.close` method. 
 
-```
+```javascript
 manager.windowManager.close("config");
 ```
 
 Since the `windowManager` tracks references to all spawned windows, you only need to provide the name of the window to the `close` method and it will remotely close that instance. You can also close all spawned instances like this:
 
-```
+```javascript
 manager.windowManager.removeSubscribers();
 ```
 
 In your `connectToLocalStorage` call, if you set `removeChildrenOnUnload` to `true`, then when the immediate parent of a spawned window is closed all it's immediate children will be closed as well. Note the spawned windows may spawn addition children windows. If the original provider window closes, all spawned windows will close recursively. If spawned window closes that had additional children windows, that window and its children will close recursively, but any parents/grandparents will remain.  
+
 ---
 
 ## Command Line Interface
@@ -717,7 +718,7 @@ A CLI is included with the `Spiccato` install, and it allows you to quickly crea
 
 The easiest way to execute the CLI script is to add a shortcut to your `package.json` file. 
 
-```
+```json
 "scripts": {
     "spiccato-cli": "node ./node_modules/spiccato/cli.js"
 }
