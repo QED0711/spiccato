@@ -325,21 +325,23 @@ export default class Spiccato {
             console.error("If connecting to localStorage, providerID must be defined in sotrageOptions passed to 'connectoToLocalStorage'");
             return;
         }
-
+        
         this.initOptions.debug && console.log("DEBUG: window.name", WINDOW.name)
         this.initOptions.debug && console.assert(!!WINDOW.name)
 
+        const isProviderWindow = WINDOW.name === this.storageOptions.providerID;
+        const isSubscriberWindow = (this.storageOptions.subscriberIDs ?? []).includes(WINDOW.name);
+
         this._bindToLocalStorage = true;
 
-        if (this.storageOptions.initializeFromLocalStorage) {
-
+        if (this.storageOptions.initializeFromLocalStorage || isSubscriberWindow) {
             if (!!WINDOW.localStorage.getItem(this.storageOptions.persistKey)) {
-                if (WINDOW.name === this.storageOptions.providerID) {
+                if (isProviderWindow && !isSubscriberWindow) {
                     this._state = {
                         ...this._state,
                         ...JSON.parse(WINDOW.localStorage.getItem(this.storageOptions.persistKey)),
                     }
-                } else if ((this.storageOptions.subscriberIDs ?? []).includes(WINDOW.name)) {
+                } else if (isSubscriberWindow) {
                     this._state = JSON.parse(WINDOW.localStorage.getItem(this.storageOptions.persistKey))
                 } else {
                     IS_BROWSER && console.warn("window is not a provider and has not been identified as a subscriber. State will not be loaded. See docs on provider and subscriber roles");

@@ -271,13 +271,15 @@ class Spiccato {
         }
         this.initOptions.debug && console.log("DEBUG: window.name", exports.WINDOW.name);
         this.initOptions.debug && console.assert(!!exports.WINDOW.name);
+        const isProviderWindow = exports.WINDOW.name === this.storageOptions.providerID;
+        const isSubscriberWindow = ((_a = this.storageOptions.subscriberIDs) !== null && _a !== void 0 ? _a : []).includes(exports.WINDOW.name);
         this._bindToLocalStorage = true;
-        if (this.storageOptions.initializeFromLocalStorage) {
+        if (this.storageOptions.initializeFromLocalStorage || isSubscriberWindow) {
             if (!!exports.WINDOW.localStorage.getItem(this.storageOptions.persistKey)) {
-                if (exports.WINDOW.name === this.storageOptions.providerID) {
+                if (isProviderWindow && !isSubscriberWindow) {
                     this._state = Object.assign(Object.assign({}, this._state), JSON.parse(exports.WINDOW.localStorage.getItem(this.storageOptions.persistKey)));
                 }
-                else if (((_a = this.storageOptions.subscriberIDs) !== null && _a !== void 0 ? _a : []).includes(exports.WINDOW.name)) {
+                else if (isSubscriberWindow) {
                     this._state = JSON.parse(exports.WINDOW.localStorage.getItem(this.storageOptions.persistKey));
                 }
                 else {
