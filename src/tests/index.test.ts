@@ -3,6 +3,9 @@ import { EventPayload, StateObject } from '../types';
 
 const testManager = new Spiccato(
     {
+        isNull: null,
+        isUndefined: undefined,
+        nested: {isNull: null, isUndefined: undefined},
         user: {},
         myVal: 1,
         num1: 5,
@@ -88,6 +91,11 @@ describe("State Interactions", () => {
             expect(testManager.state.myVal).toBeDefined();
         })
 
+        test("State can access null/undefined", () => {
+            expect(testManager.state.isNull).toEqual(null);
+            expect(testManager.state.isUndefined).toEqual(undefined);
+        })
+
         test("State is not directly mutable", () => {
             function shouldFail(path: string[], update: any, action: string = "set"): number {
                 let val = testManager.state
@@ -122,13 +130,13 @@ describe("State Interactions", () => {
         })
 
         describe("performanceMode", () => {
-            const performanceManager = new Spiccato({myVal: 1}, {id:"performanceManager", performanceMode: true});
+            const performanceManager = new Spiccato({ myVal: 1 }, { id: "performanceManager", performanceMode: true });
             performanceManager.init();
 
             test("allows normal state operations", () => {
                 performanceManager.setters.setMyVal(100);
                 expect(performanceManager.getters.getMyVal()).toBe(100);
-                performanceManager.setState({myVal: 1});
+                performanceManager.setState({ myVal: 1 });
                 expect(performanceManager.getters.getMyVal()).toBe(1);
 
             })
@@ -155,6 +163,15 @@ describe("State Interactions", () => {
             expect(testManager.getters.getLevel1_level2_level3()).toBe(3);
         })
 
+        test("Getters return null/undefined", () => {
+            const shouldBeNull = testManager.getters.getIsNull();
+            const shouldBeUndefined = testManager.getters.getIsUndefined();
+            expect(shouldBeNull).toEqual(null);
+            expect(shouldBeUndefined).toEqual(undefined);
+            expect(testManager.getters.getNested_isNull()).toEqual(null);
+            expect(testManager.getters.getNested_isUndefined()).toEqual(undefined);
+        })
+
         test("Getters return immutable state", () => {
             function shouldFail() {
                 try {
@@ -162,7 +179,7 @@ describe("State Interactions", () => {
                     level1Obj.level2 = "This shouldn't be allowed";
                     return 0
                 } catch (err: any) {
-                    if(err.name === "ImmutableStateError") {
+                    if (err.name === "ImmutableStateError") {
                         return 1
                     } else {
                         return 0
@@ -177,12 +194,12 @@ describe("State Interactions", () => {
             const val2 = testManager.getStateFromPath(["level1", "level2", "level3"])
             const stillNested = testManager.getStateFromPath(["level1", "level2"])
 
-            function shouldFail(val: {[key: string]: any}) {
+            function shouldFail(val: { [key: string]: any }) {
                 try {
                     val.test = "this should not work"
                     return 0
                 } catch (err: any) {
-                    if(err.name === "ImmutableStateError") {
+                    if (err.name === "ImmutableStateError") {
                         return 1
                     } else {
                         return 0
@@ -204,7 +221,7 @@ describe("State Interactions", () => {
         });
 
         test("setState with functional argument", () => {
-            testManager.setState(function(prevState: { [key: string]: any }) {
+            testManager.setState(function (prevState: { [key: string]: any }) {
                 const myVal = prevState.myVal;
                 return { myVal: myVal + 1 }
             })
@@ -226,6 +243,27 @@ describe("State Interactions", () => {
             testManager.setters.setLevel1_level2Val("world");
             expect(testManager.getters.getLevel1_level2_level3()).toBe(300);
             expect(testManager.getters.getLevel1_level2Val()).toBe("world");
+        })
+
+        test("Setters Can Change null/undefined", () => {
+            testManager.setters.setIsNull("not null");
+            testManager.setters.setIsUndefined("not undefined");
+            testManager.setters.setNested_isNull("not null")
+            testManager.setters.setNested_isUndefined("not undefined")
+            expect(testManager.state.isNull).toBe("not null");
+            expect(testManager.state.isUndefined).toBe("not undefined");
+            expect(testManager.state.nested.isNull).toBe("not null");
+            expect(testManager.state.nested.isUndefined).toBe("not undefined");
+            // return to null/undefined
+            testManager.setters.setIsNull(null);
+            testManager.setters.setIsUndefined(undefined);
+            testManager.setters.setNested_isNull(null);
+            testManager.setters.setNested_isUndefined(undefined);
+            expect(testManager.state.isNull).toBe(null);
+            expect(testManager.state.isUndefined).toBe(undefined);
+            expect(testManager.state.nested.isNull).toBe(null);
+            expect(testManager.state.nested.isUndefined).toBe(undefined);
+
         })
 
     })
@@ -272,6 +310,55 @@ describe("Events", () => {
             expect(payload.path).toEqual(["level1", "level2Val"]);
             expect(payload.value).toBe("Goodbye");
         });
+
+        test("null/undefined Values", async () => {
+            testManager.setters.setIsNull("not null");
+            testManager.setters.setIsUndefined("not undefined");
+            testManager.setters.setNested_isNull("not null");
+            testManager.setters.setNested_isUndefined("not undefined");
+            
+            // top level isNull
+            let payload: EventPayload = await new Promise(resolve => {
+                testManager.addEventListener(["isNull"], (payload: EventPayload) => {
+                    resolve(payload)
+                })
+                testManager.setters.setIsNull(null);
+            })
+            expect(payload.path).toEqual(["isNull"]);
+            expect(payload.value).toEqual(null);
+            
+            // top level isUndefined
+            const payload2: EventPayload = await new Promise(resolve => {
+                testManager.addEventListener(["isUndefined"], (payload: EventPayload) => {
+                    resolve(payload)
+                })
+                testManager.setters.setIsUndefined(undefined);
+            })
+            expect(payload2.path).toEqual(["isUndefined"]);
+            expect(payload2.value).toEqual(undefined);
+        
+            // nested isNull
+            const payload3: EventPayload = await new Promise(resolve => {
+                testManager.addEventListener(["nested", "isNull"], (payload: EventPayload) => {
+                    resolve(payload)
+                })
+                testManager.setState((prevState: StateObject) => {
+                    return {nested: {...prevState.nested, isNull: null}}
+                })
+            })
+            expect(payload3.path).toEqual(["nested", "isNull"]);
+            expect(payload3.value).toEqual(null);
+            
+            // nested level isUndefined
+            const payload4: EventPayload = await new Promise(resolve => {
+                testManager.addEventListener(["nested", "isUndefined"], (payload: EventPayload) => {
+                    resolve(payload)
+                })
+                testManager.setters.setNested_isUndefined(undefined);
+            })
+            expect(payload4.path).toEqual(["nested", "isUndefined"]);
+            expect(payload4.value).toEqual(undefined);
+        })
 
         test("Events Bubble", async () => {
             const payload: EventPayload = await new Promise(resolve => {
