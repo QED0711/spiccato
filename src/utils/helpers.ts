@@ -15,11 +15,11 @@ export const createStateProxy = (state: StateObject, schema: StateSchema): State
 
     const traverse = (schemaVal: any, value: any, container: any) => {
         if (
-            value === null ||
-            value === undefined ||
+            schemaVal === null ||
+            schemaVal === undefined ||
             typeof value !== "object" ||
             Array.isArray(value) ||
-            (typeof schemaVal === "object" && !Array.isArray(schema) && !Object.keys(schemaVal).length) // checks when schema initializes an empty object
+            (typeof schemaVal === "object" && !Array.isArray(schemaVal) && !Object.keys(schemaVal).length) // checks when schema initializes an empty object
         ) {
             return value
         }
