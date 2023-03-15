@@ -101,21 +101,22 @@ export const restoreState = (state, removed) => {
     }
     return restored;
 };
-export const getUpdatedPaths = (update, prevState) => {
+export const getUpdatedPaths = (update, prevState, stateSchema) => {
     const paths = [];
-    const traverse = (updatedVal, prevVal, path = []) => {
+    const traverse = (schemaVal, updatedVal, prevVal, path = []) => {
         if (typeof updatedVal !== "object" || Array.isArray(updatedVal) || !updatedVal) {
             if (updatedVal !== prevVal) {
                 path.length > 0 && paths.push(path);
             }
             return;
         }
-        // path.length > 0 && paths.push(path)
-        for (let key of Object.keys(updatedVal)) {
-            traverse(updatedVal[key], ((!!prevVal && key in prevVal) ? prevVal[key] : null), [...path, key]);
+        if (schemaVal === null || schemaVal === undefined)
+            return;
+        for (let key of Object.keys(schemaVal)) {
+            traverse(schemaVal[key], updatedVal[key], ((!!prevVal && key in prevVal) ? prevVal[key] : null), [...path, key]);
         }
     };
-    traverse(update, prevState);
+    traverse(stateSchema, update, prevState);
     return paths;
 };
 const createParamsString = (params) => {
