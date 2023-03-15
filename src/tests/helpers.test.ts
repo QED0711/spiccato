@@ -23,15 +23,15 @@ describe("Helpers", () => {
     })
 
     test("Traverse Updated Paths", () => {
-        expect(getUpdatedPaths({}, {})).toEqual([]);
-        expect(getUpdatedPaths({ a: 1 }, { a: 1 })).toEqual([]);
-        expect(getUpdatedPaths({ a: 1 }, { a: 2 })).toEqual([["a"]]);
-        expect(getUpdatedPaths({ a: { b: 1 } }, { a: { b: 1 } })).toEqual([]);
-        expect(getUpdatedPaths({ a: { b: 1 } }, { a: { b: 2 } })).toEqual([["a", "b"]]);
-        expect(getUpdatedPaths({ a: { b: 1 } }, { a: { c: 2 } })).toEqual([["a", "b"]]);
-        expect(getUpdatedPaths({ a: { b: { c: 1 } } }, { a: { c: 2 } })).toEqual([["a", "b", "c"]]);
-        expect(getUpdatedPaths({ a: { x: 1 }, b: { y: 1 } }, { a: { x: 2 }, b: { y: 2 } })).toEqual([["a", "x"], ["b", "y"]]);
-        expect(getUpdatedPaths({ a: { b: { c: 1, d: 1 } } }, { a: { b: { c: 1 } } })).toEqual([["a", "b", "d"]]);
+        expect(getUpdatedPaths({}, {}, {})).toEqual([]);
+        expect(getUpdatedPaths({ a: 1 }, { a: 1 }, { a: 1 })).toEqual([]);
+        expect(getUpdatedPaths({ a: 1 }, { a: 2 }, { a: 0 })).toEqual([["a"]]);
+        expect(getUpdatedPaths({ a: { b: 1 } }, { a: { b: 1 } }, { a: { b: 0 } })).toEqual([]);
+        expect(getUpdatedPaths({ a: { b: 1 } }, { a: { b: 2 } }, { a: { b: 0 } })).toEqual([["a", "b"]]);
+        expect(getUpdatedPaths({ a: { b: 1 } }, { a: { c: 2 } }, { a: { c: 0 } })).toEqual([["a", "c"]]);
+        expect(getUpdatedPaths({ a: { b: { c: 1 } } }, { a: { c: 2 } }, { a: { b: { c: 0 } } })).toEqual([["a", "b", "c"]]);
+        expect(getUpdatedPaths({ a: { x: 1 }, b: { y: 1 } }, { a: { x: 2 }, b: { y: 2 } }, { a: { x: 0 }, b: { y: 0 } })).toEqual([["a", "x"], ["b", "y"]]);
+        expect(getUpdatedPaths({ a: { b: { c: 1, d: 1 } } }, { a: { b: { c: 1 } } }, { a: { b: { c: 0 } } })).toEqual([]);
 
     })
 

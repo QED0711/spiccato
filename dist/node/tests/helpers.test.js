@@ -20,15 +20,15 @@ describe("Helpers", () => {
         expect(restored.e).toBe(3);
     });
     test("Traverse Updated Paths", () => {
-        expect((0, helpers_1.getUpdatedPaths)({}, {})).toEqual([]);
-        expect((0, helpers_1.getUpdatedPaths)({ a: 1 }, { a: 1 })).toEqual([]);
-        expect((0, helpers_1.getUpdatedPaths)({ a: 1 }, { a: 2 })).toEqual([["a"]]);
-        expect((0, helpers_1.getUpdatedPaths)({ a: { b: 1 } }, { a: { b: 1 } })).toEqual([]);
-        expect((0, helpers_1.getUpdatedPaths)({ a: { b: 1 } }, { a: { b: 2 } })).toEqual([["a", "b"]]);
-        expect((0, helpers_1.getUpdatedPaths)({ a: { b: 1 } }, { a: { c: 2 } })).toEqual([["a", "b"]]);
-        expect((0, helpers_1.getUpdatedPaths)({ a: { b: { c: 1 } } }, { a: { c: 2 } })).toEqual([["a", "b", "c"]]);
-        expect((0, helpers_1.getUpdatedPaths)({ a: { x: 1 }, b: { y: 1 } }, { a: { x: 2 }, b: { y: 2 } })).toEqual([["a", "x"], ["b", "y"]]);
-        expect((0, helpers_1.getUpdatedPaths)({ a: { b: { c: 1, d: 1 } } }, { a: { b: { c: 1 } } })).toEqual([["a", "b", "d"]]);
+        expect((0, helpers_1.getUpdatedPaths)({}, {}, {})).toEqual([]);
+        expect((0, helpers_1.getUpdatedPaths)({ a: 1 }, { a: 1 }, { a: 1 })).toEqual([]);
+        expect((0, helpers_1.getUpdatedPaths)({ a: 1 }, { a: 2 }, { a: 0 })).toEqual([["a"]]);
+        expect((0, helpers_1.getUpdatedPaths)({ a: { b: 1 } }, { a: { b: 1 } }, { a: { b: 0 } })).toEqual([]);
+        expect((0, helpers_1.getUpdatedPaths)({ a: { b: 1 } }, { a: { b: 2 } }, { a: { b: 0 } })).toEqual([["a", "b"]]);
+        expect((0, helpers_1.getUpdatedPaths)({ a: { b: 1 } }, { a: { c: 2 } }, { a: { c: 0 } })).toEqual([["a", "c"]]);
+        expect((0, helpers_1.getUpdatedPaths)({ a: { b: { c: 1 } } }, { a: { c: 2 } }, { a: { b: { c: 0 } } })).toEqual([["a", "b", "c"]]);
+        expect((0, helpers_1.getUpdatedPaths)({ a: { x: 1 }, b: { y: 1 } }, { a: { x: 2 }, b: { y: 2 } }, { a: { x: 0 }, b: { y: 0 } })).toEqual([["a", "x"], ["b", "y"]]);
+        expect((0, helpers_1.getUpdatedPaths)({ a: { b: { c: 1, d: 1 } } }, { a: { b: { c: 1 } } }, { a: { b: { c: 0 } } })).toEqual([]);
     });
     test("createStateProxy", () => {
         const schema = { a: 0, b: { c: 0 } };

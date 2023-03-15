@@ -220,11 +220,11 @@ export default class Spiccato {
         return new Promise(resolve => {
             let updatedPaths: string[][] = [];
             if (typeof updater === 'object') {
-                updatedPaths = getUpdatedPaths(updater, this._state)
+                updatedPaths = getUpdatedPaths(updater, this._state, this._schema)
                 this._state = { ...this._state, ...updater };
             } else if (typeof updater === 'function') {
                 const updaterValue: StateObject = updater(this.state);
-                updatedPaths = getUpdatedPaths(updaterValue, this._state)
+                updatedPaths = getUpdatedPaths(updaterValue, this._state, this._schema)
                 this._state = { ...this._state, ...updaterValue };
             }
             // const updated = Object.freeze({ ...this._state })

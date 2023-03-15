@@ -118,10 +118,11 @@ export const restoreState = (state: { [key: string]: any }, removed: { [key: str
     return restored
 }
 
-export const getUpdatedPaths = (update: { [key: string]: any }, prevState: { [key: string]: any }): string[][] => {
+export const getUpdatedPaths = (update: StateObject, prevState: StateObject, stateSchema: StateObject): string[][] => {
     const paths: string[][] = [];
 
-    const traverse = (updatedVal: any, prevVal: any, path: string[] = []) => {
+    const traverse = (schemaVal: any, updatedVal: any, prevVal: any, path: string[] = []) => {
+
         if (typeof updatedVal !== "object" || Array.isArray(updatedVal) || !updatedVal) {
             if (updatedVal !== prevVal) {
                 path.length > 0 && paths.push(path);
@@ -129,13 +130,14 @@ export const getUpdatedPaths = (update: { [key: string]: any }, prevState: { [ke
             return
         }
 
-        // path.length > 0 && paths.push(path)
-        for (let key of Object.keys(updatedVal)) {
-            traverse(updatedVal[key], ((!!prevVal && key in prevVal) ? prevVal[key] : null), [...path, key])
+        if (schemaVal === null || schemaVal === undefined) return;
+
+        for (let key of Object.keys(schemaVal)) {
+            traverse(schemaVal[key], updatedVal[key], ((!!prevVal && key in prevVal) ? prevVal[key] : null), [...path, key])
         }
     }
 
-    traverse(update, prevState)
+    traverse(stateSchema, update, prevState)
     return paths;
 }
 
