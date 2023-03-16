@@ -122,18 +122,27 @@ export const getUpdatedPaths = (update: StateObject, prevState: StateObject, sta
     const paths: string[][] = [];
 
     const traverse = (schemaVal: any, updatedVal: any, prevVal: any, path: string[] = []) => {
-
-        if (typeof updatedVal !== "object" || Array.isArray(updatedVal) || !updatedVal) {
+        // TODO: Need a way of checking failing test case
+        if (
+            typeof updatedVal !== "object" ||
+            Array.isArray(updatedVal) ||
+            !updatedVal ||
+            (schemaVal === null && (updatedVal !== schemaVal && updatedVal !== undefined)) // allows a null schema val and an updated val that is an object
+        ) {
             if (updatedVal !== prevVal) {
                 path.length > 0 && paths.push(path);
             }
             return
         }
 
-        if (schemaVal === null || schemaVal === undefined) return;
+        if (schemaVal === null || schemaVal === undefined) return; // don't traverse objects not fully defined in the schema
 
         for (let key of Object.keys(schemaVal)) {
-            traverse(schemaVal[key], updatedVal[key], ((!!prevVal && key in prevVal) ? prevVal[key] : null), [...path, key])
+            if(key in updatedVal) { // only continue check if the key in question was explicitly set in the update
+                traverse(schemaVal[key], updatedVal[key], ((!!prevVal && key in prevVal) ? prevVal[key] : null), [...path, key])
+            } else {
+                console.log(path, key, update)
+            }
         }
     }
 

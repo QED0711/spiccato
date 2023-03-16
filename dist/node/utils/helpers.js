@@ -113,16 +113,25 @@ exports.restoreState = restoreState;
 const getUpdatedPaths = (update, prevState, stateSchema) => {
     const paths = [];
     const traverse = (schemaVal, updatedVal, prevVal, path = []) => {
-        if (typeof updatedVal !== "object" || Array.isArray(updatedVal) || !updatedVal) {
+        if (typeof updatedVal !== "object" ||
+            Array.isArray(updatedVal) ||
+            !updatedVal ||
+            (schemaVal === null && (updatedVal !== schemaVal && updatedVal !== undefined)) // allows a null schema val and an updated val that is an object
+        ) {
             if (updatedVal !== prevVal) {
                 path.length > 0 && paths.push(path);
             }
             return;
         }
         if (schemaVal === null || schemaVal === undefined)
-            return;
+            return; // don't traverse objects not fully defined in the schema
         for (let key of Object.keys(schemaVal)) {
-            traverse(schemaVal[key], updatedVal[key], ((!!prevVal && key in prevVal) ? prevVal[key] : null), [...path, key]);
+            if (key in updatedVal) { // only continue check if the key in question was explicitly set in the update
+                traverse(schemaVal[key], updatedVal[key], ((!!prevVal && key in prevVal) ? prevVal[key] : null), [...path, key]);
+            }
+            else {
+                console.log(path, key, update);
+            }
         }
     };
     traverse(stateSchema, update, prevState);
