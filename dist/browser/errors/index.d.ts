@@ -10,3 +10,6 @@ export declare class ReservedStateKeyError extends Error {
 export declare class ManagerNotFoundError extends Error {
     constructor(message: string);
 }
+export declare class InvalidStateSchemaError extends Error {
+    constructor(message: string);
+}

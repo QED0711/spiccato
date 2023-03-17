@@ -22,6 +22,8 @@ export declare const restoreState: (state: {
     [x: string]: any;
 };
 export declare const getUpdatedPaths: (update: StateObject, prevState: StateObject, stateSchema: StateObject) => string[][];
+export declare function hasCircularReference(stateSchema: StateSchema): boolean;
+export declare function stateSchemaHasFunctions(stateSchema: StateSchema): boolean;
 export declare class WindowManager {
     private subscribers;
     window: {

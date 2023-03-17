@@ -122,7 +122,6 @@ export const getUpdatedPaths = (update: StateObject, prevState: StateObject, sta
     const paths: string[][] = [];
 
     const traverse = (schemaVal: any, updatedVal: any, prevVal: any, path: string[] = []) => {
-        // TODO: Need a way of checking failing test case
         if (
             typeof updatedVal !== "object" ||
             Array.isArray(updatedVal) ||
@@ -138,10 +137,16 @@ export const getUpdatedPaths = (update: StateObject, prevState: StateObject, sta
         if (schemaVal === null || schemaVal === undefined) return; // don't traverse objects not fully defined in the schema
 
         for (let key of Object.keys(schemaVal)) {
-            if(key in updatedVal) { // only continue check if the key in question was explicitly set in the update
-                traverse(schemaVal[key], updatedVal[key], ((!!prevVal && key in prevVal) ? prevVal[key] : null), [...path, key])
-            } else {
-                console.log(path, key, update)
+            if (
+                key in updatedVal ||
+                key in prevVal
+            ) { // only continue check if the key in question was explicitly set in the update
+                traverse(
+                    schemaVal[key],
+                    ((!!updatedVal && key in updatedVal) ? updatedVal[key] : null),
+                    ((!!prevVal && key in prevVal) ? prevVal[key] : null),
+                    [...path, key]
+                )
             }
         }
     }
@@ -150,6 +155,26 @@ export const getUpdatedPaths = (update: StateObject, prevState: StateObject, sta
     return paths;
 }
 
+export function hasCircularReference(stateSchema: StateSchema): boolean {
+    try {
+        JSON.stringify(stateSchema)
+    } catch (err) {
+        if (!!err?.toString().match(/circular/gi)) return true;
+    }
+    return false
+}
+
+export function stateSchemaHasFunctions(stateSchema: StateSchema): boolean {
+    for (const key in stateSchema) {
+        if (typeof stateSchema[key] === "function") return true;
+        if (typeof stateSchema[key] === "object" && !Array.isArray(stateSchema[key]) && stateSchema[key] !== null) {
+            if (stateSchemaHasFunctions(stateSchema[key] as StateSchema)) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
 
 const createParamsString = (params: { [key: string]: any }): string => {
     let str = ""

@@ -8,8 +8,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 /************************************* IMPORTS **************************************/
-import { formatAccessor, getNestedRoutes, nestedSetterFactory, sanitizeState, restoreState, WindowManager, _localStorage, getUpdatedPaths, createStateProxy, } from './utils/helpers';
-import { ProtectedNamespaceError, ReservedStateKeyError } from './errors';
+import { formatAccessor, getNestedRoutes, nestedSetterFactory, sanitizeState, restoreState, WindowManager, _localStorage, getUpdatedPaths, createStateProxy, hasCircularReference, stateSchemaHasFunctions, } from './utils/helpers';
+import { InvalidStateSchemaError, ProtectedNamespaceError, ReservedStateKeyError } from './errors';
 /************************************* DEFAULTS **************************************/
 const DEFAULT_INIT_OPTIONS = {
     id: "",
@@ -71,6 +71,12 @@ export default class Spiccato {
     }
     constructor(stateSchema = {}, options) {
         this.initOptions = Object.assign(Object.assign({}, DEFAULT_INIT_OPTIONS), options);
+        if (hasCircularReference(stateSchema)) {
+            throw new InvalidStateSchemaError("State Schema has a circular reference. Spiccato does not allow circular references");
+        }
+        else if (stateSchemaHasFunctions(stateSchema)) {
+            throw new InvalidStateSchemaError("State Schema has `functions` for some of its values. Spiccato does not allow function values in the state schema. Consider using the `addCustomMethods` or `addNamespacedMethods` functionality instead.");
+        }
         this._schema = Object.freeze(Object.assign({}, stateSchema));
         this._state = stateSchema;
         const stateKeyViolations = RESERVED_STATE_KEYS.filter(k => Object.keys(this._state).includes(k));
@@ -127,7 +133,7 @@ export default class Spiccato {
                     this.getters[formatAccessor(path, "get")] = () => {
                         let value = this._state[path[0]];
                         for (let i = 1; i < path.length; i++) {
-                            value = value[path[i]];
+                            value = value === null || value === void 0 ? void 0 : value[path[i]];
                         }
                         return value;
                     };

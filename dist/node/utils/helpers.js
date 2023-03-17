@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports._localStorage = exports.WindowManager = exports.getUpdatedPaths = exports.restoreState = exports.sanitizeState = exports.nestedSetterFactory = exports.getNestedRoutes = exports.formatAccessor = exports.createStateProxy = void 0;
+exports._localStorage = exports.WindowManager = exports.stateSchemaHasFunctions = exports.hasCircularReference = exports.getUpdatedPaths = exports.restoreState = exports.sanitizeState = exports.nestedSetterFactory = exports.getNestedRoutes = exports.formatAccessor = exports.createStateProxy = void 0;
 const errors_1 = require("../errors");
 const proxyHandlers = {
     set(obj, property, value) {
@@ -126,11 +126,9 @@ const getUpdatedPaths = (update, prevState, stateSchema) => {
         if (schemaVal === null || schemaVal === undefined)
             return; // don't traverse objects not fully defined in the schema
         for (let key of Object.keys(schemaVal)) {
-            if (key in updatedVal) { // only continue check if the key in question was explicitly set in the update
-                traverse(schemaVal[key], updatedVal[key], ((!!prevVal && key in prevVal) ? prevVal[key] : null), [...path, key]);
-            }
-            else {
-                console.log(path, key, update);
+            if (key in updatedVal ||
+                key in prevVal) { // only continue check if the key in question was explicitly set in the update
+                traverse(schemaVal[key], ((!!updatedVal && key in updatedVal) ? updatedVal[key] : null), ((!!prevVal && key in prevVal) ? prevVal[key] : null), [...path, key]);
             }
         }
     };
@@ -138,6 +136,30 @@ const getUpdatedPaths = (update, prevState, stateSchema) => {
     return paths;
 };
 exports.getUpdatedPaths = getUpdatedPaths;
+function hasCircularReference(stateSchema) {
+    try {
+        JSON.stringify(stateSchema);
+    }
+    catch (err) {
+        if (!!(err === null || err === void 0 ? void 0 : err.toString().match(/circular/gi)))
+            return true;
+    }
+    return false;
+}
+exports.hasCircularReference = hasCircularReference;
+function stateSchemaHasFunctions(stateSchema) {
+    for (const key in stateSchema) {
+        if (typeof stateSchema[key] === "function")
+            return true;
+        if (typeof stateSchema[key] === "object" && !Array.isArray(stateSchema[key]) && stateSchema[key] !== null) {
+            if (stateSchemaHasFunctions(stateSchema[key])) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+exports.stateSchemaHasFunctions = stateSchemaHasFunctions;
 const createParamsString = (params) => {
     let str = "";
     for (let param of Object.keys(params)) {
