@@ -1,6 +1,6 @@
 /************************************* IMPORTS **************************************/
 import { WindowManager } from './utils/helpers';
-import { StateObject, StateUpdateCallback, InitializationOptions, StorageOptions, managerID } from './types/index';
+import { StateObject, StateUpdateCallback, InitializationOptions, StorageOptions, managerID, StateSchema } from './types/index';
 export declare let WINDOW: {
     [key: string]: any;
 };
@@ -25,7 +25,7 @@ export default class Spiccato {
     windowManager: (WindowManager | null);
     private _eventListeners;
     [key: string]: any;
-    constructor(stateSchema: StateObject | undefined, options: InitializationOptions);
+    constructor(stateSchema: StateSchema | undefined, options: InitializationOptions);
     get state(): StateObject;
     get id(): managerID;
     init(): void;

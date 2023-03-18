@@ -67,6 +67,34 @@ describe("Initialization:", () => {
     test("Init", () => {
         expect(testManager).toBeInstanceOf(Spiccato);
     });
+    test("Valid StateSchema", () => {
+        try {
+            const a = { a: 1 };
+            const b = a;
+            a.b = b;
+            new Spiccato(a, { id: "invalid" });
+            expect(true).toBe(false);
+        }
+        catch (err) {
+            expect(err.name).toBe("InvalidStateSchemaError");
+        }
+        try {
+            const a = { a: function () { } };
+            new Spiccato(a, { id: "invalid2" });
+            expect(true).toBe(false);
+        }
+        catch (err) {
+            expect(err.name).toBe("InvalidStateSchemaError");
+        }
+        try {
+            const a = { a: 1 };
+            new Spiccato(a, { id: "valid" });
+            expect(true).toBe(true);
+        }
+        catch (err) {
+            expect(err.name).toBe("InvalidStateSchemaError");
+        }
+    });
     test("getManagerByID", () => {
         expect(testManager).toBe(Spiccato.getManagerById("TEST"));
     });

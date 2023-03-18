@@ -103,22 +103,51 @@ export const restoreState = (state, removed) => {
 };
 export const getUpdatedPaths = (update, prevState, stateSchema) => {
     const paths = [];
-    const traverse = (schemaVal, updatedVal, prevVal, path = []) => {
-        if (typeof updatedVal !== "object" || Array.isArray(updatedVal) || !updatedVal) {
+    const traverse = (schemaVal, updatedVal, prevVal, path = [], level = 0) => {
+        if (typeof updatedVal !== "object" ||
+            Array.isArray(updatedVal) ||
+            !updatedVal ||
+            (schemaVal === null && (updatedVal !== schemaVal && updatedVal !== undefined)) // allows a null schema val and an updated val that is an object
+        ) {
             if (updatedVal !== prevVal) {
                 path.length > 0 && paths.push(path);
             }
             return;
         }
         if (schemaVal === null || schemaVal === undefined)
-            return;
+            return; // don't traverse objects not fully defined in the schema
         for (let key of Object.keys(schemaVal)) {
-            traverse(schemaVal[key], updatedVal[key], ((!!prevVal && key in prevVal) ? prevVal[key] : null), [...path, key]);
+            if (key in updatedVal
+                || (key in prevVal && level > 0)) { // only continue check if the key in question was explicitly set in the update OR it is in a nested object that has changed (this is what the `level` checks)
+                traverse(schemaVal[key], ((!!updatedVal && key in updatedVal) ? updatedVal[key] : null), ((!!prevVal && key in prevVal) ? prevVal[key] : null), [...path, key], level + 1);
+            }
         }
     };
     traverse(stateSchema, update, prevState);
     return paths;
 };
+export function hasCircularReference(stateSchema) {
+    try {
+        JSON.stringify(stateSchema);
+    }
+    catch (err) {
+        if (!!(err === null || err === void 0 ? void 0 : err.toString().match(/circular/gi)))
+            return true;
+    }
+    return false;
+}
+export function stateSchemaHasFunctions(stateSchema) {
+    for (const key in stateSchema) {
+        if (typeof stateSchema[key] === "function")
+            return true;
+        if (typeof stateSchema[key] === "object" && !Array.isArray(stateSchema[key]) && stateSchema[key] !== null) {
+            if (stateSchemaHasFunctions(stateSchema[key])) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
 const createParamsString = (params) => {
     let str = "";
     for (let param of Object.keys(params)) {

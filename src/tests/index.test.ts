@@ -1,5 +1,5 @@
 import Spiccato, { WINDOW } from '../index'
-import { EventPayload, StateObject } from '../types';
+import { EventPayload, StateObject, StateSchema } from '../types';
 
 const testManager = new Spiccato(
     {
@@ -71,6 +71,34 @@ describe("Initialization:", () => {
     test("Init", () => {
         expect(testManager).toBeInstanceOf(Spiccato);
     });
+
+    test("Valid StateSchema", () => {
+        try{
+            const a: StateSchema = {a: 1};
+            const b = a;
+            a.b = b;
+            new Spiccato(a, {id: "invalid"});
+            expect(true).toBe(false);
+        } catch(err){
+            expect((err as Error).name).toBe("InvalidStateSchemaError")
+        }
+
+        try{
+            const a: StateSchema = {a: function(){}};
+            new Spiccato(a, {id: "invalid2"});
+            expect(true).toBe(false);
+        } catch(err){
+            expect((err as Error).name).toBe("InvalidStateSchemaError")
+        }
+
+        try{
+            const a: StateSchema = {a: 1};
+            new Spiccato(a, {id: "valid"});
+            expect(true).toBe(true);
+        } catch(err){
+            expect((err as Error).name).toBe("InvalidStateSchemaError")
+        }
+    })
 
     test("getManagerByID", () => {
         expect(testManager).toBe(Spiccato.getManagerById("TEST"));

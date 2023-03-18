@@ -9,6 +9,8 @@ import {
     _localStorage,
     getUpdatedPaths,
     createStateProxy,
+    hasCircularReference,
+    stateSchemaHasFunctions,
 } from './utils/helpers'
 
 import {
@@ -20,7 +22,7 @@ import {
     managerID,
     StateSchema
 } from './types/index'
-import { ProtectedNamespaceError, ReservedStateKeyError } from './errors';
+import { InvalidStateSchemaError, ProtectedNamespaceError, ReservedStateKeyError } from './errors';
 
 /************************************* DEFAULTS **************************************/
 const DEFAULT_INIT_OPTIONS: InitializationOptions = {
@@ -104,8 +106,15 @@ export default class Spiccato {
     private _eventListeners: { [key: string]: Function[] }
     [key: string]: any; /* for runtime added properties */
 
-    constructor(stateSchema: StateObject = {}, options: InitializationOptions) {
+    constructor(stateSchema: StateSchema = {}, options: InitializationOptions) {
         this.initOptions = { ...DEFAULT_INIT_OPTIONS, ...options };
+
+        if(hasCircularReference(stateSchema)){
+            throw new InvalidStateSchemaError("State Schema has a circular reference. Spiccato does not allow circular references")
+        } else if (stateSchemaHasFunctions(stateSchema)) {
+            throw new InvalidStateSchemaError("State Schema has `functions` for some of its values. Spiccato does not allow function values in the state schema. Consider using the `addCustomMethods` or `addNamespacedMethods` functionality instead.")
+        }
+
         this._schema = Object.freeze({...stateSchema})
         this._state = stateSchema;
 
@@ -177,7 +186,7 @@ export default class Spiccato {
                     this.getters[formatAccessor(path, "get")] = () => {
                         let value = this._state[path[0]];
                         for (let i = 1; i < path.length; i++) {
-                            value = value[path[i]];
+                            value = value?.[path[i]];
                         }
                         return value;
                     }
@@ -227,7 +236,7 @@ export default class Spiccato {
                 updatedPaths = getUpdatedPaths(updaterValue, this._state, this._schema)
                 this._state = { ...this._state, ...updaterValue };
             }
-            // const updated = Object.freeze({ ...this._state })
+            
             const updated = this.initOptions.performanceMode ? this._state : createStateProxy(this._state, this._schema);
             resolve(updated);
             callback?.(updated);
