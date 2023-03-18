@@ -114,7 +114,7 @@ export default class Spiccato {
         } else if (stateSchemaHasFunctions(stateSchema)) {
             throw new InvalidStateSchemaError("State Schema has `functions` for some of its values. Spiccato does not allow function values in the state schema. Consider using the `addCustomMethods` or `addNamespacedMethods` functionality instead.")
         }
-        
+
         this._schema = Object.freeze({...stateSchema})
         this._state = stateSchema;
 
@@ -236,7 +236,7 @@ export default class Spiccato {
                 updatedPaths = getUpdatedPaths(updaterValue, this._state, this._schema)
                 this._state = { ...this._state, ...updaterValue };
             }
-            // const updated = Object.freeze({ ...this._state })
+            
             const updated = this.initOptions.performanceMode ? this._state : createStateProxy(this._state, this._schema);
             resolve(updated);
             callback?.(updated);

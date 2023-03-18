@@ -185,7 +185,6 @@ class Spiccato {
                 updatedPaths = (0, helpers_1.getUpdatedPaths)(updaterValue, this._state, this._schema);
                 this._state = Object.assign(Object.assign({}, this._state), updaterValue);
             }
-            // const updated = Object.freeze({ ...this._state })
             const updated = this.initOptions.performanceMode ? this._state : (0, helpers_1.createStateProxy)(this._state, this._schema);
             resolve(updated);
             callback === null || callback === void 0 ? void 0 : callback(updated);

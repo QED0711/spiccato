@@ -121,7 +121,7 @@ export const restoreState = (state: { [key: string]: any }, removed: { [key: str
 export const getUpdatedPaths = (update: StateObject, prevState: StateObject, stateSchema: StateObject): string[][] => {
     const paths: string[][] = [];
 
-    const traverse = (schemaVal: any, updatedVal: any, prevVal: any, path: string[] = []) => {
+    const traverse = (schemaVal: any, updatedVal: any, prevVal: any, path: string[] = [], level: number = 0) => {
         if (
             typeof updatedVal !== "object" ||
             Array.isArray(updatedVal) ||
@@ -135,17 +135,18 @@ export const getUpdatedPaths = (update: StateObject, prevState: StateObject, sta
         }
 
         if (schemaVal === null || schemaVal === undefined) return; // don't traverse objects not fully defined in the schema
-
+        
         for (let key of Object.keys(schemaVal)) {
             if (
-                key in updatedVal ||
-                key in prevVal
-            ) { // only continue check if the key in question was explicitly set in the update
+                key in updatedVal
+                || (key in prevVal && level > 0)
+            ) { // only continue check if the key in question was explicitly set in the update OR it is in a nested object that has changed (this is what the `level` checks)
                 traverse(
                     schemaVal[key],
                     ((!!updatedVal && key in updatedVal) ? updatedVal[key] : null),
                     ((!!prevVal && key in prevVal) ? prevVal[key] : null),
-                    [...path, key]
+                    [...path, key],
+                    level+1
                 )
             }
         }
