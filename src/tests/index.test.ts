@@ -157,8 +157,8 @@ describe("State Interactions", () => {
             expect(shouldFail(["arr", "0"], "This should work")).toBe(1); // only object properties are protected from mutation. Arrays within a schema are mutatable
         })
 
-        describe("performanceMode", () => {
-            const performanceManager = new Spiccato({ myVal: 1 }, { id: "performanceManager", performanceMode: true });
+        describe("Disabled write protection", () => {
+            const performanceManager = new Spiccato({ myVal: 1 }, { id: "performanceManager", enableWriteProtection: false });
             performanceManager.init();
 
             test("allows normal state operations", () => {

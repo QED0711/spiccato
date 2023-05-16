@@ -18,7 +18,7 @@ const DEFAULT_INIT_OPTIONS = {
     nestedGetters: true,
     nestedSetters: true,
     debug: false,
-    performanceMode: false,
+    enableWriteProtection: true,
 };
 const DEFAULT_STORAGE_OPTIONS = {
     persistKey: "",
@@ -96,7 +96,7 @@ export default class Spiccato {
         this.constructor.registerManager(this);
     }
     get state() {
-        return this.initOptions.performanceMode ? this._state : createStateProxy(this._state, this._schema);
+        return this.initOptions.enableWriteProtection ? createStateProxy(this._state, this._schema) : this._state;
     }
     get id() {
         return this.initOptions.id;
@@ -183,7 +183,7 @@ export default class Spiccato {
                 updatedPaths = getUpdatedPaths(updaterValue, this._state, this._schema);
                 this._state = Object.assign(Object.assign({}, this._state), updaterValue);
             }
-            const updated = this.initOptions.performanceMode ? this._state : createStateProxy(this._state, this._schema);
+            const updated = this.initOptions.enableWriteProtection ? createStateProxy(this._state, this._schema) : this._state;
             resolve(updated);
             callback === null || callback === void 0 ? void 0 : callback(updated);
             this.emitEvent("update", { state: updated });
