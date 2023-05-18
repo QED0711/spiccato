@@ -22,13 +22,20 @@ export class ReservedStateKeyError extends Error {
 export class ManagerNotFoundError extends Error {
     constructor(message: string){
         super(message);
-        this.name = "ManagerNotFoundError"
+        this.name = "ManagerNotFoundError";
     }
 }
 
 export class InvalidStateSchemaError extends Error {
     constructor(message: string) {
         super(message);
-        this.name = "InvalidStateSchemaError"
+        this.name = "InvalidStateSchemaError";
+    }
+}
+
+export class InvalidStateUpdateError extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = "InvalidStateUpdateError";
     }
 }

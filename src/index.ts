@@ -22,7 +22,7 @@ import {
     managerID,
     StateSchema
 } from './types/index'
-import { InvalidStateSchemaError, ProtectedNamespaceError, ReservedStateKeyError } from './errors';
+import { InvalidStateSchemaError, ProtectedNamespaceError, ReservedStateKeyError, InvalidStateUpdateError } from './errors';
 
 /************************************* DEFAULTS **************************************/
 const DEFAULT_INIT_OPTIONS: InitializationOptions = {
@@ -230,9 +230,17 @@ export default class Spiccato {
             let updatedPaths: string[][] = [];
             if (typeof updater === 'object') {
                 updatedPaths = getUpdatedPaths(updater, this._state, this._schema)
+                if (Array.isArray(updater)) {
+                    throw new InvalidStateUpdateError("Update value passed to `setState` is an array - must be an object or a function that returns an object, not an array");
+                }
                 this._state = { ...this._state, ...updater };
             } else if (typeof updater === 'function') {
                 const updaterValue: StateObject = updater(this.state);
+                if (typeof updaterValue !== "object") {
+                    throw new InvalidStateUpdateError("Functional update did not return an object. The function passed to `setState` must return an object");
+                } else if (Array.isArray(updaterValue)) {
+                    throw new InvalidStateUpdateError("Functional update returned an array. The function passed to `setState` must return an object, not an array");
+                }
                 updatedPaths = getUpdatedPaths(updaterValue, this._state, this._schema)
                 this._state = { ...this._state, ...updaterValue };
             }
