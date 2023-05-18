@@ -167,7 +167,7 @@ manager.setState({myVal: 2}, (updatedState) => {
 | nestedGetters | boolean | true | Whether or not to dynamically generate nested getter methods based on the initialized state schema |
 | nestedSetters | boolean | true | Whether or not to dynamically generate nested setter methods based on the initialized state schema |
 | debug | boolean | false | Whether or not to log out debug messages when utilizing the initialized manager |
-| performanceMode | boolean | false |**WARNING**: *Activating this removes safeguards that disallow direct state mutation. Use only when absolutely necessary.* When active, makes state updates more performant by removing a recursive copying operation that ensures directly accessed state is immutable.  |
+| enableWriteProtection | boolean | true |**WARNING**: *Disabling this removes safeguards that disallow direct state mutation. Disable only when absolutely necessary.* When active, only allows users access to an immutable state object. There is a performance cost that comes from a recursive copying operation to create this immutable object. If performance is a concern, you may consider disabling this safeguard.  |
 
 ---
 ### Project Wide State Management
@@ -230,21 +230,24 @@ const stateSchema = {
 ---
 ### State Accessors
 #### Immutable Access
-Each `spiccato` instance has a `state` property. You can access values through this property, but you cannot modify any value directly from this property. The exception to this is when the manager has been placed in `performanceMode`, which removes a safeguard preventing direct mutability in favor of more performant state access.  
+Each `spiccato` instance has a `state` property. You can access values through this property, but by default, you cannot modify any value directly from this property. This safeguard is put in place when setting the initialization property, `enableWriteProtection`, to true. 
+
+There is a performance cost associated with write protecting your state in this way. If performance is a concern, you may consider disabling this feature. Note that if you disable write protection, any direct mutations will work, but event emitters associated with that state will not fire. This uncoupling of state updates can lead to unexpected and difficult to debug behavior. It is recommended to leave write protection enabled unless absolutely necessary.
+
+A compromise between safety and performance is to enable write protection in development mode to ensure all state updates are handled appropriately and predictably, and then disable it in production. The precise implementation of this logic will change depending on your environment, but it could look something like this:
 
 ```javascript
 const manager = Spiccato({myVal: 0}, {id: "immutability"})
-manager.init()
+manager.init({ enableWriteProtection: process.env.NODE_ENV === "development"})
 
 manager.state.myVal // => 0
 
-manager.state.myVal = 1 // This will throw an error
+manager.state.myVal = 1 // This will throw an error in development mode
 ```
 #### Dynamic Accessors
 An alternative way to access and set state values is through dynamically generated accessors. 
 
 The default initialization behavior of a `spiccato` instance automatically creates accessor methods (getters and setters) for the each parameter in the associated state. In the case of nested values, nested accessors are also created. This behavior can be modified at the time of initialization. See [Initialization Options](#initialization-options) for more information on how to modify this behavior.
-
 For example, take the following state schema and initialization:
 ```javascript
 const stateSchema = {
@@ -530,7 +533,7 @@ import {/* SOME_ERROR_TYPE */} from 'spiccato/errors';
 | Error | Reason | Remediation |
 | --- | --- | --- |
 | ProtectedNamespaceError | The user has added a namespaced method that overwrites an existing `spiccato` property (e.g. state, getters, setters, etc.) | Select a different namespace for your namespaced method |
-| ImmutableStateError | The user has attempted to modify state directly without a setter. This error is not thrown when in `performanceMode`. | Use `setState`, or a setter (dynamic or custom) to modify state. Alternatively, set `performanceMode` in initialization options to true (*dangerous!!!*). |
+| ImmutableStateError | The user has attempted to modify state directly without a setter. This error is not thrown when `enableWriteProtection` is false. | Use `setState`, or a setter (dynamic or custom) to modify state. Alternatively, set `enableWriteProtection` in initialization options to false. |
 | ReservedStateKeyError | The user has supplied a key in state that is reserved by `spiccato` to perform additional functionality. | Select a different key name for the indicated state resource |
 | ManagerNotFoundError | The class method, `getManagerByID`, returns `undefined`. This error must be thrown manually. | Check that the ID supplied is associated with an existing manager ID. |
 

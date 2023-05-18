@@ -32,7 +32,7 @@ const DEFAULT_INIT_OPTIONS: InitializationOptions = {
     nestedGetters: true,
     nestedSetters: true,
     debug: false,
-    performanceMode: false,
+    enableWriteProtection: true,
 }
 
 const DEFAULT_STORAGE_OPTIONS: StorageOptions = {
@@ -141,7 +141,7 @@ export default class Spiccato {
     }
 
     public get state(): StateObject {
-        return this.initOptions.performanceMode ? this._state : createStateProxy(this._state, this._schema);
+        return this.initOptions.enableWriteProtection ? createStateProxy(this._state, this._schema) : this._state ;
     }
 
     public get id(): managerID {
@@ -237,7 +237,7 @@ export default class Spiccato {
                 this._state = { ...this._state, ...updaterValue };
             }
             
-            const updated = this.initOptions.performanceMode ? this._state : createStateProxy(this._state, this._schema);
+            const updated = this.initOptions.enableWriteProtection ? createStateProxy(this._state, this._schema) : this._state;
             resolve(updated);
             callback?.(updated);
             this.emitEvent("update", {state: updated})
