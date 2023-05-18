@@ -32,7 +32,7 @@ export default class Spiccato {
     private _applyState;
     private _persistToLocalStorage;
     getStateFromPath(path: string | string[]): any | undefined;
-    setState(updater: StateObject | Function, callback?: StateUpdateCallback | null): Promise<StateObject>;
+    setState(updater: StateObject | Function, callback?: StateUpdateCallback | null, updatedPaths?: string[][] | null): Promise<StateObject>;
     addCustomGetters(getters: {
         [key: string]: Function;
     }): void;

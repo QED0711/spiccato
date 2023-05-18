@@ -28,3 +28,9 @@ export class InvalidStateSchemaError extends Error {
         this.name = "InvalidStateSchemaError";
     }
 }
+export class InvalidStateUpdateError extends Error {
+    constructor(message) {
+        super(message);
+        this.name = "InvalidStateUpdateError";
+    }
+}
