@@ -120,7 +120,7 @@ class Spiccato {
             if (this.initOptions.dynamicSetters) {
                 this.setters[(0, helpers_1.formatAccessor)(k, "set")] = (v, callback) => {
                     return new Promise((resolve) => __awaiter(this, void 0, void 0, function* () {
-                        resolve(yield this.setState({ [k]: v }, callback));
+                        resolve(yield this.setState({ [k]: v }, callback, [[k]]));
                     }));
                 };
             }
@@ -144,7 +144,7 @@ class Spiccato {
                     this.setters[(0, helpers_1.formatAccessor)(path, "set")] = (v, callback) => {
                         const updatedState = (0, helpers_1.nestedSetterFactory)(this._state, path)(v);
                         return new Promise((resolve) => __awaiter(this, void 0, void 0, function* () {
-                            resolve(yield this.setState(updatedState, callback));
+                            resolve(yield this.setState(updatedState, callback, [path]));
                         }));
                     };
                 }
@@ -173,17 +173,29 @@ class Spiccato {
             return val;
         }
     }
-    setState(updater, callback = null) {
+    setState(updater, callback = null, updatedPaths = null) {
         return new Promise(resolve => {
-            let updatedPaths = [];
             if (typeof updater === 'object') {
-                updatedPaths = (0, helpers_1.getUpdatedPaths)(updater, this._state, this._schema);
+                updatedPaths !== null && updatedPaths !== void 0 ? updatedPaths : (updatedPaths = (0, helpers_1.getUpdatedPaths)(updater, this._state, this._schema));
+                if (Array.isArray(updater)) {
+                    throw new errors_1.InvalidStateUpdateError("Update value passed to `setState` is an array - must be an object or a function that returns an object, not an array");
+                }
                 this._state = Object.assign(Object.assign({}, this._state), updater);
             }
             else if (typeof updater === 'function') {
                 const updaterValue = updater(this.state);
-                updatedPaths = (0, helpers_1.getUpdatedPaths)(updaterValue, this._state, this._schema);
+                if (typeof updaterValue !== "object") {
+                    throw new errors_1.InvalidStateUpdateError("Functional update did not return an object. The function passed to `setState` must return an object");
+                }
+                else if (Array.isArray(updaterValue)) {
+                    throw new errors_1.InvalidStateUpdateError("Functional update returned an array. The function passed to `setState` must return an object, not an array");
+                }
+                updatedPaths !== null && updatedPaths !== void 0 ? updatedPaths : (updatedPaths = (0, helpers_1.getUpdatedPaths)(updaterValue, this._state, this._schema));
                 this._state = Object.assign(Object.assign({}, this._state), updaterValue);
+            }
+            else {
+                // if state update could not be performed, reset updatedPaths to and empty array
+                updatedPaths = [];
             }
             const updated = this.initOptions.enableWriteProtection ? (0, helpers_1.createStateProxy)(this._state, this._schema) : this._state;
             resolve(updated);

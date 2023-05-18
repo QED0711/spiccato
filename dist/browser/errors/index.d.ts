@@ -13,3 +13,6 @@ export declare class ManagerNotFoundError extends Error {
 export declare class InvalidStateSchemaError extends Error {
     constructor(message: string);
 }
+export declare class InvalidStateUpdateError extends Error {
+    constructor(message: string);
+}

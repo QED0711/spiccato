@@ -534,6 +534,7 @@ import {/* SOME_ERROR_TYPE */} from 'spiccato/errors';
 | --- | --- | --- |
 | ProtectedNamespaceError | The user has added a namespaced method that overwrites an existing `spiccato` property (e.g. state, getters, setters, etc.) | Select a different namespace for your namespaced method |
 | ImmutableStateError | The user has attempted to modify state directly without a setter. This error is not thrown when `enableWriteProtection` is false. | Use `setState`, or a setter (dynamic or custom) to modify state. Alternatively, set `enableWriteProtection` in initialization options to false. |
+| InvalidStateUpdateError | The user has provided an invalid value for the first argument to `setState` | Ensure that all calls to `setState` receive either an object or a function that returns an object as the first argument. |
 | ReservedStateKeyError | The user has supplied a key in state that is reserved by `spiccato` to perform additional functionality. | Select a different key name for the indicated state resource |
 | ManagerNotFoundError | The class method, `getManagerByID`, returns `undefined`. This error must be thrown manually. | Check that the ID supplied is associated with an existing manager ID. |
 

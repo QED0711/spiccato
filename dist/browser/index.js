@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 /************************************* IMPORTS **************************************/
 import { formatAccessor, getNestedRoutes, nestedSetterFactory, sanitizeState, restoreState, WindowManager, _localStorage, getUpdatedPaths, createStateProxy, hasCircularReference, stateSchemaHasFunctions, } from './utils/helpers';
-import { InvalidStateSchemaError, ProtectedNamespaceError, ReservedStateKeyError } from './errors';
+import { InvalidStateSchemaError, ProtectedNamespaceError, ReservedStateKeyError, InvalidStateUpdateError } from './errors';
 /************************************* DEFAULTS **************************************/
 const DEFAULT_INIT_OPTIONS = {
     id: "",
@@ -118,7 +118,7 @@ export default class Spiccato {
             if (this.initOptions.dynamicSetters) {
                 this.setters[formatAccessor(k, "set")] = (v, callback) => {
                     return new Promise((resolve) => __awaiter(this, void 0, void 0, function* () {
-                        resolve(yield this.setState({ [k]: v }, callback));
+                        resolve(yield this.setState({ [k]: v }, callback, [[k]]));
                     }));
                 };
             }
@@ -142,7 +142,7 @@ export default class Spiccato {
                     this.setters[formatAccessor(path, "set")] = (v, callback) => {
                         const updatedState = nestedSetterFactory(this._state, path)(v);
                         return new Promise((resolve) => __awaiter(this, void 0, void 0, function* () {
-                            resolve(yield this.setState(updatedState, callback));
+                            resolve(yield this.setState(updatedState, callback, [path]));
                         }));
                     };
                 }
@@ -171,17 +171,29 @@ export default class Spiccato {
             return val;
         }
     }
-    setState(updater, callback = null) {
+    setState(updater, callback = null, updatedPaths = null) {
         return new Promise(resolve => {
-            let updatedPaths = [];
             if (typeof updater === 'object') {
-                updatedPaths = getUpdatedPaths(updater, this._state, this._schema);
+                updatedPaths !== null && updatedPaths !== void 0 ? updatedPaths : (updatedPaths = getUpdatedPaths(updater, this._state, this._schema));
+                if (Array.isArray(updater)) {
+                    throw new InvalidStateUpdateError("Update value passed to `setState` is an array - must be an object or a function that returns an object, not an array");
+                }
                 this._state = Object.assign(Object.assign({}, this._state), updater);
             }
             else if (typeof updater === 'function') {
                 const updaterValue = updater(this.state);
-                updatedPaths = getUpdatedPaths(updaterValue, this._state, this._schema);
+                if (typeof updaterValue !== "object") {
+                    throw new InvalidStateUpdateError("Functional update did not return an object. The function passed to `setState` must return an object");
+                }
+                else if (Array.isArray(updaterValue)) {
+                    throw new InvalidStateUpdateError("Functional update returned an array. The function passed to `setState` must return an object, not an array");
+                }
+                updatedPaths !== null && updatedPaths !== void 0 ? updatedPaths : (updatedPaths = getUpdatedPaths(updaterValue, this._state, this._schema));
                 this._state = Object.assign(Object.assign({}, this._state), updaterValue);
+            }
+            else {
+                // if state update could not be performed, reset updatedPaths to and empty array
+                updatedPaths = [];
             }
             const updated = this.initOptions.enableWriteProtection ? createStateProxy(this._state, this._schema) : this._state;
             resolve(updated);
