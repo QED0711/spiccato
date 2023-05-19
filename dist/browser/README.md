@@ -337,7 +337,7 @@ setInterval(() => {
 }, 1000)
 ```
 
-Dynamic setters offer a shortcut to the more low level `setState` functionality. They have all the same behavior as `setState` (in fact, they call `setState` under the hood) including asynchronous functionality and callbacks. If you are ever performing a simple state update operation on a single parameter, dynamic setters are the easiest solution.
+Dynamic setters offer a shortcut to the more low level `setState` functionality. They have all the same behavior as `setState` (in fact, they call `setState` under the hood) including asynchronous functionality, callbacks, and explicit update paths. If you are ever performing a simple state update operation on a single parameter, dynamic setters are the easiest solution.
 
 ```javascript
 // with `setState` you are responsible for ensuring only the state you want updated gets updated.
@@ -346,9 +346,13 @@ manager.setState({...manager.state.complexObject, value: 1}, (updatedState) => {
 })
 
 // with dynamic setters, all complexity is abstracted away for you. 
-manager.setters.setComplexObject_value(1, (updatedState) => {
+manager.setters.setComplexObject_value(
+    1, 
+    (updatedState) => {
     /* do something with callback here */
-});
+    }, 
+    {explicitUpdatePath: true}
+);
 ```
 
 ---
