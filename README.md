@@ -9,6 +9,7 @@
         - [Object Input](#object-input)
         - [Function Input](#function-input)
         - [Asynchronous Behavior & Callback Argument](#asynchronous-behavior--callback-argument)
+        - [updatedPaths & More Efficient Updating](#updatedpaths--more-efficient-updating)
     - [Initialization Options](#initialization-options)
     - [Project Wide State Management](#project-wide-state-management)
     - [State Schema](#state-schema)
@@ -75,7 +76,13 @@ console.log(manager.getters.getNum()) // => 5; dynamic getter
 ```
 #### **setState**
 
-`setState` is a low level method the you can access on your `spiccato` instance. It is used to set all properties of an associated state, but more commonly just a subset of properties . This method can take in one of two types for its first argument: an `object` or a `function`. It can take an optional second argument of a `callback` called after the state has been set. `setState` returns a promise that will resolve to an updated state. 
+`setState` is a low level method the you can access on your `spiccato` instance. It can be used to set all properties of an associated state, but more commonly just a subset of properties. This method accepts three arguments:
+
+| Argument | Type(s) | Description |
+| --- | --- | --- |
+| updater | object \| function | This can be either an object or a function which returns an object. In either case, this object will be used to update the values of your state. |
+| callback | function \| null | a callback that is executed *after* a state update has been performed. |
+| updatedPaths | string[][] \| null | Defines what paths in your state are being updated. |
 
 ##### **Object Input**
 
@@ -156,7 +163,34 @@ manager.setState({myVal: 2}, (updatedState) => {
     console.log(updatedState.myVal) // => 2
 })
 ```
+##### **updatedPaths & More Efficient Updating**
 
+The third argument you can pass to `setState` is `updatedPaths`, an array defining which paths the state update will effect. 
+
+There are some benefits to explicitly defining the paths that are about to be updated. When an update occurs, `spiccato` compares your previous state to the newly updated state to determine which paths have updated so it can notify the appropriate listeners. This operation is recursive and becomes more expensive for object with deeply nested structures. However, if you tell `setState` what you are about to update, it will skip this recursive check and just call event listeners based on the paths you define.
+
+> Note: dynamic setters and nested setters make a call to `setState` under the hood. They make use of this efficiency boost by explicitly defining the updated paths. If the situation permits, dynamic setters and nested setters offer the easiest and most efficient solution for state updates. 
+
+However, you should be aware of some potential drawbacks in explicitly defining your state updates.
+
+- If your defined paths do not exactly match your actual state update, you will either miss or erroneously trigger an event listener.
+- If your state update doesn't actually change your state (i.e. just sets the same value again), en event listener will still trigger based on your explicit updated paths definition. 
+
+```javascript
+/* THESE ARE EXAMPLES OF WHAT `NOT` TO DO */
+
+const stateSchema = { val1: 0, val2: 0 }
+
+const manager = new Spiccato(stateSchema, {id: "explicateUpdatedPaths"})
+manager.init()
+
+// this will trigger an event listener even though `val1` is still `0` after the update
+manager.setState({ val1: 0 }, null, [["val1"]]) 
+
+// the update and the explicit paths do not match, and event listeners for `val2` will not be fired
+manager.setState({ val1: 1, val2: 2 }, null, [["val1"]])
+
+```
 ---
 ### Initialization Options
 | Property | Type  | Default | Description  |  

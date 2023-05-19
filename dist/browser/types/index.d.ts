@@ -28,6 +28,9 @@ export interface StorageOptions {
     removeChildrenOnUnload?: boolean;
     privateState?: (string | string[])[];
 }
+export interface DynamicSetterOptions {
+    explicitUpdatePath?: boolean;
+}
 export type EventPayload = {
     path?: string | string[];
     value?: any;

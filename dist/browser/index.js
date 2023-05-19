@@ -28,6 +28,9 @@ const DEFAULT_STORAGE_OPTIONS = {
     removeChildrenOnUnload: true,
     privateState: [],
 };
+const DEFAULT_DYNAMIC_SETTER_OPTIONS = {
+    explicitUpdatePath: true
+};
 let IS_BROWSER;
 export let WINDOW;
 try {
@@ -116,9 +119,10 @@ export default class Spiccato {
                 };
             }
             if (this.initOptions.dynamicSetters) {
-                this.setters[formatAccessor(k, "set")] = (v, callback) => {
+                this.setters[formatAccessor(k, "set")] = (v, callback, options) => {
+                    options = Object.assign(Object.assign({}, DEFAULT_DYNAMIC_SETTER_OPTIONS), options);
                     return new Promise((resolve) => __awaiter(this, void 0, void 0, function* () {
-                        resolve(yield this.setState({ [k]: v }, callback, [[k]]));
+                        resolve(yield this.setState({ [k]: v }, callback, (options === null || options === void 0 ? void 0 : options.explicitUpdatePath) ? [[k]] : null));
                     }));
                 };
             }
@@ -139,10 +143,11 @@ export default class Spiccato {
                     };
                 }
                 if (createNestedSetters) {
-                    this.setters[formatAccessor(path, "set")] = (v, callback) => {
+                    this.setters[formatAccessor(path, "set")] = (v, callback, options) => {
+                        options = Object.assign(Object.assign({}, DEFAULT_DYNAMIC_SETTER_OPTIONS), options);
                         const updatedState = nestedSetterFactory(this._state, path)(v);
                         return new Promise((resolve) => __awaiter(this, void 0, void 0, function* () {
-                            resolve(yield this.setState(updatedState, callback, [path]));
+                            resolve(yield this.setState(updatedState, callback, (options === null || options === void 0 ? void 0 : options.explicitUpdatePath) ? [path] : null));
                         }));
                     };
                 }
@@ -172,6 +177,7 @@ export default class Spiccato {
         }
     }
     setState(updater, callback = null, updatedPaths = null) {
+        /* TODO: Update Docs with updatedPaths override */
         return new Promise(resolve => {
             if (typeof updater === 'object') {
                 updatedPaths !== null && updatedPaths !== void 0 ? updatedPaths : (updatedPaths = getUpdatedPaths(updater, this._state, this._schema));
