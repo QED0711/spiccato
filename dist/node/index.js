@@ -106,6 +106,9 @@ class Spiccato {
     get id() {
         return this.initOptions.id;
     }
+    getPaths(prefixes = []) {
+        return (0, helpers_1.createPathObject)(this._state);
+    }
     init() {
         this._applyState();
     }

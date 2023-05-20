@@ -11,6 +11,7 @@ import {
     createStateProxy,
     hasCircularReference,
     stateSchemaHasFunctions,
+    createPathObject,
 } from './utils/helpers'
 
 import {
@@ -152,10 +153,14 @@ export default class Spiccato {
         return this.initOptions.id;
     }
 
+    public getPaths(prefixes: string[] = []): any {
+        return createPathObject(this._state)
+    }
+
     init() {
         this._applyState();
     }
-
+    
     private _applyState() {
 
         if (this._bindToLocalStorage) {

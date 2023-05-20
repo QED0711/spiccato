@@ -16,3 +16,6 @@ export declare class InvalidStateSchemaError extends Error {
 export declare class InvalidStateUpdateError extends Error {
     constructor(message: string);
 }
+export declare class StatePathNotExistError extends Error {
+    constructor(message: string);
+}

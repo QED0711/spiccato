@@ -1,5 +1,6 @@
 import { StateObject, StateSchema } from "../types";
 export declare const createStateProxy: (state: StateObject, schema: StateSchema) => StateObject;
+export declare const createPathObject: (obj: any, currentPath?: string[]) => any;
 export declare const formatAccessor: (path: string | string[], accessorType?: string) => string;
 export declare const getNestedRoutes: (state: {
     [key: string]: any;

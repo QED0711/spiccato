@@ -1,4 +1,4 @@
-import { ImmutableStateError } from "../errors";
+import { ImmutableStateError, StatePathNotExistError } from "../errors";
 import { StateObject, StateSchema } from "../types";
 
 const proxyHandlers: { [key: string]: Function } = {
@@ -36,6 +36,31 @@ export const createStateProxy = (state: StateObject, schema: StateSchema): State
     traverse(schema, state, proxied);
     return new Proxy(proxied, proxyHandlers);
 
+}
+
+export const createPathObject = (obj: any, currentPath: string[] = []): any => {
+    if (typeof obj !== 'object' || obj === null) {
+        return currentPath;
+    }
+
+    return new Proxy(obj, {
+        get: (target, prop: string) => {
+            if (['asymmetricMatch', 'nodeType', '$$typeof'].includes(prop)) {
+                return;
+            }
+            if (!target.hasOwnProperty(prop)) {
+                throw new Error(`Property ${[...currentPath, prop].join('.')} does not exist!`);
+            }
+
+            const newPath = [...currentPath, prop];
+
+            if (typeof target[prop] === 'object' && target[prop] !== null) {
+                return createPathObject(target[prop], newPath);
+            } else {
+                return newPath;
+            }
+        }
+    });
 }
 
 export const formatAccessor = (path: string | string[], accessorType: string = "get") => {
@@ -135,7 +160,7 @@ export const getUpdatedPaths = (update: StateObject, prevState: StateObject, sta
         }
 
         if (schemaVal === null || schemaVal === undefined) return; // don't traverse objects not fully defined in the schema
-        
+
         for (let key of Object.keys(schemaVal)) {
             if (
                 key in updatedVal
@@ -146,7 +171,7 @@ export const getUpdatedPaths = (update: StateObject, prevState: StateObject, sta
                     ((!!updatedVal && key in updatedVal) ? updatedVal[key] : null),
                     ((!!prevVal && key in prevVal) ? prevVal[key] : null),
                     [...path, key],
-                    level+1
+                    level + 1
                 )
             }
         }

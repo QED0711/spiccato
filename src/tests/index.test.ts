@@ -106,6 +106,15 @@ describe("Initialization:", () => {
 
     test("Instance ID", () => {
         expect(testManager.id).toBe("TEST");
+    });
+
+    test("Paths", () => {
+        const paths = testManager.getPaths();
+        // console.log(paths.myVal)
+
+        expect(paths.myVal).toEqual(["myVal"]);
+        expect(paths.level1).toEqual(["level1"]);
+        // expect(paths.level1.level2).toEqual(["level1", "level2"]);
     })
 })
 

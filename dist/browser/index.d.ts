@@ -28,6 +28,7 @@ export default class Spiccato {
     constructor(stateSchema: StateSchema | undefined, options: InitializationOptions);
     get state(): StateObject;
     get id(): managerID;
+    getPaths(prefixes?: string[]): any;
     init(): void;
     private _applyState;
     private _persistToLocalStorage;

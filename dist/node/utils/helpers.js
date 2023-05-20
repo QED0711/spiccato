@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports._localStorage = exports.WindowManager = exports.stateSchemaHasFunctions = exports.hasCircularReference = exports.getUpdatedPaths = exports.restoreState = exports.sanitizeState = exports.nestedSetterFactory = exports.getNestedRoutes = exports.formatAccessor = exports.createStateProxy = void 0;
+exports._localStorage = exports.WindowManager = exports.stateSchemaHasFunctions = exports.hasCircularReference = exports.getUpdatedPaths = exports.restoreState = exports.sanitizeState = exports.nestedSetterFactory = exports.getNestedRoutes = exports.formatAccessor = exports.createPathObject = exports.createStateProxy = void 0;
 const errors_1 = require("../errors");
 const proxyHandlers = {
     set(obj, property, value) {
@@ -33,6 +33,29 @@ const createStateProxy = (state, schema) => {
     return new Proxy(proxied, proxyHandlers);
 };
 exports.createStateProxy = createStateProxy;
+const createPathObject = (obj, currentPath = []) => {
+    if (typeof obj !== 'object' || obj === null) {
+        return currentPath;
+    }
+    return new Proxy(obj, {
+        get: (target, prop) => {
+            if (['asymmetricMatch', 'nodeType', '$$typeof'].includes(prop)) {
+                return;
+            }
+            if (!target.hasOwnProperty(prop)) {
+                throw new Error(`Property ${[...currentPath, prop].join('.')} does not exist!`);
+            }
+            const newPath = [...currentPath, prop];
+            if (typeof target[prop] === 'object' && target[prop] !== null) {
+                return (0, exports.createPathObject)(target[prop], newPath);
+            }
+            else {
+                return newPath;
+            }
+        }
+    });
+};
+exports.createPathObject = createPathObject;
 const formatAccessor = (path, accessorType = "get") => {
     path = Array.isArray(path) ? path.join("_") : path;
     return accessorType + path[0].toUpperCase() + path.slice(1);
