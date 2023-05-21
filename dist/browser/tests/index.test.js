@@ -8,6 +8,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 import Spiccato, { WINDOW } from '../index';
+import { PathNode } from '../utils/helpers';
 const testManager = new Spiccato({
     isNull: null,
     isUndefined: undefined,
@@ -102,11 +103,14 @@ describe("Initialization:", () => {
         expect(testManager.id).toBe("TEST");
     });
     test("Paths", () => {
-        const paths = testManager.getPaths();
-        // console.log(paths.myVal)
-        expect(paths.myVal).toEqual(["myVal"]);
-        expect(paths.level1).toEqual(["level1"]);
-        // expect(paths.level1.level2).toEqual(["level1", "level2"]);
+        expect(testManager.paths).toBeInstanceOf(PathNode);
+        expect(testManager.paths.isNull.__$path).toEqual(["isNull"]);
+        expect(testManager.paths.isUndefined.__$path).toEqual(["isUndefined"]);
+        expect(testManager.paths.myVal.__$path).toEqual(["myVal"]);
+        expect(testManager.paths.num1.__$path).toEqual(["num1"]);
+        expect(testManager.paths.level1.level2.__$path).toEqual(["level1", "level2"]);
+        expect(testManager.paths.level1.level2.level3.__$path).toEqual(["level1", "level2", "level3"]);
+        expect(testManager.paths.arr[0]).toEqual(undefined);
     });
 });
 describe("State Interactions", () => {

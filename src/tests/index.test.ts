@@ -1,5 +1,6 @@
 import Spiccato, { WINDOW } from '../index'
 import { EventPayload, StateObject, StateSchema } from '../types';
+import { PathNode } from '../utils/helpers';
 
 const testManager = new Spiccato(
     {
@@ -109,12 +110,14 @@ describe("Initialization:", () => {
     });
 
     test("Paths", () => {
-        const paths = testManager.getPaths();
-        // console.log(paths.myVal)
-
-        expect(paths.myVal).toEqual(["myVal"]);
-        expect(paths.level1).toEqual(["level1"]);
-        // expect(paths.level1.level2).toEqual(["level1", "level2"]);
+        expect(testManager.paths).toBeInstanceOf(PathNode);
+        expect(testManager.paths.isNull.__$path).toEqual(["isNull"]);
+        expect(testManager.paths.isUndefined.__$path).toEqual(["isUndefined"]);
+        expect(testManager.paths.myVal.__$path).toEqual(["myVal"]);
+        expect(testManager.paths.num1.__$path).toEqual(["num1"]);
+        expect(testManager.paths.level1.level2.__$path).toEqual(["level1", "level2"]);
+        expect(testManager.paths.level1.level2.level3.__$path).toEqual(["level1", "level2", "level3"]);
+        expect(testManager.paths.arr[0]).toEqual(undefined);
     })
 })
 

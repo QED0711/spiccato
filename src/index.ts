@@ -11,7 +11,8 @@ import {
     createStateProxy,
     hasCircularReference,
     stateSchemaHasFunctions,
-    createPathObject,
+    PathNode,
+    PathTree,
 } from './utils/helpers'
 
 import {
@@ -67,6 +68,7 @@ const PROTECTED_NAMESPACES: {[key: string]: any} = {
     getters: true, 
     methods: true,
     initOptions: true,
+    paths: true,
     _schema: true,
     _state: true,
     _bindToLocalStorage: true,
@@ -153,12 +155,9 @@ export default class Spiccato {
         return this.initOptions.id;
     }
 
-    public getPaths(prefixes: string[] = []): any {
-        return createPathObject(this._state)
-    }
-
     init() {
         this._applyState();
+        this.paths = new PathTree(this._state).root;
     }
     
     private _applyState() {
@@ -307,9 +306,12 @@ export default class Spiccato {
 
     /********** EVENTS **********/
 
-    addEventListener(eventType: string | string[], callback: Function) {
+    addEventListener(eventType: string | string[] | PathNode, callback: Function) {
         if(Array.isArray(eventType)) {
-            eventType = "on_" + eventType.join("_") + "_update"
+            eventType = "on_" + eventType.join("_") + "_update";
+        }
+        if(eventType instanceof PathNode) {
+            eventType = "on_" + eventType.__$path.join("_") + "_update";
         }
         if (eventType in this._eventListeners) {
             this._eventListeners[eventType].push(callback);

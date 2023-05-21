@@ -1,4 +1,4 @@
-import { ImmutableStateError, StatePathNotExistError } from "../errors";
+import { ImmutableStateError } from "../errors";
 import { StateObject, StateSchema } from "../types";
 
 const proxyHandlers: { [key: string]: Function } = {
@@ -36,31 +36,6 @@ export const createStateProxy = (state: StateObject, schema: StateSchema): State
     traverse(schema, state, proxied);
     return new Proxy(proxied, proxyHandlers);
 
-}
-
-export const createPathObject = (obj: any, currentPath: string[] = []): any => {
-    if (typeof obj !== 'object' || obj === null) {
-        return currentPath;
-    }
-
-    return new Proxy(obj, {
-        get: (target, prop: string) => {
-            if (['asymmetricMatch', 'nodeType', '$$typeof'].includes(prop)) {
-                return;
-            }
-            if (!target.hasOwnProperty(prop)) {
-                throw new Error(`Property ${[...currentPath, prop].join('.')} does not exist!`);
-            }
-
-            const newPath = [...currentPath, prop];
-
-            if (typeof target[prop] === 'object' && target[prop] !== null) {
-                return createPathObject(target[prop], newPath);
-            } else {
-                return newPath;
-            }
-        }
-    });
 }
 
 export const formatAccessor = (path: string | string[], accessorType: string = "get") => {
@@ -262,5 +237,40 @@ export class _localStorage {
 
     clear() {
         this.state = {};
+    }
+}
+
+
+export class PathNode {
+    public __$path: string[];
+    [key: string]: any;
+    /* TODO: console.error when accessing a property that doesn't exist */
+
+    constructor(path: string[]){
+        this.__$path = path;
+    }
+
+    extendPath(prop: string){
+        this[prop] = new PathNode([...this.__$path, prop]);
+    }
+}
+
+export class PathTree {
+    public root: PathNode;
+
+    constructor(obj: StateObject){
+        this.root = new PathNode([]);
+        this.processPaths(obj, this.root);
+    }
+
+    processPaths(obj: StateObject , currentNode: PathNode){
+        if (typeof obj === 'object' && !Array.isArray(obj) && obj !== null) {
+            for (let [key, val] of Object.entries(obj)) {
+                currentNode.extendPath(key);
+                if (typeof val === 'object') {
+                    this.processPaths(val, currentNode[key]);
+                }
+            }
+        }
     }
 }

@@ -1,6 +1,5 @@
 import { StateObject, StateSchema } from "../types";
 export declare const createStateProxy: (state: StateObject, schema: StateSchema) => StateObject;
-export declare const createPathObject: (obj: any, currentPath?: string[]) => any;
 export declare const formatAccessor: (path: string | string[], accessorType?: string) => string;
 export declare const getNestedRoutes: (state: {
     [key: string]: any;
@@ -46,4 +45,15 @@ export declare class _localStorage {
     setItem(key: string, value: string): void;
     removeItem(key: string): void;
     clear(): void;
+}
+export declare class PathNode {
+    __$path: string[];
+    [key: string]: any;
+    constructor(path: string[]);
+    extendPath(prop: string): void;
+}
+export declare class PathTree {
+    root: PathNode;
+    constructor(obj: StateObject);
+    processPaths(obj: StateObject, currentNode: PathNode): void;
 }

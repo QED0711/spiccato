@@ -1,4 +1,4 @@
-import { sanitizeState, restoreState, getUpdatedPaths, createStateProxy, hasCircularReference, stateSchemaHasFunctions } from "../utils/helpers";
+import { sanitizeState, restoreState, getUpdatedPaths, createStateProxy, hasCircularReference, stateSchemaHasFunctions, PathTree } from "../utils/helpers";
 describe("Helpers", () => {
     test("Sanitization and Restoration", () => {
         const state = {
@@ -63,5 +63,17 @@ describe("Helpers", () => {
         expect(stateSchemaHasFunctions({ a: null, b: true, c: 1, d: "hello", e: [], f: { x: () => { } } })).toBe(true);
         expect(stateSchemaHasFunctions({ myFunc() { } })).toBe(true);
         expect(stateSchemaHasFunctions({ a: [function () { }] })).toBe(false);
+    });
+    test("PathTree", () => {
+        const path = new PathTree({
+            a: { b: null, c: 1 },
+            d: [1, 2, 3],
+            f: undefined
+        }).root;
+        expect(path.a.__$path).toEqual(["a"]);
+        expect(path.a.b.__$path).toEqual(["a", "b"]);
+        expect(path.a.c.__$path).toEqual(["a", "c"]);
+        expect(path.d.__$path).toEqual(["d"]);
+        expect(path.f.__$path).toEqual(["f"]);
     });
 });

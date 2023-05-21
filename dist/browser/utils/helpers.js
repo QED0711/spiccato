@@ -29,28 +29,6 @@ export const createStateProxy = (state, schema) => {
     traverse(schema, state, proxied);
     return new Proxy(proxied, proxyHandlers);
 };
-export const createPathObject = (obj, currentPath = []) => {
-    if (typeof obj !== 'object' || obj === null) {
-        return currentPath;
-    }
-    return new Proxy(obj, {
-        get: (target, prop) => {
-            if (['asymmetricMatch', 'nodeType', '$$typeof'].includes(prop)) {
-                return;
-            }
-            if (!target.hasOwnProperty(prop)) {
-                throw new Error(`Property ${[...currentPath, prop].join('.')} does not exist!`);
-            }
-            const newPath = [...currentPath, prop];
-            if (typeof target[prop] === 'object' && target[prop] !== null) {
-                return createPathObject(target[prop], newPath);
-            }
-            else {
-                return newPath;
-            }
-        }
-    });
-};
 export const formatAccessor = (path, accessorType = "get") => {
     path = Array.isArray(path) ? path.join("_") : path;
     return accessorType + path[0].toUpperCase() + path.slice(1);
@@ -214,5 +192,30 @@ export class _localStorage {
     }
     clear() {
         this.state = {};
+    }
+}
+export class PathNode {
+    /* TODO: console.error when accessing a property that doesn't exist */
+    constructor(path) {
+        this.__$path = path;
+    }
+    extendPath(prop) {
+        this[prop] = new PathNode([...this.__$path, prop]);
+    }
+}
+export class PathTree {
+    constructor(obj) {
+        this.root = new PathNode([]);
+        this.processPaths(obj, this.root);
+    }
+    processPaths(obj, currentNode) {
+        if (typeof obj === 'object' && !Array.isArray(obj) && obj !== null) {
+            for (let [key, val] of Object.entries(obj)) {
+                currentNode.extendPath(key);
+                if (typeof val === 'object') {
+                    this.processPaths(val, currentNode[key]);
+                }
+            }
+        }
     }
 }
