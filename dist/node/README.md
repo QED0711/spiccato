@@ -502,9 +502,12 @@ When a `Spiccato` instance is initialized, it dynamically creates events for all
 
 #### AddEventListener
 
-You can add event listeners to a `Spiccato` instance. In keeping with common JS event subscriptions patterns, you simply call the `addEventListener` method on your instance, passing in either an event name *or* a `string[]` array denoting the path to a state property and a callback to be executed when that event triggers. You can add multiple event listeners to the same event. 
+You can add event listeners to a `Spiccato` instance. In keeping with common JS event subscriptions patterns, you simply call the `addEventListener` method on your instance, passing in either an event name *or* an array of paths within your state. You can add multiple event listeners to the same event. 
 
-Event names conform to the following format: "on_" + PATH_TO_STATE_PROPERTY + "_update". If you have a state property named "myVal", the associated event that would trigger when that property changes would be "on_myVal_update". In the case of nested properties, it follows the same format with each level of nesting being separated by an underscore "\_". E.G. "on_level1_level2_value_update".
+**Name Input**: Event names conform to the following format: "on_" + PATH_TO_STATE_PROPERTY + "_update". If you have a state property named "myVal", the associated event that would trigger when that property changes would be "on_myVal_update". In the case of nested properties, it follows the same format with each level of nesting being separated by an underscore "\_". E.G. "on_level1_level2_value_update".
+
+**Path Input**: Rather than formatting a string like the examples above, you may like to put in the path to your state resource when adding your event listener. This can be accomplished in two ways. First, you can put in a `string[]` denoting the path to your resource. For example: ["myVal"], or ["level1", "level2", "value"]. Alternatively, your `spiccato` instance will have a `paths` property. This property provides an idiomatic way to input paths to event listeners that prevents common formatting or spelling errors when writing out long string sequences. You can do something like: `manager.paths.myVal`, or `manager.paths.level1.level2.value`. Should you attempt to access a path that is not defined in your `stateSchema`, a `StatePathNotExistError` will be thrown. 
+
 ```javascript
 const manager = new Spiccato({
         num: 1,
@@ -519,13 +522,22 @@ const manager = new Spiccato({
 )
 manager.init();
 
+// Path object input (recommended)
+manager.addEventListener(manager.paths.user.phone.work, function(payload){
+    /* do something here */
+})
+
+// Formatted event name input
 manager.addEventListener("on_num_update", function(payload) {
     /* do something here */
 })
 
+// String array input
 manager.addEventListener(["user", "phone", "cell"], function(payload){
     /* do something here */
 })
+
+
 ```
 #### Event Payload
 The event `payload` is an object with two properties, `path` and `value`. The `path` property is the full path to the state resource from the top level of your state object. The `value` property is the value after the update. 
@@ -573,6 +585,7 @@ import {/* SOME_ERROR_TYPE */} from 'spiccato/errors';
 | ProtectedNamespaceError | The user has added a namespaced method that overwrites an existing `spiccato` property (e.g. state, getters, setters, etc.) | Select a different namespace for your namespaced method |
 | ImmutableStateError | The user has attempted to modify state directly without a setter. This error is not thrown when `enableWriteProtection` is false. | Use `setState`, or a setter (dynamic or custom) to modify state. Alternatively, set `enableWriteProtection` in initialization options to false. |
 | InvalidStateUpdateError | The user has provided an invalid value for the first argument to `setState` | Ensure that all calls to `setState` receive either an object or a function that returns an object as the first argument. |
+| StatePathNotExistError | The user has attempted to access a property within the instance `paths` object that does not exist | Ensure that the `stateSchema` does define the indicated path and that all path properties are spelled correctly | 
 | ReservedStateKeyError | The user has supplied a key in state that is reserved by `spiccato` to perform additional functionality. | Select a different key name for the indicated state resource |
 | ManagerNotFoundError | The class method, `getManagerByID`, returns `undefined`. This error must be thrown manually. | Check that the ID supplied is associated with an existing manager ID. |
 
