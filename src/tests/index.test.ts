@@ -109,15 +109,24 @@ describe("Initialization:", () => {
         expect(testManager.id).toBe("TEST");
     });
 
-    test("Paths", () => {
-        expect(testManager.paths).toBeInstanceOf(PathNode);
-        expect(testManager.paths.isNull.__$path).toEqual(["isNull"]);
-        expect(testManager.paths.isUndefined.__$path).toEqual(["isUndefined"]);
-        expect(testManager.paths.myVal.__$path).toEqual(["myVal"]);
-        expect(testManager.paths.num1.__$path).toEqual(["num1"]);
-        expect(testManager.paths.level1.level2.__$path).toEqual(["level1", "level2"]);
-        expect(testManager.paths.level1.level2.level3.__$path).toEqual(["level1", "level2", "level3"]);
-        expect(testManager.paths.arr[0]).toEqual(undefined);
+    describe("Paths", () => {
+        test("Path Access", () => {
+            expect(testManager.paths).toBeInstanceOf(PathNode);
+            expect(testManager.paths.isNull.__$path).toEqual(["isNull"]);
+            expect(testManager.paths.isUndefined.__$path).toEqual(["isUndefined"]);
+            expect(testManager.paths.myVal.__$path).toEqual(["myVal"]);
+            expect(testManager.paths.num1.__$path).toEqual(["num1"]);
+            expect(testManager.paths.level1.level2.__$path).toEqual(["level1", "level2"]);
+            expect(testManager.paths.level1.level2.level3.__$path).toEqual(["level1", "level2", "level3"]);
+        })
+        test("Path Errors", () => {
+            try{
+                testManager.paths.level1.level2.notHere
+            } catch(err){
+                expect((err as Error).name).toBe("StatePathNotExistError")
+            }
+        }) 
+
     })
 })
 
@@ -329,7 +338,7 @@ describe("Events", () => {
     describe("Payload", () => {
         test("Standard Payload", async () => {
             const payload: EventPayload = await new Promise(resolve => {
-                testManager.addEventListener(["myVal"], (payload: EventPayload) => {
+                testManager.addEventListener(testManager.paths.myVal, (payload: EventPayload) => {
                     resolve(payload)
                 })
                 testManager.setters.setMyVal(42);
@@ -341,7 +350,7 @@ describe("Events", () => {
 
         test("Nested Payload", async () => {
             const payload: EventPayload = await new Promise(resolve => {
-                testManager.addEventListener(["level1", "level2Val"], (payload: EventPayload) => {
+                testManager.addEventListener(testManager.paths.level1.level2Val, (payload: EventPayload) => {
                     resolve(payload);
                 })
                 testManager.setters.setLevel1_level2Val("Goodbye")

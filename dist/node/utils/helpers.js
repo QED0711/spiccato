@@ -209,12 +209,21 @@ class _localStorage {
 }
 exports._localStorage = _localStorage;
 class PathNode {
-    /* TODO: console.error when accessing a property that doesn't exist */
     constructor(path) {
         this.__$path = path;
     }
     extendPath(prop) {
-        this[prop] = new PathNode([...this.__$path, prop]);
+        this[prop] = new Proxy(new PathNode([...this.__$path, prop]), {
+            get(target, name) {
+                if (target.hasOwnProperty(name)) {
+                    return target[name];
+                }
+                if (name in target.__proto__) { // allows access to the methods defined on the objects prototype
+                    return target.__proto__[name];
+                }
+                throw new errors_1.StatePathNotExistError(`Path '${target.__$path.join(".")}.${name}' does not exist in the state schema`);
+            }
+        });
     }
 }
 exports.PathNode = PathNode;

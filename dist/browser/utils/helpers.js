@@ -1,4 +1,4 @@
-import { ImmutableStateError } from "../errors";
+import { ImmutableStateError, StatePathNotExistError } from "../errors";
 const proxyHandlers = {
     set(obj, property, value) {
         throw new ImmutableStateError("State cannot be mutated directly. Use `setState` or a dynamic setter instead.");
@@ -195,12 +195,21 @@ export class _localStorage {
     }
 }
 export class PathNode {
-    /* TODO: console.error when accessing a property that doesn't exist */
     constructor(path) {
         this.__$path = path;
     }
     extendPath(prop) {
-        this[prop] = new PathNode([...this.__$path, prop]);
+        this[prop] = new Proxy(new PathNode([...this.__$path, prop]), {
+            get(target, name) {
+                if (target.hasOwnProperty(name)) {
+                    return target[name];
+                }
+                if (name in target.__proto__) { // allows access to the methods defined on the objects prototype
+                    return target.__proto__[name];
+                }
+                throw new StatePathNotExistError(`Path '${target.__$path.join(".")}.${name}' does not exist in the state schema`);
+            }
+        });
     }
 }
 export class PathTree {
