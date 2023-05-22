@@ -475,7 +475,7 @@ describe("Events", () => {
                 testManager.addEventListener("on_myVal_update", callback)
                 await testManager.setters.setMyVal(1);
                 await testManager.setters.setMyVal(2);
-                testManager.removeEventListener(["myVal"], callback)
+                testManager.removeEventListener(testManager.paths.myVal, callback)
                 await testManager.setters.setMyVal(3);
                 resolve(0)
             })

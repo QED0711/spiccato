@@ -62,10 +62,10 @@ try {
 }
 if (!("localStorage" in WINDOW)) WINDOW.localStorage = new _localStorage
 
-const PROTECTED_NAMESPACES: {[key: string]: any} = {
-    state: true, 
-    setters: true, 
-    getters: true, 
+const PROTECTED_NAMESPACES: { [key: string]: any } = {
+    state: true,
+    setters: true,
+    getters: true,
     methods: true,
     initOptions: true,
     paths: true,
@@ -116,18 +116,18 @@ export default class Spiccato {
     constructor(stateSchema: StateSchema = {}, options: InitializationOptions) {
         this.initOptions = { ...DEFAULT_INIT_OPTIONS, ...options };
 
-        if(hasCircularReference(stateSchema)){
+        if (hasCircularReference(stateSchema)) {
             throw new InvalidStateSchemaError("State Schema has a circular reference. Spiccato does not allow circular references")
         } else if (stateSchemaHasFunctions(stateSchema)) {
             throw new InvalidStateSchemaError("State Schema has `functions` for some of its values. Spiccato does not allow function values in the state schema. Consider using the `addCustomMethods` or `addNamespacedMethods` functionality instead.")
         }
 
-        this._schema = Object.freeze({...stateSchema})
+        this._schema = Object.freeze({ ...stateSchema })
         this._state = stateSchema;
 
         const stateKeyViolations = RESERVED_STATE_KEYS.filter(k => Object.keys(this._state).includes(k));
-        if(stateKeyViolations.length){
-            throw new ReservedStateKeyError(`The key: '${stateKeyViolations[0]}' is reserved at this level. Please select a different key for this state resource.`) 
+        if (stateKeyViolations.length) {
+            throw new ReservedStateKeyError(`The key: '${stateKeyViolations[0]}' is reserved at this level. Please select a different key for this state resource.`)
         }
 
         this.getters = {}
@@ -148,7 +148,7 @@ export default class Spiccato {
     }
 
     public get state(): StateObject {
-        return this.initOptions.enableWriteProtection ? createStateProxy(this._state, this._schema) : this._state ;
+        return this.initOptions.enableWriteProtection ? createStateProxy(this._state, this._schema) : this._state;
     }
 
     public get id(): managerID {
@@ -159,7 +159,7 @@ export default class Spiccato {
         this._applyState();
         this.paths = new PathTree(this._state).root;
     }
-    
+
     private _applyState() {
 
         if (this._bindToLocalStorage) {
@@ -176,7 +176,7 @@ export default class Spiccato {
 
             if (this.initOptions.dynamicSetters) {
                 this.setters[formatAccessor(k, "set")] = (v: any, callback: StateUpdateCallback | null, options: DynamicSetterOptions | null) => {
-                    options = {...DEFAULT_DYNAMIC_SETTER_OPTIONS, ...options}
+                    options = { ...DEFAULT_DYNAMIC_SETTER_OPTIONS, ...options }
                     return new Promise(async resolve => {
                         resolve(await this.setState({ [k]: v }, callback, options?.explicitUpdatePath ? [[k]] : null));
                     })
@@ -203,7 +203,7 @@ export default class Spiccato {
 
                 if (createNestedSetters) {
                     this.setters[formatAccessor(path, "set")] = (v: any, callback: StateUpdateCallback | null, options: DynamicSetterOptions | null): Promise<StateObject> => {
-                        options = {...DEFAULT_DYNAMIC_SETTER_OPTIONS, ...options}
+                        options = { ...DEFAULT_DYNAMIC_SETTER_OPTIONS, ...options }
                         const updatedState = nestedSetterFactory(this._state, path)(v);
                         return new Promise(async resolve => {
                             resolve(await this.setState(updatedState, callback, options?.explicitUpdatePath ? [path] : null));
@@ -223,13 +223,13 @@ export default class Spiccato {
     }
 
     getStateFromPath(path: string | string[]): any | undefined {
-        if(typeof path === "string"){
+        if (typeof path === "string") {
             return this.state[path]
-        } else if (Array.isArray(path)){
+        } else if (Array.isArray(path)) {
             let val = this.state;
-            for(let p of path) {
+            for (let p of path) {
                 val = val[p];
-                if(val === undefined) return undefined
+                if (val === undefined) return undefined
             }
             return val
         }
@@ -261,7 +261,7 @@ export default class Spiccato {
             const updated = this.initOptions.enableWriteProtection ? createStateProxy(this._state, this._schema) : this._state;
             resolve(updated);
             callback?.(updated);
-            this.emitEvent("update", {state: updated})
+            this.emitEvent("update", { state: updated })
             for (let path of updatedPaths) {
                 this.emitUpdateEventFromPath(path)
             }
@@ -294,9 +294,9 @@ export default class Spiccato {
 
     addNamespacedMethods(namespaces: { [key: string]: { [key: string]: Function } }) {
         for (let ns in namespaces) {
-            if(PROTECTED_NAMESPACES[ns]) {
+            if (PROTECTED_NAMESPACES[ns]) {
                 throw new ProtectedNamespaceError(`The namespace '${ns}' is protected. Please choose a different namespace for you methods.`)
-            } 
+            }
             this[ns] = {}
             for (let [key, callback] of Object.entries(namespaces[ns])) {
                 this[ns][key] = callback.bind(this);
@@ -307,10 +307,10 @@ export default class Spiccato {
     /********** EVENTS **********/
 
     addEventListener(eventType: string | string[] | PathNode, callback: Function) {
-        if(Array.isArray(eventType)) {
+        if (Array.isArray(eventType)) {
             eventType = "on_" + eventType.join("_") + "_update";
         }
-        if(eventType instanceof PathNode) {
+        if (eventType instanceof PathNode) {
             eventType = "on_" + eventType.__$path.join("_") + "_update";
         }
         if (eventType in this._eventListeners) {
@@ -320,9 +320,12 @@ export default class Spiccato {
         }
     }
 
-    removeEventListener(eventType: string | string[], callback: Function) {
-        if(Array.isArray(eventType)) {
+    removeEventListener(eventType: string | string[] | PathNode, callback: Function) {
+        if (Array.isArray(eventType)) {
             eventType = "on_" + eventType.join("_") + "_update"
+        }
+        if (eventType instanceof PathNode) {
+            eventType = "on_" + eventType.__$path.join("_") + "_update";
         }
         this._eventListeners[eventType] = this._eventListeners[eventType]?.filter(cb => cb !== callback);
     }
@@ -358,7 +361,7 @@ export default class Spiccato {
             console.error("If connecting to localStorage, providerID must be defined in sotrageOptions passed to 'connectoToLocalStorage'");
             return;
         }
-        
+
         this.initOptions.debug && console.log("DEBUG: window.name", WINDOW.name)
         this.initOptions.debug && console.assert(!!WINDOW.name)
 
