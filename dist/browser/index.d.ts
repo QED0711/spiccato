@@ -49,7 +49,7 @@ export default class Spiccato {
     }): void;
     /********** EVENTS **********/
     addEventListener(eventType: string | string[] | PathNode, callback: Function): void;
-    removeEventListener(eventType: string | string[], callback: Function): void;
+    removeEventListener(eventType: string | string[] | PathNode, callback: Function): void;
     private emitEvent;
     private emitUpdateEventFromPath;
     /********** LOCAL STORAGE **********/

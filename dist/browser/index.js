@@ -264,6 +264,9 @@ export default class Spiccato {
         if (Array.isArray(eventType)) {
             eventType = "on_" + eventType.join("_") + "_update";
         }
+        if (eventType instanceof PathNode) {
+            eventType = "on_" + eventType.__$path.join("_") + "_update";
+        }
         this._eventListeners[eventType] = (_a = this._eventListeners[eventType]) === null || _a === void 0 ? void 0 : _a.filter(cb => cb !== callback);
     }
     emitEvent(eventType, payload) {

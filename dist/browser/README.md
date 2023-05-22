@@ -554,19 +554,24 @@ For the general `update` event, the payload differs slightly. Since there is no 
 
 #### RemoveEventListener
 
-You can remove an event listener with a familiar pattern as well.
+You can remove an event listener with a familiar pattern as well. Similarly, `removeEventListener` can take in a `string`, `string[]`, or `paths object` as its first argument defining the path. 
 
 ```javascript
 // define your callback
 const callback = (payload) => {
     /* do something here */
 }
+const otherCallback = (payload) => {
+    /* do something here */
+}
 
-// add your callback to a particular event
+// add your callback to a particular vent
 manager.addEventListener("update", callback)
+manager.addEventListener(manager.paths.myVal, otherCallback)
 
 // remove callback/event listener when it is no longer needed
 manager.removeEventListener("update", callback)
+manager.removeEventListener(manager.paths.myVal, otherCallback)
 ```
 
 > **Note**: It is important you pass in the same function reference when you remove a listener as you did when you originally subscribed. 
