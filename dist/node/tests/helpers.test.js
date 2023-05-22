@@ -66,4 +66,16 @@ describe("Helpers", () => {
         expect((0, helpers_1.stateSchemaHasFunctions)({ myFunc() { } })).toBe(true);
         expect((0, helpers_1.stateSchemaHasFunctions)({ a: [function () { }] })).toBe(false);
     });
+    test("PathTree", () => {
+        const path = new helpers_1.PathTree({
+            a: { b: null, c: 1 },
+            d: [1, 2, 3],
+            f: undefined
+        }).root;
+        expect(path.a.__$path).toEqual(["a"]);
+        expect(path.a.b.__$path).toEqual(["a", "b"]);
+        expect(path.a.c.__$path).toEqual(["a", "c"]);
+        expect(path.d.__$path).toEqual(["d"]);
+        expect(path.f.__$path).toEqual(["f"]);
+    });
 });

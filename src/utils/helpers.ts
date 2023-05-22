@@ -1,4 +1,4 @@
-import { ImmutableStateError } from "../errors";
+import { ImmutableStateError, StatePathNotExistError } from "../errors";
 import { StateObject, StateSchema } from "../types";
 
 const proxyHandlers: { [key: string]: Function } = {
@@ -135,7 +135,7 @@ export const getUpdatedPaths = (update: StateObject, prevState: StateObject, sta
         }
 
         if (schemaVal === null || schemaVal === undefined) return; // don't traverse objects not fully defined in the schema
-        
+
         for (let key of Object.keys(schemaVal)) {
             if (
                 key in updatedVal
@@ -146,7 +146,7 @@ export const getUpdatedPaths = (update: StateObject, prevState: StateObject, sta
                     ((!!updatedVal && key in updatedVal) ? updatedVal[key] : null),
                     ((!!prevVal && key in prevVal) ? prevVal[key] : null),
                     [...path, key],
-                    level+1
+                    level + 1
                 )
             }
         }
@@ -237,5 +237,50 @@ export class _localStorage {
 
     clear() {
         this.state = {};
+    }
+}
+
+
+export class PathNode {
+    public __$path: string[];
+    [key: string]: any;
+
+    constructor(path: string[]){
+        this.__$path = path;
+    }
+
+    extendPath(prop: string){
+        this[prop] = new Proxy(new PathNode([...this.__$path, prop]), {
+            get(target: PathNode, name: string) {
+                if(target.hasOwnProperty(name)) {
+                    return target[name];
+                }
+                if (name in target.__proto__) { // allows access to the methods defined on the objects prototype
+                    return target.__proto__[name];
+                }
+                throw new StatePathNotExistError(`Path '${target.__$path.join(".")}.${name}' does not exist in the state schema`);
+            }
+        })
+
+    }
+}
+
+export class PathTree {
+    public root: PathNode;
+
+    constructor(obj: StateObject){
+        this.root = new PathNode([]);
+        this.processPaths(obj, this.root);
+    }
+
+    processPaths(obj: StateObject , currentNode: PathNode){
+        if (typeof obj === 'object' && !Array.isArray(obj) && obj !== null) {
+            for (let [key, val] of Object.entries(obj)) {
+                currentNode.extendPath(key);
+                if (typeof val === 'object') {
+                    this.processPaths(val, currentNode[key]);
+                }
+            }
+        }
     }
 }

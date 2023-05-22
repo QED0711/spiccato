@@ -46,3 +46,14 @@ export declare class _localStorage {
     removeItem(key: string): void;
     clear(): void;
 }
+export declare class PathNode {
+    __$path: string[];
+    [key: string]: any;
+    constructor(path: string[]);
+    extendPath(prop: string): void;
+}
+export declare class PathTree {
+    root: PathNode;
+    constructor(obj: StateObject);
+    processPaths(obj: StateObject, currentNode: PathNode): void;
+}

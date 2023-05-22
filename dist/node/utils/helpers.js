@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports._localStorage = exports.WindowManager = exports.stateSchemaHasFunctions = exports.hasCircularReference = exports.getUpdatedPaths = exports.restoreState = exports.sanitizeState = exports.nestedSetterFactory = exports.getNestedRoutes = exports.formatAccessor = exports.createStateProxy = void 0;
+exports.PathTree = exports.PathNode = exports._localStorage = exports.WindowManager = exports.stateSchemaHasFunctions = exports.hasCircularReference = exports.getUpdatedPaths = exports.restoreState = exports.sanitizeState = exports.nestedSetterFactory = exports.getNestedRoutes = exports.formatAccessor = exports.createStateProxy = void 0;
 const errors_1 = require("../errors");
 const proxyHandlers = {
     set(obj, property, value) {
@@ -208,3 +208,39 @@ class _localStorage {
     }
 }
 exports._localStorage = _localStorage;
+class PathNode {
+    constructor(path) {
+        this.__$path = path;
+    }
+    extendPath(prop) {
+        this[prop] = new Proxy(new PathNode([...this.__$path, prop]), {
+            get(target, name) {
+                if (target.hasOwnProperty(name)) {
+                    return target[name];
+                }
+                if (name in target.__proto__) { // allows access to the methods defined on the objects prototype
+                    return target.__proto__[name];
+                }
+                throw new errors_1.StatePathNotExistError(`Path '${target.__$path.join(".")}.${name}' does not exist in the state schema`);
+            }
+        });
+    }
+}
+exports.PathNode = PathNode;
+class PathTree {
+    constructor(obj) {
+        this.root = new PathNode([]);
+        this.processPaths(obj, this.root);
+    }
+    processPaths(obj, currentNode) {
+        if (typeof obj === 'object' && !Array.isArray(obj) && obj !== null) {
+            for (let [key, val] of Object.entries(obj)) {
+                currentNode.extendPath(key);
+                if (typeof val === 'object') {
+                    this.processPaths(val, currentNode[key]);
+                }
+            }
+        }
+    }
+}
+exports.PathTree = PathTree;

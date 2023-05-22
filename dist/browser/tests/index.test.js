@@ -8,6 +8,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 import Spiccato, { WINDOW } from '../index';
+import { PathNode } from '../utils/helpers';
 const testManager = new Spiccato({
     isNull: null,
     isUndefined: undefined,
@@ -100,6 +101,25 @@ describe("Initialization:", () => {
     });
     test("Instance ID", () => {
         expect(testManager.id).toBe("TEST");
+    });
+    describe("Paths", () => {
+        test("Path Access", () => {
+            expect(testManager.paths).toBeInstanceOf(PathNode);
+            expect(testManager.paths.isNull.__$path).toEqual(["isNull"]);
+            expect(testManager.paths.isUndefined.__$path).toEqual(["isUndefined"]);
+            expect(testManager.paths.myVal.__$path).toEqual(["myVal"]);
+            expect(testManager.paths.num1.__$path).toEqual(["num1"]);
+            expect(testManager.paths.level1.level2.__$path).toEqual(["level1", "level2"]);
+            expect(testManager.paths.level1.level2.level3.__$path).toEqual(["level1", "level2", "level3"]);
+        });
+        test("Path Errors", () => {
+            try {
+                testManager.paths.level1.level2.notHere;
+            }
+            catch (err) {
+                expect(err.name).toBe("StatePathNotExistError");
+            }
+        });
     });
 });
 describe("State Interactions", () => {
@@ -284,7 +304,7 @@ describe("Events", () => {
     describe("Payload", () => {
         test("Standard Payload", () => __awaiter(void 0, void 0, void 0, function* () {
             const payload = yield new Promise(resolve => {
-                testManager.addEventListener(["myVal"], (payload) => {
+                testManager.addEventListener(testManager.paths.myVal, (payload) => {
                     resolve(payload);
                 });
                 testManager.setters.setMyVal(42);
@@ -294,7 +314,7 @@ describe("Events", () => {
         }));
         test("Nested Payload", () => __awaiter(void 0, void 0, void 0, function* () {
             const payload = yield new Promise(resolve => {
-                testManager.addEventListener(["level1", "level2Val"], (payload) => {
+                testManager.addEventListener(testManager.paths.level1.level2Val, (payload) => {
                     resolve(payload);
                 });
                 testManager.setters.setLevel1_level2Val("Goodbye");

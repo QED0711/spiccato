@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.InvalidStateUpdateError = exports.InvalidStateSchemaError = exports.ManagerNotFoundError = exports.ReservedStateKeyError = exports.ProtectedNamespaceError = exports.ImmutableStateError = void 0;
+exports.StatePathNotExistError = exports.InvalidStateUpdateError = exports.InvalidStateSchemaError = exports.ManagerNotFoundError = exports.ReservedStateKeyError = exports.ProtectedNamespaceError = exports.ImmutableStateError = void 0;
 class ImmutableStateError extends Error {
     constructor(message) {
         super(message);
@@ -43,3 +43,10 @@ class InvalidStateUpdateError extends Error {
     }
 }
 exports.InvalidStateUpdateError = InvalidStateUpdateError;
+class StatePathNotExistError extends Error {
+    constructor(message) {
+        super(message);
+        this.name = "StatePathNotExistError";
+    }
+}
+exports.StatePathNotExistError = StatePathNotExistError;

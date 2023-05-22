@@ -51,6 +51,7 @@ const PROTECTED_NAMESPACES = {
     getters: true,
     methods: true,
     initOptions: true,
+    paths: true,
     _schema: true,
     _state: true,
     _bindToLocalStorage: true,
@@ -108,6 +109,7 @@ class Spiccato {
     }
     init() {
         this._applyState();
+        this.paths = new helpers_1.PathTree(this._state).root;
     }
     _applyState() {
         if (this._bindToLocalStorage) {
@@ -248,6 +250,9 @@ class Spiccato {
     addEventListener(eventType, callback) {
         if (Array.isArray(eventType)) {
             eventType = "on_" + eventType.join("_") + "_update";
+        }
+        if (eventType instanceof helpers_1.PathNode) {
+            eventType = "on_" + eventType.__$path.join("_") + "_update";
         }
         if (eventType in this._eventListeners) {
             this._eventListeners[eventType].push(callback);

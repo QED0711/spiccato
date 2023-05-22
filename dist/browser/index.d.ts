@@ -1,5 +1,5 @@
 /************************************* IMPORTS **************************************/
-import { WindowManager } from './utils/helpers';
+import { WindowManager, PathNode } from './utils/helpers';
 import { StateObject, StateUpdateCallback, InitializationOptions, StorageOptions, managerID, StateSchema } from './types/index';
 export declare let WINDOW: {
     [key: string]: any;
@@ -48,7 +48,7 @@ export default class Spiccato {
         };
     }): void;
     /********** EVENTS **********/
-    addEventListener(eventType: string | string[], callback: Function): void;
+    addEventListener(eventType: string | string[] | PathNode, callback: Function): void;
     removeEventListener(eventType: string | string[], callback: Function): void;
     private emitEvent;
     private emitUpdateEventFromPath;

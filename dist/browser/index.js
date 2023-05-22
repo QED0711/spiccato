@@ -8,7 +8,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 /************************************* IMPORTS **************************************/
-import { formatAccessor, getNestedRoutes, nestedSetterFactory, sanitizeState, restoreState, WindowManager, _localStorage, getUpdatedPaths, createStateProxy, hasCircularReference, stateSchemaHasFunctions, } from './utils/helpers';
+import { formatAccessor, getNestedRoutes, nestedSetterFactory, sanitizeState, restoreState, WindowManager, _localStorage, getUpdatedPaths, createStateProxy, hasCircularReference, stateSchemaHasFunctions, PathNode, PathTree, } from './utils/helpers';
 import { InvalidStateSchemaError, ProtectedNamespaceError, ReservedStateKeyError, InvalidStateUpdateError } from './errors';
 /************************************* DEFAULTS **************************************/
 const DEFAULT_INIT_OPTIONS = {
@@ -49,6 +49,7 @@ const PROTECTED_NAMESPACES = {
     getters: true,
     methods: true,
     initOptions: true,
+    paths: true,
     _schema: true,
     _state: true,
     _bindToLocalStorage: true,
@@ -106,6 +107,7 @@ export default class Spiccato {
     }
     init() {
         this._applyState();
+        this.paths = new PathTree(this._state).root;
     }
     _applyState() {
         if (this._bindToLocalStorage) {
@@ -246,6 +248,9 @@ export default class Spiccato {
     addEventListener(eventType, callback) {
         if (Array.isArray(eventType)) {
             eventType = "on_" + eventType.join("_") + "_update";
+        }
+        if (eventType instanceof PathNode) {
+            eventType = "on_" + eventType.__$path.join("_") + "_update";
         }
         if (eventType in this._eventListeners) {
             this._eventListeners[eventType].push(callback);

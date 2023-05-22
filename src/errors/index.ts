@@ -39,3 +39,10 @@ export class InvalidStateUpdateError extends Error {
         this.name = "InvalidStateUpdateError";
     }
 }
+
+export class StatePathNotExistError extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = "StatePathNotExistError"
+    }
+}
