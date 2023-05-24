@@ -455,6 +455,17 @@ describe("Events", () => {
 
         })
 
+        test("setState With Explicit Paths", async () => {
+            const payload: EventPayload = await new Promise(resolve => {
+                testManager.addEventListener(testManager.paths.level1.level2Val, (payload: EventPayload) => {
+                    resolve(payload)
+                });
+                testManager.setState((prevState: StateObject) => ({level1: {...prevState.level1, level2Val: "Hi Again!!!"}}), null, [testManager.paths.level1.level2Val]) 
+            })
+            expect(payload.path).toEqual(testManager.paths.level1.level2Val.__$path);
+            expect(payload.value).toBe("Hi Again!!!");
+        })
+
         test("Full State Update", async () => {
             const payload: EventPayload = await new Promise(resolve => {
                 testManager.addEventListener("update", (payload: EventPayload) => {

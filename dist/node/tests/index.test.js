@@ -432,6 +432,16 @@ describe("Events", () => {
             expect((_e = results[2]) === null || _e === void 0 ? void 0 : _e.path).toEqual(["level1", "level2", "level3"]);
             expect((_f = results[2]) === null || _f === void 0 ? void 0 : _f.value).toEqual(-1);
         }));
+        test("setState With Explicit Paths", () => __awaiter(void 0, void 0, void 0, function* () {
+            const payload = yield new Promise(resolve => {
+                testManager.addEventListener(testManager.paths.level1.level2Val, (payload) => {
+                    resolve(payload);
+                });
+                testManager.setState((prevState) => ({ level1: Object.assign(Object.assign({}, prevState.level1), { level2Val: "Hi Again!!!" }) }), null, [testManager.paths.level1.level2Val]);
+            });
+            expect(payload.path).toEqual(testManager.paths.level1.level2Val.__$path);
+            expect(payload.value).toBe("Hi Again!!!");
+        }));
         test("Full State Update", () => __awaiter(void 0, void 0, void 0, function* () {
             var _g;
             const payload = yield new Promise(resolve => {
