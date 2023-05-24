@@ -108,8 +108,8 @@ class Spiccato {
         return this.initOptions.id;
     }
     init() {
+        this.paths = new helpers_1.PathTree(this._schema).root;
         this._applyState();
-        this.paths = new helpers_1.PathTree(this._state).root;
     }
     _applyState() {
         if (this._bindToLocalStorage) {
@@ -181,7 +181,6 @@ class Spiccato {
         }
     }
     setState(updater, callback = null, updatedPaths = null) {
-        /* TODO: Update Docs with updatedPaths override */
         return new Promise(resolve => {
             if (typeof updater === 'object') {
                 updatedPaths !== null && updatedPaths !== void 0 ? updatedPaths : (updatedPaths = (0, helpers_1.getUpdatedPaths)(updater, this._state, this._schema));
@@ -202,7 +201,7 @@ class Spiccato {
                 this._state = Object.assign(Object.assign({}, this._state), updaterValue);
             }
             else {
-                // if state update could not be performed, reset updatedPaths to and empty array
+                // if state update could not be performed, reset updatedPaths to an empty array
                 updatedPaths = [];
             }
             const updated = this.initOptions.enableWriteProtection ? (0, helpers_1.createStateProxy)(this._state, this._schema) : this._state;
@@ -278,6 +277,8 @@ class Spiccato {
         });
     }
     emitUpdateEventFromPath(path) {
+        if (path instanceof helpers_1.PathNode)
+            path = path.__$path;
         let p, v;
         for (let i = 0; i < path.length; i++) {
             p = path.slice(0, i + 1);
@@ -292,12 +293,12 @@ class Spiccato {
     connectToLocalStorage(storageOptions) {
         var _a;
         this.storageOptions = Object.assign(Object.assign({}, DEFAULT_STORAGE_OPTIONS), storageOptions);
-        // if window does not have a "name" peroperty, default to the provider window id
+        // if window does not have a "name" property, default to the provider window id
         if (!exports.WINDOW.name && this.storageOptions.providerID) {
             exports.WINDOW.name = this.storageOptions.providerID;
         }
         if (!exports.WINDOW.name) {
-            console.error("If connecting to localStorage, providerID must be defined in sotrageOptions passed to 'connectoToLocalStorage'");
+            console.error("If connecting to localStorage, providerID must be defined in storageOptions passed to 'connectToToLocalStorage'");
             return;
         }
         this.initOptions.debug && console.log("DEBUG: window.name", exports.WINDOW.name);

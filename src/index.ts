@@ -156,8 +156,8 @@ export default class Spiccato {
     }
 
     init() {
+        this.paths = new PathTree(this._schema).root;
         this._applyState();
-        this.paths = new PathTree(this._state).root;
     }
 
     private _applyState() {
@@ -235,8 +235,8 @@ export default class Spiccato {
         }
     }
 
-    setState(updater: StateObject | Function, callback: StateUpdateCallback | null = null, updatedPaths: string[][] | null = null): Promise<StateObject> {
-        /* TODO: Update Docs with updatedPaths override */
+    setState(updater: StateObject | Function, callback: StateUpdateCallback | null = null, updatedPaths: string[][] | PathNode[] | null = null): Promise<StateObject> {
+
         return new Promise(resolve => {
             if (typeof updater === 'object') {
                 updatedPaths ??= getUpdatedPaths(updater, this._state, this._schema)
@@ -254,7 +254,7 @@ export default class Spiccato {
                 updatedPaths ??= getUpdatedPaths(updaterValue, this._state, this._schema)
                 this._state = { ...this._state, ...updaterValue };
             } else {
-                // if state update could not be performed, reset updatedPaths to and empty array
+                // if state update could not be performed, reset updatedPaths to an empty array
                 updatedPaths = [];
             }
 
@@ -336,7 +336,8 @@ export default class Spiccato {
         })
     }
 
-    private emitUpdateEventFromPath(path: string[]) {
+    private emitUpdateEventFromPath(path: string[] | PathNode) {
+        if(path instanceof PathNode) path = path.__$path;
         let p: string[], v: any;
         for (let i = 0; i < path.length; i++) {
             p = path.slice(0, i + 1)
@@ -352,13 +353,13 @@ export default class Spiccato {
     connectToLocalStorage(storageOptions: StorageOptions) {
         this.storageOptions = { ...DEFAULT_STORAGE_OPTIONS, ...storageOptions };
 
-        // if window does not have a "name" peroperty, default to the provider window id
+        // if window does not have a "name" property, default to the provider window id
         if (!WINDOW.name && this.storageOptions.providerID) {
             WINDOW.name = this.storageOptions.providerID;
         }
 
         if (!WINDOW.name) {
-            console.error("If connecting to localStorage, providerID must be defined in sotrageOptions passed to 'connectoToLocalStorage'");
+            console.error("If connecting to localStorage, providerID must be defined in storageOptions passed to 'connectToToLocalStorage'");
             return;
         }
 
