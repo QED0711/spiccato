@@ -108,6 +108,7 @@ ${name}Manager.connectToLocalStorage({
 ${name}Manager.init();
 
 export default ${name}Manager; 
+export const ${name}Paths = ${name}Manager.paths;
 `
     // create state directory if it doesn't exist
     !fs.existsSync(root) && fs.mkdirSync(root, { recursive: true })

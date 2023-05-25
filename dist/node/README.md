@@ -165,30 +165,64 @@ manager.setState({myVal: 2}, (updatedState) => {
 ```
 ##### **updatedPaths & More Efficient Updating**
 
-The third argument you can pass to `setState` is `updatedPaths`, an array defining which paths the state update will effect. 
+The third argument you can pass to `setState` is `updatedPaths`, an array defining which paths the state update will effect. This can take the form of either a an array of string arrays (`string[][]`), or an array of `spiccato` path objects which are accessed on the instance's `paths` property.
 
 There are some benefits to explicitly defining the paths that are about to be updated. When an update occurs, `spiccato` compares your previous state to the newly updated state to determine which paths have updated so it can notify the appropriate listeners. This operation is recursive and becomes more expensive for object with deeply nested structures. However, if you tell `setState` what you are about to update, it will skip this recursive check and just call event listeners based on the paths you define.
 
 > Note: dynamic setters and nested setters make a call to `setState` under the hood. They make use of this efficiency boost by explicitly defining the updated paths. If the situation permits, dynamic setters and nested setters offer the easiest and most efficient solution for state updates. 
 
-However, you should be aware of some potential drawbacks in explicitly defining your state updates.
-
-- If your defined paths do not exactly match your actual state update, you will either miss or erroneously trigger an event listener.
-- If your state update doesn't actually change your state (i.e. just sets the same value again), en event listener will still trigger based on your explicit updated paths definition. 
-
 ```javascript
-/* THESE ARE EXAMPLES OF WHAT `NOT` TO DO */
-
-const stateSchema = { val1: 0, val2: 0 }
+const stateSchema = { 
+    myVal: 0, 
+    user: {
+        name: "", 
+        phone: {
+            cell: "", 
+            work: ""
+        }
+    } 
+}
 
 const manager = new Spiccato(stateSchema, {id: "explicateUpdatedPaths"})
 manager.init()
 
-// this will trigger an event listener even though `val1` is still `0` after the update
-manager.setState({ val1: 0 }, null, [["val1"]]) 
+// Example with array paths. For this update we don't need to check the user object for changes because we are explicitly telling it that we're only updating `myVal`
+manager.setState({myVal: 1}, null, [["myVal"]])
 
-// the update and the explicit paths do not match, and event listeners for `val2` will not be fired
-manager.setState({ val1: 1, val2: 2 }, null, [["val1"]])
+// Example with an array of path objects from the instance's 'paths' property. Here we use a functional input to update nested paths. By explicitly defining the changed paths, we don't need to check the whole state structure for updates.  
+manager.setState(
+    prevState => ({
+        user: {
+            name: "Jane", 
+            phone: {
+                ...prevState.user.phone, 
+                cell: "555-5555"
+            }
+        }
+    }),
+    null,
+    [manager.paths.user.name, manager.paths.user.phone.cell]
+)
+
+```
+However, you should be aware of some potential drawbacks in explicitly defining your state updates.
+
+- If your defined paths do not exactly match your actual state update, you will either miss or erroneously trigger an event listener.
+- If your state update doesn't actually change your state (i.e. just sets the same primitive value again), en event listener will still trigger based on your explicit updated paths definition. 
+
+```javascript
+/* AVOID THESE SCENARIOS */
+
+const stateSchema = { val1: 0, val2: 0 }
+
+const manager = new Spiccato(stateSchema, {id: "BADexplicateUpdatedPaths"})
+manager.init()
+
+// This will trigger an event listener even though `val1` is still `0` after the update. A recursive check would not have flagged this change as an update.
+manager.setState({ val1: 0 }, null, [manager.paths.val1]) 
+
+// The update and the explicit paths do not match, and event listeners for `val2` will not be fired
+manager.setState({ val1: 1, val2: 2 }, null, [manager.paths.val1])
 
 ```
 ---
