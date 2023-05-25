@@ -124,6 +124,7 @@ export default class Spiccato {
 
         this._schema = Object.freeze({ ...stateSchema })
         this._state = stateSchema;
+        this.paths = new PathTree(this._schema).root;
 
         const stateKeyViolations = RESERVED_STATE_KEYS.filter(k => Object.keys(this._state).includes(k));
         if (stateKeyViolations.length) {
@@ -156,7 +157,6 @@ export default class Spiccato {
     }
 
     init() {
-        this.paths = new PathTree(this._schema).root;
         this._applyState();
     }
 
@@ -352,7 +352,7 @@ export default class Spiccato {
     /********** LOCAL STORAGE **********/
     connectToLocalStorage(storageOptions: StorageOptions) {
         this.storageOptions = { ...DEFAULT_STORAGE_OPTIONS, ...storageOptions };
-        this.storageOptions.privateState = this.storageOptions.privateState.map((ps: string | string[] | PathNode) => ps instanceof PathNode ? ps.__$path : ps);
+        this.storageOptions.privateState = this.storageOptions.privateState.map((ps: string | string[] | PathNode) => ps instanceof PathNode ? ps.__$path : typeof ps === "string" ? [ps] : ps);
 
         // if window does not have a "name" property, default to the provider window id
         if (!WINDOW.name && this.storageOptions.providerID) {

@@ -85,6 +85,7 @@ class Spiccato {
         }
         this._schema = Object.freeze(Object.assign({}, stateSchema));
         this._state = stateSchema;
+        this.paths = new helpers_1.PathTree(this._schema).root;
         const stateKeyViolations = RESERVED_STATE_KEYS.filter(k => Object.keys(this._state).includes(k));
         if (stateKeyViolations.length) {
             throw new errors_1.ReservedStateKeyError(`The key: '${stateKeyViolations[0]}' is reserved at this level. Please select a different key for this state resource.`);
@@ -108,7 +109,6 @@ class Spiccato {
         return this.initOptions.id;
     }
     init() {
-        this.paths = new helpers_1.PathTree(this._schema).root;
         this._applyState();
     }
     _applyState() {
@@ -293,7 +293,7 @@ class Spiccato {
     connectToLocalStorage(storageOptions) {
         var _a;
         this.storageOptions = Object.assign(Object.assign({}, DEFAULT_STORAGE_OPTIONS), storageOptions);
-        this.storageOptions.privateState = this.storageOptions.privateState.map((ps) => ps instanceof helpers_1.PathNode ? ps.__$path : ps);
+        this.storageOptions.privateState = this.storageOptions.privateState.map((ps) => ps instanceof helpers_1.PathNode ? ps.__$path : typeof ps === "string" ? [ps] : ps);
         // if window does not have a "name" property, default to the provider window id
         if (!exports.WINDOW.name && this.storageOptions.providerID) {
             exports.WINDOW.name = this.storageOptions.providerID;
