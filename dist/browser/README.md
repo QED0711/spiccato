@@ -703,7 +703,7 @@ Note in this example how the `init` method is called *after* `connectToLocalStor
 | subscriberIDs | string[] | [] | An array of IDs indicating which spawned windows may subscribe to and receive state updates. |  
 | clearStorageOnUnload | bool | true | Whether of not to clear the state loaded to `localStorage` when the provider window is closed. |
 | removeChildrenOnUnload | bool | true | Whether of not to recursively close spawned children windows when the provider window (or relative parent window) is closed. |
-| privateState | string[] or string[][] | [] | An array of strings or array of nested string arrays. Indicates state paths that will not be persisted to local storage. Provider windows will have access to all state regardless, but subscriber windows will only have access to state not defined within this option. | 
+| privateState | string[] or string[][] or (instance path object)[] | [] | An array of strings, array of nested string arrays, or array of instance path objects (defined on instance.paths). Indicates state paths that will not be persisted to local storage. Provider windows will have access to all state regardless, but subscriber windows will only have access to state not defined within this option. | 
 
 ---
 
@@ -724,7 +724,7 @@ manager.connectToLocalStorage({
     initializeFromLocalStorage: true,
     providerID: "persistProvider",
     clearStorageOnUnload: false,
-    privateState: ["accessKey"]
+    privateState: [manager.paths.accessKey]
 })
 
 manager.init();
@@ -772,7 +772,7 @@ manager.connectToLocalStorage({
     removeChildrenOnUnload: true
     providerWindow: "main", // defines the originating state provider window
     subscriberWindows: ["config"], // defines what windows may receive state updates
-    privateState: ["superSecretKey"],
+    privateState: [manager.paths.superSecretKey],
 });
 
 manager.init();
