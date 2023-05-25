@@ -1,3 +1,5 @@
+import { PathNode } from "../utils/helpers";
+
 export interface StateObject {[key: string]: any};
 export interface StateSchema {[key: string]: null | undefined | boolean | number | string | any[] | object};
 export interface StateUpdateCallback {
@@ -20,7 +22,7 @@ export interface StorageOptions {
     subscriberIDs?: string[],
     clearStorageOnUnload?: boolean,
     removeChildrenOnUnload?: boolean,
-    privateState?: (string | string[])[],
+    privateState?: (string | string[] | PathNode)[],
 };
 export interface DynamicSetterOptions {
     explicitUpdatePath?: boolean,

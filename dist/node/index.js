@@ -293,6 +293,7 @@ class Spiccato {
     connectToLocalStorage(storageOptions) {
         var _a;
         this.storageOptions = Object.assign(Object.assign({}, DEFAULT_STORAGE_OPTIONS), storageOptions);
+        this.storageOptions.privateState = this.storageOptions.privateState.map((ps) => ps instanceof helpers_1.PathNode ? ps.__$path : ps);
         // if window does not have a "name" property, default to the provider window id
         if (!exports.WINDOW.name && this.storageOptions.providerID) {
             exports.WINDOW.name = this.storageOptions.providerID;
