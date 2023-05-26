@@ -45,7 +45,7 @@ const DEFAULT_STORAGE_OPTIONS: StorageOptions = {
     clearStorageOnUnload: true,
     removeChildrenOnUnload: true,
     privateState: [],
-    deepSanitizeState: false
+    deepSanitizeState: true
 }
 
 const DEFAULT_DYNAMIC_SETTER_OPTIONS = {
