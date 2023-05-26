@@ -92,6 +92,7 @@ export default class Spiccato {
         this.setters = {};
         this.methods = {};
         this._bindToLocalStorage = false;
+        this._role = "provider";
         this.windowManager = IS_BROWSER ? new WindowManager(WINDOW) : null;
         this._eventListeners = {};
         if (IS_BROWSER) {
@@ -112,6 +113,11 @@ export default class Spiccato {
     _applyState() {
         if (this._bindToLocalStorage) {
             this._persistToLocalStorage(this._state);
+        }
+        if (this._role !== "provider") {
+            this._schema = sanitizeState(this._state, this.storageOptions.privateState)[0];
+            this._state = this._schema;
+            Object.freeze(this._schema);
         }
         for (let k in this._state) {
             if (this.initOptions.dynamicGetters) {
@@ -304,6 +310,7 @@ export default class Spiccato {
         this.initOptions.debug && console.assert(!!WINDOW.name);
         const isProviderWindow = WINDOW.name === this.storageOptions.providerID;
         const isSubscriberWindow = ((_a = this.storageOptions.subscriberIDs) !== null && _a !== void 0 ? _a : []).includes(WINDOW.name);
+        this._role = isProviderWindow ? "provider" : isSubscriberWindow ? "subscriber" : "";
         this._bindToLocalStorage = true;
         if (this.storageOptions.initializeFromLocalStorage || isSubscriberWindow) {
             if (!!WINDOW.localStorage.getItem(this.storageOptions.persistKey)) {

@@ -484,6 +484,7 @@ describe("Local Storage Peristance", () => {
     });
     test("Persistance doesn't mutate local state", () => {
         index_1.default.clear();
+        delete index_1.WINDOW.name;
         const manager = new index_1.default({
             a: {
                 b: {
@@ -499,12 +500,13 @@ describe("Local Storage Peristance", () => {
             persistKey: "persist",
             initializeFromLocalStorage: false,
             providerID: "Persist",
-            privateState: ["e", ["a", "b", "c"]]
+            privateState: [manager.paths.e, manager.paths.a.b.c]
         });
         manager.init();
         manager.setters.setA_d(10);
         expect(manager.state.a.b.c).toBe(3);
         expect(manager.state.e).toBe(5);
+        expect(manager.state.a.d).toBe(10);
     });
     test("Initialize provider from local storage", () => {
         index_1.default.clear();
@@ -515,7 +517,7 @@ describe("Local Storage Peristance", () => {
             persistKey: "init",
             initializeFromLocalStorage: true,
             providerID: "provider",
-            privateState: ["b"]
+            privateState: [manager.paths.b]
         });
         manager.init();
         expect(manager.state.a).toEqual(100);
@@ -530,10 +532,17 @@ describe("Local Storage Peristance", () => {
             persistKey: "init",
             subscriberIDs: ["someSubscriber"],
             initializeFromLocalStorage: true,
-            privateState: ["b"]
+            privateState: [manager.paths.b]
         });
         manager.init();
         expect(manager.state.a).toEqual(100);
         expect(manager.state.b).toBeUndefined();
+        expect("b" in manager.state).toBe(false);
+        console.log(manager._schema, manager._state);
+        expect(manager.setters.setB).toBeUndefined();
+        manager.setters.setA(100);
+        expect(manager.state.a).toBe(100);
+        expect(manager.state.b).toBeUndefined();
+        expect("b" in manager.state).toBe(false);
     });
 });

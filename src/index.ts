@@ -45,6 +45,7 @@ const DEFAULT_STORAGE_OPTIONS: StorageOptions = {
     clearStorageOnUnload: true,
     removeChildrenOnUnload: true,
     privateState: [],
+    deepSanitizeState: false
 }
 
 const DEFAULT_DYNAMIC_SETTER_OPTIONS = {
@@ -103,12 +104,13 @@ export default class Spiccato {
 
     /* Instance Properties */
     private initOptions: InitializationOptions;
-    private _schema: StateSchema
-    private _state: StateObject;
+    public _schema: StateSchema
+    public _state: StateObject;
     getters: { [key: string]: Function };
     setters: { [key: string]: Function };
     methods: { [key: string]: Function };
     private _bindToLocalStorage: boolean;
+    public _role: string;
     windowManager: (WindowManager | null);
     private _eventListeners: { [key: string]: Function[] }
     [key: string]: any; /* for runtime added properties */
@@ -136,6 +138,7 @@ export default class Spiccato {
         this.methods = {}
 
         this._bindToLocalStorage = false
+        this._role = "provider"
         this.windowManager = IS_BROWSER ? new WindowManager(WINDOW) : null;
 
         this._eventListeners = {};
@@ -165,6 +168,12 @@ export default class Spiccato {
         if (this._bindToLocalStorage) {
             this._persistToLocalStorage(this._state)
         }
+        if(this._role !== "provider") {
+            this._schema = (sanitizeState(this._state, this.storageOptions.privateState)[0] as StateSchema);
+            this._state = this._schema;
+            Object.freeze(this._schema);
+        }
+
 
         for (let k in this._state) {
             if (this.initOptions.dynamicGetters) {
@@ -369,6 +378,7 @@ export default class Spiccato {
 
         const isProviderWindow = WINDOW.name === this.storageOptions.providerID;
         const isSubscriberWindow = (this.storageOptions.subscriberIDs ?? []).includes(WINDOW.name);
+        this._role = isProviderWindow ? "provider" : isSubscriberWindow ? "subscriber" : ""
 
         this._bindToLocalStorage = true;
 

@@ -69,7 +69,6 @@ export const sanitizeState = (state, privatePaths) => {
         if (typeof Array.isArray(path)) {
             let copy = sanitized;
             for (let i = 0; i < path.length; i++) {
-                // console.log(copy, path[i], "\n")
                 if (i === path.length - 1) {
                     removed.set(path, copy[path[i]]);
                     delete copy[path[i]];

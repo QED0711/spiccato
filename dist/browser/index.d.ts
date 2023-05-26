@@ -10,8 +10,8 @@ export default class Spiccato {
     static getManagerById(id: managerID): Spiccato;
     static clear(): void;
     private initOptions;
-    private _schema;
-    private _state;
+    _schema: StateSchema;
+    _state: StateObject;
     getters: {
         [key: string]: Function;
     };
@@ -22,6 +22,7 @@ export default class Spiccato {
         [key: string]: Function;
     };
     private _bindToLocalStorage;
+    _role: string;
     windowManager: (WindowManager | null);
     private _eventListeners;
     [key: string]: any;

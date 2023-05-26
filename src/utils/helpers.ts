@@ -78,14 +78,13 @@ export const nestedSetterFactory = (state: { [key: string]: any }, path: string[
     return copy;
 }
 
-export const sanitizeState = (state: { [key: string]: any }, privatePaths: (string | string[])[]) => {
+export const sanitizeState = (state: StateObject, privatePaths: (string | string[])[]) => {
     const sanitized = { ...state }
-    const removed = new Map()
+    const removed = new Map<string | string[], string[]>()
     for (let path of privatePaths ?? []) {
         if (typeof Array.isArray(path)) {
             let copy = sanitized;
             for (let i = 0; i < path.length; i++) {
-                // console.log(copy, path[i], "\n")
                 if (i === path.length - 1) {
                     removed.set(path, copy[path[i]])
                     delete copy[path[i]]
