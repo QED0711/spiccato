@@ -28,6 +28,7 @@ export interface StorageOptions {
     clearStorageOnUnload?: boolean;
     removeChildrenOnUnload?: boolean;
     privateState?: (string | string[] | PathNode)[];
+    deepSanitizeState?: boolean;
 }
 export interface DynamicSetterOptions {
     explicitUpdatePath?: boolean;

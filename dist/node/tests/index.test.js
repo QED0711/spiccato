@@ -532,13 +532,35 @@ describe("Local Storage Peristance", () => {
             persistKey: "init",
             subscriberIDs: ["someSubscriber"],
             initializeFromLocalStorage: true,
-            privateState: [manager.paths.b]
+            privateState: [manager.paths.b],
+            deepSanitizeState: false
+        });
+        manager.init();
+        expect(manager.state.a).toEqual(100);
+        expect(manager.state.b).toBeUndefined();
+        expect("b" in manager.state).toBe(true);
+        expect(manager.setters.setB).toBeDefined();
+        manager.setters.setA(100);
+        expect(manager.state.a).toBe(100);
+        expect(manager.state.b).toBeUndefined();
+        expect("b" in manager.state).toBe(true);
+    });
+    test("Subscriber deep sanitization", () => {
+        index_1.default.clear();
+        index_1.WINDOW.name = "sanitizedSubscriber";
+        index_1.WINDOW.localStorage.setItem("init", JSON.stringify({ a: 100 }));
+        const manager = new index_1.default({ a: 1, b: 2 }, { id: "localStorageInit" });
+        manager.connectToLocalStorage({
+            persistKey: "init",
+            subscriberIDs: ["sanitizedSubscriber"],
+            initializeFromLocalStorage: true,
+            privateState: [manager.paths.b],
+            deepSanitizeState: true
         });
         manager.init();
         expect(manager.state.a).toEqual(100);
         expect(manager.state.b).toBeUndefined();
         expect("b" in manager.state).toBe(false);
-        console.log(manager._schema, manager._state);
         expect(manager.setters.setB).toBeUndefined();
         manager.setters.setA(100);
         expect(manager.state.a).toBe(100);

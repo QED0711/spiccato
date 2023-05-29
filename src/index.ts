@@ -25,7 +25,13 @@ import {
     StateSchema,
     DynamicSetterOptions
 } from './types/index'
-import { InvalidStateSchemaError, ProtectedNamespaceError, ReservedStateKeyError, InvalidStateUpdateError } from './errors';
+import { 
+    InvalidStateSchemaError, 
+    ProtectedNamespaceError, 
+    ReservedStateKeyError, 
+    InvalidStateUpdateError,
+    InitializationError
+} from './errors';
 
 /************************************* DEFAULTS **************************************/
 const DEFAULT_INIT_OPTIONS: InitializationOptions = {
@@ -110,7 +116,8 @@ export default class Spiccato {
     setters: { [key: string]: Function };
     methods: { [key: string]: Function };
     private _bindToLocalStorage: boolean;
-    public _role: string;
+    private _initialized: boolean;
+    private _role: string;
     windowManager: (WindowManager | null);
     private _eventListeners: { [key: string]: Function[] }
     [key: string]: any; /* for runtime added properties */
@@ -137,8 +144,9 @@ export default class Spiccato {
         this.setters = {}
         this.methods = {}
 
-        this._bindToLocalStorage = false
-        this._role = "provider"
+        this._initialized = false;
+        this._bindToLocalStorage = false;
+        this._role = "provider";
         this.windowManager = IS_BROWSER ? new WindowManager(WINDOW) : null;
 
         this._eventListeners = {};
@@ -161,6 +169,7 @@ export default class Spiccato {
 
     init() {
         this._applyState();
+        this._initialized = true
     }
 
     private _applyState() {
@@ -168,7 +177,8 @@ export default class Spiccato {
         if (this._bindToLocalStorage) {
             this._persistToLocalStorage(this._state)
         }
-        if(this._role !== "provider") {
+
+        if (this.storageOptions?.deepSanitizeState && this._role !== "provider") {
             this._schema = (sanitizeState(this._state, this.storageOptions.privateState)[0] as StateSchema);
             this._state = this._schema;
             Object.freeze(this._schema);
@@ -346,7 +356,7 @@ export default class Spiccato {
     }
 
     private emitUpdateEventFromPath(path: string[] | PathNode) {
-        if(path instanceof PathNode) path = path.__$path;
+        if (path instanceof PathNode) path = path.__$path;
         let p: string[], v: any;
         for (let i = 0; i < path.length; i++) {
             p = path.slice(0, i + 1)
@@ -360,6 +370,9 @@ export default class Spiccato {
 
     /********** LOCAL STORAGE **********/
     connectToLocalStorage(storageOptions: StorageOptions) {
+        if(this._initialized) {
+            throw new InitializationError("`init()` method called before `connectToLocalStorage()`.")
+        }
         this.storageOptions = { ...DEFAULT_STORAGE_OPTIONS, ...storageOptions };
         this.storageOptions.privateState = this.storageOptions.privateState.map((ps: string | string[] | PathNode) => ps instanceof PathNode ? ps.__$path : typeof ps === "string" ? [ps] : ps);
 

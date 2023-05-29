@@ -40,3 +40,9 @@ export class StatePathNotExistError extends Error {
         this.name = "StatePathNotExistError";
     }
 }
+export class InitializationError extends Error {
+    constructor(message) {
+        super(message);
+        this.name = "InitializationError";
+    }
+}

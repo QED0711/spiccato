@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 /************************************* IMPORTS **************************************/
 import { formatAccessor, getNestedRoutes, nestedSetterFactory, sanitizeState, restoreState, WindowManager, _localStorage, getUpdatedPaths, createStateProxy, hasCircularReference, stateSchemaHasFunctions, PathNode, PathTree, } from './utils/helpers';
-import { InvalidStateSchemaError, ProtectedNamespaceError, ReservedStateKeyError, InvalidStateUpdateError } from './errors';
+import { InvalidStateSchemaError, ProtectedNamespaceError, ReservedStateKeyError, InvalidStateUpdateError, InitializationError } from './errors';
 /************************************* DEFAULTS **************************************/
 const DEFAULT_INIT_OPTIONS = {
     id: "",
@@ -27,6 +27,7 @@ const DEFAULT_STORAGE_OPTIONS = {
     clearStorageOnUnload: true,
     removeChildrenOnUnload: true,
     privateState: [],
+    deepSanitizeState: true
 };
 const DEFAULT_DYNAMIC_SETTER_OPTIONS = {
     explicitUpdatePath: true
@@ -91,6 +92,7 @@ export default class Spiccato {
         this.getters = {};
         this.setters = {};
         this.methods = {};
+        this._initialized = false;
         this._bindToLocalStorage = false;
         this._role = "provider";
         this.windowManager = IS_BROWSER ? new WindowManager(WINDOW) : null;
@@ -109,12 +111,14 @@ export default class Spiccato {
     }
     init() {
         this._applyState();
+        this._initialized = true;
     }
     _applyState() {
+        var _a;
         if (this._bindToLocalStorage) {
             this._persistToLocalStorage(this._state);
         }
-        if (this._role !== "provider") {
+        if (((_a = this.storageOptions) === null || _a === void 0 ? void 0 : _a.deepSanitizeState) && this._role !== "provider") {
             this._schema = sanitizeState(this._state, this.storageOptions.privateState)[0];
             this._state = this._schema;
             Object.freeze(this._schema);
@@ -296,6 +300,9 @@ export default class Spiccato {
     /********** LOCAL STORAGE **********/
     connectToLocalStorage(storageOptions) {
         var _a;
+        if (this._initialized) {
+            throw new InitializationError("`init()` method called before `connectToLocalStorage()`.");
+        }
         this.storageOptions = Object.assign(Object.assign({}, DEFAULT_STORAGE_OPTIONS), storageOptions);
         this.storageOptions.privateState = this.storageOptions.privateState.map((ps) => ps instanceof PathNode ? ps.__$path : typeof ps === "string" ? [ps] : ps);
         // if window does not have a "name" property, default to the provider window id

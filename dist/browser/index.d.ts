@@ -22,7 +22,8 @@ export default class Spiccato {
         [key: string]: Function;
     };
     private _bindToLocalStorage;
-    _role: string;
+    private _initialized;
+    private _role;
     windowManager: (WindowManager | null);
     private _eventListeners;
     [key: string]: any;

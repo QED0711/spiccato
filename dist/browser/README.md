@@ -703,7 +703,8 @@ Note in this example how the `init` method is called *after* `connectToLocalStor
 | subscriberIDs | string[] | [] | An array of IDs indicating which spawned windows may subscribe to and receive state updates. |  
 | clearStorageOnUnload | bool | true | Whether of not to clear the state loaded to `localStorage` when the provider window is closed. |
 | removeChildrenOnUnload | bool | true | Whether of not to recursively close spawned children windows when the provider window (or relative parent window) is closed. |
-| privateState | string[] or string[][] or (instance path object)[] | [] | An array of strings, array of nested string arrays, or array of instance path objects (defined on instance.paths). Indicates state paths that will not be persisted to local storage. Provider windows will have access to all state regardless, but subscriber windows will only have access to state not defined within this option. | 
+| privateState | string[] or string[][] or (instance path object)[] | [] | An array of strings, array of nested string arrays, or array of instance path objects (defined on `instance.paths`). Indicates state paths that will not be persisted to local storage. Provider windows will have access to all state regardless, but subscriber windows will only have access to state values not defined within this option. | 
+| deepSanitizeState | bool | true | Whether or not any subscribers will have basic knowledge of private state? By default (true), subscribers will initialize without any knowledge that private state paths exist. This means that dynamic setters, getters, etc. will not be created for any paths defined within `privateState`. Set to false if you still want to your subscribers to know about private state but not the underlying data from the provider. 
 
 ---
 
@@ -773,6 +774,7 @@ manager.connectToLocalStorage({
     providerWindow: "main", // defines the originating state provider window
     subscriberWindows: ["config"], // defines what windows may receive state updates
     privateState: [manager.paths.superSecretKey],
+    deepSanitizeState: true
 });
 
 manager.init();
@@ -784,7 +786,7 @@ First, you must define a `providerWindow`. At time of initialization, if the win
 
 Second, you must provide an inclusive array of all subscriber window names that you intend to recognize throughout the lifecycle of your application. If the example above, our call to `connectToLocalStorage` says that it will recognize one subscriber window named `config`.
 
-Finally, in our `manager.windowManager.open` call, we tie everything together. Here, we're saying *"open a window at the route '/settings', name that window 'config', and pass it the following init params."* When that window opens and initializes its local `spiccato` instance, since its name links it to the approved list of subscribers, it will look at the current state given by the provider window and set that as the default value. Note that it will not receive the *superSecretKey* state parameter because that is marked as private and only the provider will have access to it. 
+Finally, in our `manager.windowManager.open` call, we tie everything together. Here, we're saying *"open a window at the route '/settings', name that window 'config', and pass it the following init params."* When that window opens and initializes its local `spiccato` instance, since its name links it to the approved list of subscribers, it will look at the current state given by the provider window and set that as the default value. Note that it will not receive the *superSecretKey* state parameter because that is marked as private and only the provider will have access to it. Because `deepSanitizeState` is set to true, the subscriber window will not even know that `superSecretKey` is a property that the provider window has access to, and will ignore it when setting up its own dynamic setters and getters. 
 
 To programmatically close a spawned window, you only need to call the `windowManager.close` method. 
 
