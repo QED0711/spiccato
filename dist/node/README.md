@@ -113,7 +113,7 @@ console.log(manager.state.user) // => {name: "Jane Doe"}; address and phone prop
 ```
 
 ##### **Function Input**
-As described above, object inputs to `setState` have some drawbacks when working with more complex state values like *objects* and *arrays*. In these situations, it is recommended that you use a function as the initial input. This function will receive one argument, which is the `state` at the time the function is called, and it must return an object with the necessary updated values. Like the object input, values in the returned object from this function are updated, and anything omitted is not updated. 
+As described above, object inputs to `setState` have some drawbacks when working with more complex state values like *objects* and *arrays*. In these situations, it is recommended that you use a function as the initial input. This function will receive one argument, which is the `state` at the time the function is called. The return value can either be an object with the necessary updated values, or an array of two elements where the first is the object with updated values and the second is an array indicating what paths have been updated. Like the object input, values in the returned object from this function are updated, and anything omitted is not updated. 
 
 ```javascript
 const stateSchema = {
@@ -129,16 +129,19 @@ const manager = new Spiccato(stateSchema, {id: "setStateWithFunction"})
 manager.init()
 
 manager.setState(function(prevState){
-    return {someBool: !prevState.someBool}
+    return {someBool: !prevState.someBool} // returns just an object
 })
 
 manager.setState(function(prevState){
-    return {user: {...prevState.user, name: "John Doe"}};
+    return [ 
+        {user: {...prevState.user, name: "John Doe"}}, // updater object
+        [manager.paths.user.name] // paths that have been updated
+    ];
 })
 ```
 In this example, we call `setState` twice, each time with a function as an argument. In the first call, we take a boolean value and return its inverse. This could also be accomplished with an object input, but you would then have to access the boolean value outside the set state call so you could determine its inverse. 
 
-In the second call, we take the more complex *user* object and set just a subset of its nested values. With `...prevState.user`, we are effectively creating a new user object with all the same properties as the incoming state's user object. We then change just the *name* parameter in this new object we have created. This way we are sure that we have completely preserved all the parameters we haven't touched in the *user* object.
+In the second call, we take the more complex *user* object and set just a subset of its nested values. With `...prevState.user`, we are effectively creating a new user object with all the same properties as the incoming state's user object. We then change just the *name* parameter in this new object we have created. This way we are sure that we have completely preserved all the parameters we haven't touched in the *user* object. As a second element in the returned array, we have a paths array indicating what paths have just been updated. This isn't necessary, but does provide a slight [performance improvement](#updatedpaths--more-efficient-updating).
 
 ##### **Asynchronous Behavior & Callback Argument**
 
@@ -167,7 +170,9 @@ manager.setState({myVal: 2}, (updatedState) => {
 
 The third argument you can pass to `setState` is `updatedPaths`, an array defining which paths the state update will effect. This can take the form of either a an array of string arrays (`string[][]`), or an array of `spiccato` path objects which are accessed on the instance's `paths` property.
 
-There are some benefits to explicitly defining the paths that are about to be updated. When an update occurs, `spiccato` compares your previous state to the newly updated state to determine which paths have updated so it can notify the appropriate listeners. This operation is recursive and becomes more expensive for object with deeply nested structures. However, if you tell `setState` what you are about to update, it will skip this recursive check and just call event listeners based on the paths you define.
+There are some benefits to explicitly defining the paths that are about to be updated. When an update occurs, `spiccato` compares your previous state to the newly updated state to determine which paths have updated so it can notify the appropriate listeners. This operation is recursive and becomes more expensive for objects with deeply nested structures. However, if you tell `setState` what you are about to update, it will skip this recursive check and just call event listeners based on the paths you define.
+
+When you use a functional argument in `setState`, you can return an array where the second element is this `updatedPaths` argument. If you take this route, the returned value from the function will supersede the direct input of `updatedPaths` to `setState`. This is particularly helpful if there is logic in your `setState` function that may or may not update certain values. By returning the `updatedPaths` value from the function call itself, you can always make sure that the `updatedPaths` array is an accurate representation of what has been updated. 
 
 > Note: dynamic setters and nested setters make a call to `setState` under the hood. They make use of this efficiency boost by explicitly defining the updated paths. If the situation permits, dynamic setters and nested setters offer the easiest and most efficient solution for state updates. 
 

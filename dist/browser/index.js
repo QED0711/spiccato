@@ -198,12 +198,16 @@ export default class Spiccato {
                 this._state = Object.assign(Object.assign({}, this._state), updater);
             }
             else if (typeof updater === 'function') {
-                const updaterValue = updater(this.state);
-                if (typeof updaterValue !== "object") {
+                const result = updater(this.state);
+                if (typeof result !== "object")
                     throw new InvalidStateUpdateError("Functional update did not return an object. The function passed to `setState` must return an object");
+                let updaterValue;
+                if (Array.isArray(result)) {
+                    updaterValue = result[0];
+                    updatedPaths = result[1];
                 }
-                else if (Array.isArray(updaterValue)) {
-                    throw new InvalidStateUpdateError("Functional update returned an array. The function passed to `setState` must return an object, not an array");
+                else {
+                    updaterValue = result;
                 }
                 updatedPaths !== null && updatedPaths !== void 0 ? updatedPaths : (updatedPaths = getUpdatedPaths(updaterValue, this._state, this._schema));
                 this._state = Object.assign(Object.assign({}, this._state), updaterValue);

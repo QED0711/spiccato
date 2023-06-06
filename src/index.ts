@@ -264,11 +264,14 @@ export default class Spiccato {
                 }
                 this._state = { ...this._state, ...updater };
             } else if (typeof updater === 'function') {
-                const updaterValue: StateObject = updater(this.state);
-                if (typeof updaterValue !== "object") {
-                    throw new InvalidStateUpdateError("Functional update did not return an object. The function passed to `setState` must return an object");
-                } else if (Array.isArray(updaterValue)) {
-                    throw new InvalidStateUpdateError("Functional update returned an array. The function passed to `setState` must return an object, not an array");
+                const result: StateObject | [StateObject, string[][] | PathNode[]] = updater(this.state);
+                if (typeof result !== "object") throw new InvalidStateUpdateError("Functional update did not return an object. The function passed to `setState` must return an object");
+                let updaterValue: StateObject 
+                if (Array.isArray(result)) {
+                    updaterValue = result[0];
+                    updatedPaths = result[1];
+                } else {
+                    updaterValue = result;
                 }
                 updatedPaths ??= getUpdatedPaths(updaterValue, this._state, this._schema)
                 this._state = { ...this._state, ...updaterValue };

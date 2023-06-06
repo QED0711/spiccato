@@ -277,9 +277,16 @@ describe("State Interactions", () => {
             expect(testManager.getters.getMyVal()).toBe(3)
         })
 
+        test("setState function argument with returning updated path", () => {
+            testManager.setState(function(prevState: StateObject) {
+                return [{myVal: 123}, [testManager.paths.myVal]]
+            })
+            expect(testManager.state.myVal).toBe(123);
+        });
+
         test("Dynamic Setters", () => {
-            testManager.setters.setMyVal(3);
-            expect(testManager.getters.getMyVal()).toBe(3);
+            testManager.setters.setMyVal(4);
+            expect(testManager.getters.getMyVal()).toBe(4);
         });
 
         test("Custom Setters", () => {
