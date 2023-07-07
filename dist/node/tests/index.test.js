@@ -48,7 +48,9 @@ const testManager = new index_1.default({
         },
         level2Val: "hello"
     },
-    arr: [1, 2, 3]
+    arr: [1, 2, 3],
+    override: "override this setter",
+    overrideGetter: "override this getter",
 }, {
     id: "TEST"
 });
@@ -56,12 +58,20 @@ testManager.init();
 testManager.addCustomGetters({
     getAddedNums: function () {
         return this.state.num1 + this.state.num2;
+    },
+    getOverrideGetter() {
+        return "this is not the string you're looking for";
     }
 });
 testManager.addCustomSetters({
     setBothNums(num1, num2) {
         this.setState((prevState) => {
             return { num1, num2 };
+        });
+    },
+    setOverride(text) {
+        this.setState((prevState) => {
+            return [{ override: "constant string" }, []]; // does nothing, nothing is set
         });
     }
 });
@@ -212,6 +222,9 @@ describe("State Interactions", () => {
         test("Custom getters", () => {
             expect(testManager.getters.getAddedNums()).toBe(15);
         });
+        test("Dynamic getters override", () => {
+            expect(testManager.getters.getOverrideGetter()).toBe("this is not the string you're looking for");
+        });
         test("Nested Getters", () => {
             expect(testManager.getters.getLevel1()).toStrictEqual({ level2: { level3: 3 }, level2Val: "hello" });
             expect(testManager.getters.getLevel1_level2()).toStrictEqual({ level3: 3 });
@@ -292,6 +305,10 @@ describe("State Interactions", () => {
         test("Custom Setters", () => {
             testManager.setters.setBothNums(50, 100);
             expect(testManager.getters.getAddedNums()).toBe(150);
+        });
+        test("Dynamic Setter Override", () => {
+            testManager.setters.setOverride("This is some new string");
+            expect(testManager.getters.getOverride()).toBe("constant string");
         });
         test("Nested Setters", () => {
             testManager.setters.setLevel1_level2_level3(300);
