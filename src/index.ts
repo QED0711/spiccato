@@ -38,6 +38,7 @@ const DEFAULT_INIT_OPTIONS: InitializationOptions = {
     id: "",
     dynamicGetters: true,
     dynamicSetters: true,
+    allowDynamicAccessorOverride: true,
     nestedGetters: true,
     nestedSetters: true,
     debug: false,
@@ -294,15 +295,25 @@ export default class Spiccato {
     }
 
     addCustomGetters(getters: { [key: string]: Function }) {
+        if(!this._initialized) {
+            throw new InitializationError("`addCustomGetters` called before init(). This may lead to unexpected behavior with dynamic getter overrides")
+        }
         for (let [key, callback] of Object.entries(getters)) {
-            getters[key] = callback.bind(this);
+            if(!(key in this.getters) || (key in this.getters && this.initOptions.allowDynamicAccessorOverride)) {
+                getters[key] = callback.bind(this);
+            }
         }
         this.getters = { ...this.getters, ...getters }
     }
 
     addCustomSetters(setters: { [key: string]: Function }) {
+        if(!this._initialized) {
+            throw new InitializationError("`addCustomSetters` called before init(). This may lead to unexpected behavior with dynamic setter overrides")
+        }
         for (let [key, callback] of Object.entries(setters)) {
-            setters[key] = callback.bind(this);
+            if(!(key in this.setters) || (key in this.setters && this.initOptions.allowDynamicAccessorOverride)) {
+                setters[key] = callback.bind(this);
+            }
         }
         this.setters = { ...this.setters, ...setters };
     }

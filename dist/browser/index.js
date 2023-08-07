@@ -15,6 +15,7 @@ const DEFAULT_INIT_OPTIONS = {
     id: "",
     dynamicGetters: true,
     dynamicSetters: true,
+    allowDynamicAccessorOverride: true,
     nestedGetters: true,
     nestedSetters: true,
     debug: false,

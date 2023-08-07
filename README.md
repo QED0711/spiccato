@@ -237,6 +237,7 @@ manager.setState({ val1: 1, val2: 2 }, null, [manager.paths.val1])
 | id  | string (required) | null | A unique ID that can be used to retrieve the registered instance at a later time |
 | dynamicGetters | boolean   | true | Whether or not to dynamically generate getter methods based on the initialized state schema |
 | dynamicSetters | boolean | true | Whether or not to dynamically generate setter methods based on the initialized state schema |
+| allowDynamicAccessorOverride | boolean | true | If true, the user can replace a dynamic getter/setter with a function of the same name in either `addCustomGetters` or `addCustomSetters` | 
 | nestedGetters | boolean | true | Whether or not to dynamically generate nested getter methods based on the initialized state schema |
 | nestedSetters | boolean | true | Whether or not to dynamically generate nested setter methods based on the initialized state schema |
 | debug | boolean | false | Whether or not to log out debug messages when utilizing the initialized manager |

@@ -15,6 +15,7 @@ export interface InitializationOptions {
     id: managerID;
     dynamicGetters?: boolean;
     dynamicSetters?: boolean;
+    allowDynamicAccessorOverride?: boolean;
     nestedGetters?: boolean;
     nestedSetters?: boolean;
     debug?: boolean;
