@@ -94,10 +94,6 @@ ${supportImports}
 
 ${supportFiles.stateSchema ? `const ${name}Manager = new Spiccato(${supportFiles.stateSchema}, {id: "${name}"})` : `const ${name}Manager = new Spiccato({}, {id: "${name}"})`}
 
-${supportFiles.getters ? `${name}Manager.addCustomGetters(${supportFiles.getters})` : ""}
-${supportFiles.setters ? `${name}Manager.addCustomSetters(${supportFiles.setters})` : ""}
-${supportFiles.methods ? `${name}Manager.addCustomMethods(${supportFiles.methods})` : ""}
-
 // Uncomment below to connect state to localStorage
 /*
 ${name}Manager.connectToLocalStorage({ 
@@ -106,6 +102,10 @@ ${name}Manager.connectToLocalStorage({
 */
 
 ${name}Manager.init();
+
+${supportFiles.getters ? `${name}Manager.addCustomGetters(${supportFiles.getters})` : ""}
+${supportFiles.setters ? `${name}Manager.addCustomSetters(${supportFiles.setters})` : ""}
+${supportFiles.methods ? `${name}Manager.addCustomMethods(${supportFiles.methods})` : ""}
 
 export default ${name}Manager; 
 export const ${name}Paths = ${name}Manager.paths;
