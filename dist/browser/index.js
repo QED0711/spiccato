@@ -230,14 +230,24 @@ export default class Spiccato {
         });
     }
     addCustomGetters(getters) {
+        if (!this._initialized) {
+            throw new InitializationError("`addCustomGetters` called before init(). This may lead to unexpected behavior with dynamic getter overrides");
+        }
         for (let [key, callback] of Object.entries(getters)) {
-            getters[key] = callback.bind(this);
+            if (!(key in this.getters) || (key in this.getters && this.initOptions.allowDynamicAccessorOverride)) {
+                getters[key] = callback.bind(this);
+            }
         }
         this.getters = Object.assign(Object.assign({}, this.getters), getters);
     }
     addCustomSetters(setters) {
+        if (!this._initialized) {
+            throw new InitializationError("`addCustomSetters` called before init(). This may lead to unexpected behavior with dynamic setter overrides");
+        }
         for (let [key, callback] of Object.entries(setters)) {
-            setters[key] = callback.bind(this);
+            if (!(key in this.setters) || (key in this.setters && this.initOptions.allowDynamicAccessorOverride)) {
+                setters[key] = callback.bind(this);
+            }
         }
         this.setters = Object.assign(Object.assign({}, this.setters), setters);
     }

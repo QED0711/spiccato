@@ -220,7 +220,7 @@ However, you should be aware of some potential drawbacks in explicitly defining 
 
 const stateSchema = { val1: 0, val2: 0 }
 
-const manager = new Spiccato(stateSchema, {id: "BADexplicateUpdatedPaths"})
+const manager = new Spiccato(stateSchema, {id: "BADexplicitUpdatedPaths"})
 manager.init()
 
 // This will trigger an event listener even though `val1` is still `0` after the update. A recursive check would not have flagged this change as an update.
@@ -237,6 +237,7 @@ manager.setState({ val1: 1, val2: 2 }, null, [manager.paths.val1])
 | id  | string (required) | null | A unique ID that can be used to retrieve the registered instance at a later time |
 | dynamicGetters | boolean   | true | Whether or not to dynamically generate getter methods based on the initialized state schema |
 | dynamicSetters | boolean | true | Whether or not to dynamically generate setter methods based on the initialized state schema |
+| allowDynamicAccessorOverride | boolean | true | If true, the user can replace a dynamic getter/setter with a function of the same name in either `addCustomGetters` or `addCustomSetters` | 
 | nestedGetters | boolean | true | Whether or not to dynamically generate nested getter methods based on the initialized state schema |
 | nestedSetters | boolean | true | Whether or not to dynamically generate nested setter methods based on the initialized state schema |
 | debug | boolean | false | Whether or not to log out debug messages when utilizing the initialized manager |
@@ -398,6 +399,8 @@ manager.setters.setComplexObject_value(
 ### Customization
 
 You will likely find it necessary to extend the functionality of your state management beyond the dynamic getter and setter patterns described above. This is easily achieved with a number of customization options that are available on your `spiccato` instance.  
+
+> NOTE: It is important that you call the `.init()` method prior to adding custom getters and setters. Failure to do so will result in an error being thrown because the  `addCustomGetters` and `addCustomSetters` will exhibit strange behavior if your try to overwrite a dynamic getter/setter.  
 
 The following four methods follow a similar pattern. They each take in an object where the keys are the custom function names, and the values are the functions themselves (`addNamespacedMethods` is slightly different, see below). The custom functions get bound to your `spiccato` instance, and can access the `this` parameter within their body. Because of this binding procedure, it is important that you do not pass in *arrow functions* to these methods, as they cannot be bound like typical JavaScript functions. 
 

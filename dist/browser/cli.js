@@ -101,7 +101,7 @@ ${name}Manager.connectToLocalStorage({
 })
 */
 
-${name}Manager.init();
+${name}Manager.init(); ${(!!supportFiles.getters || !!supportFiles.setters) && "// IMPORTANT: This must be called prior to addCustomGetters and addCustomSetters"}
 
 ${supportFiles.getters ? `${name}Manager.addCustomGetters(${supportFiles.getters})` : ""}
 ${supportFiles.setters ? `${name}Manager.addCustomSetters(${supportFiles.setters})` : ""}
