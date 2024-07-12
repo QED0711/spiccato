@@ -107,7 +107,7 @@ class Spiccato {
         this.constructor.registerManager(this);
     }
     get state() {
-        return this.initOptions.enableWriteProtection ? (0, helpers_1.createStateProxy)(this._state, this._schema) : this._state;
+        return (this.initOptions.enableWriteProtection ? (0, helpers_1.createStateProxy)(this._state, this._schema) : this._state);
     }
     get id() {
         return this.initOptions.id;
@@ -184,9 +184,14 @@ class Spiccato {
         else if (Array.isArray(path)) {
             let val = this.state;
             for (let p of path) {
-                val = val[p];
-                if (val === undefined)
+                if (val && typeof val === "object" && p in val) {
+                    val = val[p];
+                }
+                else {
                     return undefined;
+                }
+                // val = val[p];
+                // if (val === undefined) return undefined
             }
             return val;
         }

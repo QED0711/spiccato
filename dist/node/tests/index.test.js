@@ -34,7 +34,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 const index_1 = __importStar(require("../index"));
 const helpers_1 = require("../utils/helpers");
-const testManager = new index_1.default({
+const initState = {
     isNull: null,
     isUndefined: undefined,
     nested: { isNull: null, isUndefined: undefined },
@@ -51,7 +51,8 @@ const testManager = new index_1.default({
     arr: [1, 2, 3],
     override: "override this setter",
     overrideGetter: "override this getter",
-}, {
+};
+const testManager = new index_1.default(initState, {
     id: "TEST"
 });
 testManager.init();
@@ -508,7 +509,7 @@ describe("Local Storage Peristance", () => {
     test("Persistance doesn't mutate local state", () => {
         index_1.default.clear();
         delete index_1.WINDOW.name;
-        const manager = new index_1.default({
+        const initPersistState = {
             a: {
                 b: {
                     c: 3
@@ -516,7 +517,8 @@ describe("Local Storage Peristance", () => {
                 d: 4
             },
             e: 5
-        }, {
+        };
+        const manager = new index_1.default(initPersistState, {
             id: "Persist",
         });
         manager.connectToLocalStorage({

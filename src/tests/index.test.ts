@@ -2,25 +2,27 @@ import Spiccato, { WINDOW } from '../index'
 import { EventPayload, StateObject, StateSchema } from '../types';
 import { PathNode } from '../utils/helpers';
 
-const testManager = new Spiccato(
-    {
-        isNull: null,
-        isUndefined: undefined,
-        nested: {isNull: null, isUndefined: undefined},
-        user: {},
-        myVal: 1,
-        num1: 5,
-        num2: 10,
-        level1: {
-            level2: {
-                level3: 3
-            },
-            level2Val: "hello"
+const initState = {
+    isNull: null,
+    isUndefined: undefined,
+    nested: { isNull: null, isUndefined: undefined },
+    user: {},
+    myVal: 1,
+    num1: 5,
+    num2: 10,
+    level1: {
+        level2: {
+            level3: 3
         },
-        arr: [1, 2, 3],
-        override: "override this setter",
-        overrideGetter: "override this getter",
+        level2Val: "hello"
     },
+    arr: [1, 2, 3],
+    override: "override this setter",
+    overrideGetter: "override this getter",
+}
+
+const testManager = new Spiccato<typeof initState>(
+    initState,
     {
         id: "TEST"
     },
@@ -29,17 +31,17 @@ const testManager = new Spiccato(
 testManager.init();
 
 testManager.addCustomGetters({
-    getAddedNums: function (this: Spiccato) {
+    getAddedNums: function (this: Spiccato<typeof initState>) {
         return this.state.num1 + this.state.num2;
     },
 
-    getOverrideGetter(){
+    getOverrideGetter() {
         return "this is not the string you're looking for"
     }
 })
 
 testManager.addCustomSetters({
-    setBothNums(this: Spiccato, num1: number, num2: number) {
+    setBothNums(this: Spiccato<typeof initState>, num1: number, num2: number) {
         this.setState((prevState: StateObject) => {
             return { num1, num2 };
         })
@@ -47,7 +49,7 @@ testManager.addCustomSetters({
 
     setOverride(this: Spiccato, text: string) {
         this.setState((prevState: StateObject) => {
-            return [{override: "constant string"}, []]; // does nothing, nothing is set
+            return [{ override: "constant string" }, []]; // does nothing, nothing is set
         })
     }
 
@@ -87,29 +89,29 @@ describe("Initialization:", () => {
     });
 
     test("Valid StateSchema", () => {
-        try{
-            const a: StateSchema = {a: 1};
+        try {
+            const a: StateSchema = { a: 1 };
             const b = a;
             a.b = b;
-            new Spiccato(a, {id: "invalid"});
+            new Spiccato(a, { id: "invalid" });
             expect(true).toBe(false);
-        } catch(err){
+        } catch (err) {
             expect((err as Error).name).toBe("InvalidStateSchemaError")
         }
 
-        try{
-            const a: StateSchema = {a: function(){}};
-            new Spiccato(a, {id: "invalid2"});
+        try {
+            const a: StateSchema = { a: function () { } };
+            new Spiccato(a, { id: "invalid2" });
             expect(true).toBe(false);
-        } catch(err){
+        } catch (err) {
             expect((err as Error).name).toBe("InvalidStateSchemaError")
         }
 
-        try{
-            const a: StateSchema = {a: 1};
-            new Spiccato(a, {id: "valid"});
+        try {
+            const a: StateSchema = { a: 1 };
+            new Spiccato(a, { id: "valid" });
             expect(true).toBe(true);
-        } catch(err){
+        } catch (err) {
             expect((err as Error).name).toBe("InvalidStateSchemaError")
         }
     })
@@ -133,12 +135,12 @@ describe("Initialization:", () => {
             expect(testManager.paths.level1.level2.level3.__$path).toEqual(["level1", "level2", "level3"]);
         })
         test("Path Errors", () => {
-            try{
+            try {
                 testManager.paths.level1.level2.notHere
-            } catch(err){
+            } catch (err) {
                 expect((err as Error).name).toBe("StatePathNotExistError")
             }
-        }) 
+        })
 
     })
 })
@@ -166,14 +168,14 @@ describe("State Interactions", () => {
                         if (i === path.length - 1) {
                             switch (action) {
                                 case "set":
-                                    val[path[i]] = update;
+                                    (val as Record<string, any>)[path[i]] = update;
                                     return 1
                                 case "delete":
-                                    delete val[path[i]];
+                                    delete (val as Record<string, any>)[path[i]];
                                     return 1
                             }
                         }
-                        val = val[path[i]]
+                        val = (val as Record<string, any>)[path[i]]
                     }
                     return 1
                 } catch (err: any) {
@@ -295,8 +297,8 @@ describe("State Interactions", () => {
         })
 
         test("setState function argument with returning updated path", () => {
-            testManager.setState(function(prevState: StateObject) {
-                return [{myVal: 123}, [testManager.paths.myVal]]
+            testManager.setState(function (prevState: StateObject) {
+                return [{ myVal: 123 }, [testManager.paths.myVal]]
             })
             expect(testManager.state.myVal).toBe(123);
         });
@@ -314,7 +316,7 @@ describe("State Interactions", () => {
         test("Dynamic Setter Override", () => {
             testManager.setters.setOverride("This is some new string");
             expect(testManager.getters.getOverride()).toBe("constant string");
-        })        
+        })
 
         test("Nested Setters", () => {
             testManager.setters.setLevel1_level2_level3(300);
@@ -394,7 +396,7 @@ describe("Events", () => {
             testManager.setters.setIsUndefined("not undefined");
             testManager.setters.setNested_isNull("not null");
             testManager.setters.setNested_isUndefined("not undefined");
-            
+
             // top level isNull
             let payload: EventPayload = await new Promise(resolve => {
                 testManager.addEventListener(["isNull"], (payload: EventPayload) => {
@@ -404,7 +406,7 @@ describe("Events", () => {
             })
             expect(payload.path).toEqual(["isNull"]);
             expect(payload.value).toEqual(null);
-            
+
             // top level isUndefined
             const payload2: EventPayload = await new Promise(resolve => {
                 testManager.addEventListener(["isUndefined"], (payload: EventPayload) => {
@@ -414,19 +416,19 @@ describe("Events", () => {
             })
             expect(payload2.path).toEqual(["isUndefined"]);
             expect(payload2.value).toEqual(undefined);
-        
+
             // nested isNull
             const payload3: EventPayload = await new Promise(resolve => {
                 testManager.addEventListener(["nested", "isNull"], (payload: EventPayload) => {
                     resolve(payload)
                 })
                 testManager.setState((prevState: StateObject) => {
-                    return {nested: {...prevState.nested, isNull: null}}
+                    return { nested: { ...prevState.nested, isNull: null } }
                 })
             })
             expect(payload3.path).toEqual(["nested", "isNull"]);
             expect(payload3.value).toEqual(null);
-            
+
             // nested level isUndefined
             const payload4: EventPayload = await new Promise(resolve => {
                 testManager.addEventListener(["nested", "isUndefined"], (payload: EventPayload) => {
@@ -489,7 +491,7 @@ describe("Events", () => {
                 testManager.addEventListener(testManager.paths.level1.level2Val, (payload: EventPayload) => {
                     resolve(payload)
                 });
-                testManager.setState((prevState: StateObject) => ({level1: {...prevState.level1, level2Val: "Hi Again!!!"}}), null, [testManager.paths.level1.level2Val]) 
+                testManager.setState((prevState: StateObject) => ({ level1: { ...prevState.level1, level2Val: "Hi Again!!!" } }), null, [testManager.paths.level1.level2Val])
             })
             expect(payload.path).toEqual(testManager.paths.level1.level2Val.__$path);
             expect(payload.value).toBe("Hi Again!!!");
@@ -547,7 +549,7 @@ describe("Local Storage Peristance", () => {
     test("Persistance doesn't mutate local state", () => {
         Spiccato.clear()
         delete WINDOW.name;
-        const manager = new Spiccato({
+        const initPersistState = {
             a: {
                 b: {
                     c: 3
@@ -555,7 +557,8 @@ describe("Local Storage Peristance", () => {
                 d: 4
             },
             e: 5
-        }, {
+        }
+        const manager = new Spiccato<typeof initPersistState>(initPersistState, {
             id: "Persist",
         })
 
@@ -567,7 +570,7 @@ describe("Local Storage Peristance", () => {
         })
 
         manager.init()
-        
+
         manager.setters.setA_d(10);
         expect(manager.state.a.b.c).toBe(3);
         expect(manager.state.e).toBe(5);

@@ -25,10 +25,10 @@ import {
     StateSchema,
     DynamicSetterOptions
 } from './types/index'
-import { 
-    InvalidStateSchemaError, 
-    ProtectedNamespaceError, 
-    ReservedStateKeyError, 
+import {
+    InvalidStateSchemaError,
+    ProtectedNamespaceError,
+    ReservedStateKeyError,
     InvalidStateUpdateError,
     InitializationError
 } from './errors';
@@ -90,7 +90,7 @@ const RESERVED_STATE_KEYS: string[] = [
 
 
 /* SPICCATO */
-export default class Spiccato {
+export default class Spiccato<State extends StateSchema = StateSchema> {
     /* Class Properties */
     private static managers: { [key: string]: Spiccato } = {};
 
@@ -157,11 +157,11 @@ export default class Spiccato {
             WINDOW?.addEventListener("onunload", this.handleUnload.bind(this))
         }
 
-        (this.constructor as typeof Spiccato).registerManager(this)
+        (this.constructor as typeof Spiccato<State>).registerManager(this as Spiccato)
     }
 
-    public get state(): StateObject {
-        return this.initOptions.enableWriteProtection ? createStateProxy(this._state, this._schema) : this._state;
+    public get state(): State {
+        return (this.initOptions.enableWriteProtection ? createStateProxy(this._state, this._schema) : this._state) as State;
     }
 
     public get id(): managerID {
@@ -190,7 +190,7 @@ export default class Spiccato {
             if (this.initOptions.dynamicGetters) {
                 this.getters[formatAccessor(k, "get")] = () => {
                     // this accesses `this.state` and NOT `this._state`. If the getter returns a higher level object, that object should be immutable
-                    return this.state[k];
+                    return this.state[k as keyof State];
                 }
             }
 
@@ -244,12 +244,17 @@ export default class Spiccato {
 
     getStateFromPath(path: string | string[]): any | undefined {
         if (typeof path === "string") {
-            return this.state[path]
+            return this.state[path as keyof State]
         } else if (Array.isArray(path)) {
-            let val = this.state;
+            let val: any = this.state;
             for (let p of path) {
-                val = val[p];
-                if (val === undefined) return undefined
+                if (val && typeof val === "object" && p in val) {
+                    val = val[p as keyof typeof val];
+                } else {
+                    return undefined;
+                }
+                // val = val[p];
+                // if (val === undefined) return undefined
             }
             return val
         }
@@ -267,7 +272,7 @@ export default class Spiccato {
             } else if (typeof updater === 'function') {
                 const result: StateObject | [StateObject, string[][] | PathNode[]] = updater(this.state);
                 if (typeof result !== "object") throw new InvalidStateUpdateError("Functional update did not return an object. The function passed to `setState` must return an object");
-                let updaterValue: StateObject 
+                let updaterValue: StateObject
                 if (Array.isArray(result)) {
                     updaterValue = result[0];
                     updatedPaths = result[1];
@@ -295,11 +300,11 @@ export default class Spiccato {
     }
 
     addCustomGetters(getters: { [key: string]: Function }) {
-        if(!this._initialized) {
+        if (!this._initialized) {
             throw new InitializationError("`addCustomGetters` called before init(). This may lead to unexpected behavior with dynamic getter overrides")
         }
         for (let [key, callback] of Object.entries(getters)) {
-            if(!(key in this.getters) || (key in this.getters && this.initOptions.allowDynamicAccessorOverride)) {
+            if (!(key in this.getters) || (key in this.getters && this.initOptions.allowDynamicAccessorOverride)) {
                 getters[key] = callback.bind(this);
             }
         }
@@ -307,11 +312,11 @@ export default class Spiccato {
     }
 
     addCustomSetters(setters: { [key: string]: Function }) {
-        if(!this._initialized) {
+        if (!this._initialized) {
             throw new InitializationError("`addCustomSetters` called before init(). This may lead to unexpected behavior with dynamic setter overrides")
         }
         for (let [key, callback] of Object.entries(setters)) {
-            if(!(key in this.setters) || (key in this.setters && this.initOptions.allowDynamicAccessorOverride)) {
+            if (!(key in this.setters) || (key in this.setters && this.initOptions.allowDynamicAccessorOverride)) {
                 setters[key] = callback.bind(this);
             }
         }
@@ -384,7 +389,7 @@ export default class Spiccato {
 
     /********** LOCAL STORAGE **********/
     connectToLocalStorage(storageOptions: StorageOptions) {
-        if(this._initialized) {
+        if (this._initialized) {
             throw new InitializationError("`init()` method called before `connectToLocalStorage()`.")
         }
         this.storageOptions = { ...DEFAULT_STORAGE_OPTIONS, ...storageOptions };

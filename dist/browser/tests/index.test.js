@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 import Spiccato, { WINDOW } from '../index';
 import { PathNode } from '../utils/helpers';
-const testManager = new Spiccato({
+const initState = {
     isNull: null,
     isUndefined: undefined,
     nested: { isNull: null, isUndefined: undefined },
@@ -26,7 +26,8 @@ const testManager = new Spiccato({
     arr: [1, 2, 3],
     override: "override this setter",
     overrideGetter: "override this getter",
-}, {
+};
+const testManager = new Spiccato(initState, {
     id: "TEST"
 });
 testManager.init();
@@ -483,7 +484,7 @@ describe("Local Storage Peristance", () => {
     test("Persistance doesn't mutate local state", () => {
         Spiccato.clear();
         delete WINDOW.name;
-        const manager = new Spiccato({
+        const initPersistState = {
             a: {
                 b: {
                     c: 3
@@ -491,7 +492,8 @@ describe("Local Storage Peristance", () => {
                 d: 4
             },
             e: 5
-        }, {
+        };
+        const manager = new Spiccato(initPersistState, {
             id: "Persist",
         });
         manager.connectToLocalStorage({

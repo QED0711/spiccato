@@ -4,10 +4,10 @@ import { StateObject, StateUpdateCallback, InitializationOptions, StorageOptions
 export declare let WINDOW: {
     [key: string]: any;
 };
-export default class Spiccato {
+export default class Spiccato<State extends StateSchema = StateSchema> {
     private static managers;
     private static registerManager;
-    static getManagerById(id: managerID): Spiccato;
+    static getManagerById(id: managerID): Spiccato<StateSchema>;
     static clear(): void;
     private initOptions;
     _schema: StateSchema;
@@ -28,7 +28,7 @@ export default class Spiccato {
     private _eventListeners;
     [key: string]: any;
     constructor(stateSchema: StateSchema | undefined, options: InitializationOptions);
-    get state(): StateObject;
+    get state(): State;
     get id(): managerID;
     init(): void;
     private _applyState;
