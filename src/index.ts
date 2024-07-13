@@ -23,7 +23,12 @@ import {
     EventPayload,
     managerID,
     StateSchema,
-    DynamicSetterOptions
+    DynamicSetterOptions,
+    GettersSchema,
+    SettersSchema,
+    MethodsSchema,
+    SpiccatoInstance,
+    NamespacedMethods
 } from './types/index'
 import {
     InvalidStateSchemaError,
@@ -90,7 +95,12 @@ const RESERVED_STATE_KEYS: string[] = [
 
 
 /* SPICCATO */
-export default class Spiccato<State extends StateSchema = StateSchema> {
+export default class Spiccato<
+    State extends StateSchema = StateSchema,
+    Getters extends GettersSchema<SpiccatoInstance<State, Getters, Setters, Methods>> = {},
+    Setters extends SettersSchema<SpiccatoInstance<State, Getters, Setters, Methods>> = {},
+    Methods extends MethodsSchema<SpiccatoInstance<State, Getters, Setters, Methods>> = {},
+> {
     /* Class Properties */
     private static managers: { [key: string]: Spiccato } = {};
 
@@ -113,9 +123,11 @@ export default class Spiccato<State extends StateSchema = StateSchema> {
     private initOptions: InitializationOptions;
     public _schema: StateSchema
     public _state: StateObject;
-    getters: { [key: string]: Function };
-    setters: { [key: string]: Function };
-    methods: { [key: string]: Function };
+
+    _getters: {[key: string]: Function};
+    _setters: {[key: string]: Function};
+    _methods: {[key: string]: Function};
+
     private _bindToLocalStorage: boolean;
     private _initialized: boolean;
     private _role: string;
@@ -141,9 +153,9 @@ export default class Spiccato<State extends StateSchema = StateSchema> {
             throw new ReservedStateKeyError(`The key: '${stateKeyViolations[0]}' is reserved at this level. Please select a different key for this state resource.`)
         }
 
-        this.getters = {}
-        this.setters = {}
-        this.methods = {}
+        this._getters = {} 
+        this._setters = {}
+        this._methods = {}
 
         this._initialized = false;
         this._bindToLocalStorage = false;
@@ -168,6 +180,18 @@ export default class Spiccato<State extends StateSchema = StateSchema> {
         return this.initOptions.id;
     }
 
+    public get getters(): Getters {
+        return this._getters as Getters;
+    }    
+
+    public get setters(): Setters {
+        return this._setters as Setters;
+    }
+
+    public get methods(): Methods {
+        return this._methods as Methods;
+    }
+
     init() {
         this._applyState();
         this._initialized = true
@@ -188,14 +212,14 @@ export default class Spiccato<State extends StateSchema = StateSchema> {
 
         for (let k in this._state) {
             if (this.initOptions.dynamicGetters) {
-                this.getters[formatAccessor(k, "get")] = () => {
+                this._getters[formatAccessor(k, "get")] = () => {
                     // this accesses `this.state` and NOT `this._state`. If the getter returns a higher level object, that object should be immutable
                     return this.state[k as keyof State];
                 }
             }
 
             if (this.initOptions.dynamicSetters) {
-                this.setters[formatAccessor(k, "set")] = (v: any, callback: StateUpdateCallback | null, options: DynamicSetterOptions | null) => {
+                this._setters[formatAccessor(k, "set")] = (v: any, callback: StateUpdateCallback | null, options: DynamicSetterOptions | null) => {
                     options = { ...DEFAULT_DYNAMIC_SETTER_OPTIONS, ...options }
                     return new Promise(async resolve => {
                         resolve(await this.setState({ [k]: v }, callback, options?.explicitUpdatePath ? [[k]] : null));
@@ -212,7 +236,7 @@ export default class Spiccato<State extends StateSchema = StateSchema> {
             for (let path of nestedPaths) {
 
                 if (createNestedGetters) {
-                    this.getters[formatAccessor(path, "get")] = () => {
+                    this._getters[formatAccessor(path, "get")] = () => {
                         let value = this._state[path[0]];
                         for (let i = 1; i < path.length; i++) {
                             value = value?.[path[i]];
@@ -222,7 +246,7 @@ export default class Spiccato<State extends StateSchema = StateSchema> {
                 }
 
                 if (createNestedSetters) {
-                    this.setters[formatAccessor(path, "set")] = (v: any, callback: StateUpdateCallback | null, options: DynamicSetterOptions | null): Promise<StateObject> => {
+                    this._setters[formatAccessor(path, "set")] = (v: any, callback: StateUpdateCallback | null, options: DynamicSetterOptions | null): Promise<StateObject> => {
                         options = { ...DEFAULT_DYNAMIC_SETTER_OPTIONS, ...options }
                         const updatedState = nestedSetterFactory(this._state, path)(v);
                         return new Promise(async resolve => {
@@ -304,40 +328,40 @@ export default class Spiccato<State extends StateSchema = StateSchema> {
             throw new InitializationError("`addCustomGetters` called before init(). This may lead to unexpected behavior with dynamic getter overrides")
         }
         for (let [key, callback] of Object.entries(getters)) {
-            if (!(key in this.getters) || (key in this.getters && this.initOptions.allowDynamicAccessorOverride)) {
+            if (!(key in this._getters) || (key in this._getters && this.initOptions.allowDynamicAccessorOverride)) {
                 getters[key] = callback.bind(this);
             }
         }
-        this.getters = { ...this.getters, ...getters }
+        this._getters = { ...this._getters, ...getters }
     }
 
-    addCustomSetters(setters: { [key: string]: Function }) {
+    addCustomSetters(setters: SettersSchema<SpiccatoInstance<State, Getters, Setters, Methods>>) {
         if (!this._initialized) {
             throw new InitializationError("`addCustomSetters` called before init(). This may lead to unexpected behavior with dynamic setter overrides")
         }
         for (let [key, callback] of Object.entries(setters)) {
-            if (!(key in this.setters) || (key in this.setters && this.initOptions.allowDynamicAccessorOverride)) {
-                setters[key] = callback.bind(this);
+            if (!(key in this._setters) || (key in this._setters && this.initOptions.allowDynamicAccessorOverride)) {
+                setters[key] = callback.bind(this as SpiccatoInstance<State, Getters, Setters, Methods>);
             }
         }
-        this.setters = { ...this.setters, ...setters };
+        this._setters = { ...this._setters, ...setters };
     }
 
     addCustomMethods(methods: { [key: string]: Function }) {
         for (let [key, callback] of Object.entries(methods)) {
             methods[key] = callback.bind(this);
         }
-        this.methods = { ...this.methods, ...methods };
+        this._methods = { ...this._methods, ...methods };
     }
 
-    addNamespacedMethods(namespaces: { [key: string]: { [key: string]: Function } }) {
+    addNamespacedMethods(namespaces: NamespacedMethods<SpiccatoInstance<State, Getters, Setters, Methods>>) {
         for (let ns in namespaces) {
             if (PROTECTED_NAMESPACES[ns]) {
                 throw new ProtectedNamespaceError(`The namespace '${ns}' is protected. Please choose a different namespace for you methods.`)
             }
-            this[ns] = {}
+            (this as any)[ns] = {} as NamespacedMethods<SpiccatoInstance<State, Getters, Setters, Methods>>;
             for (let [key, callback] of Object.entries(namespaces[ns])) {
-                this[ns][key] = callback.bind(this);
+                (this as any)[ns][key] = callback.bind(this as SpiccatoInstance<State, Getters, Setters, Methods>);
             }
         }
     }

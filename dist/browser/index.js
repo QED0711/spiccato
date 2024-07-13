@@ -90,9 +90,9 @@ export default class Spiccato {
         if (stateKeyViolations.length) {
             throw new ReservedStateKeyError(`The key: '${stateKeyViolations[0]}' is reserved at this level. Please select a different key for this state resource.`);
         }
-        this.getters = {};
-        this.setters = {};
-        this.methods = {};
+        this._getters = {};
+        this._setters = {};
+        this._methods = {};
         this._initialized = false;
         this._bindToLocalStorage = false;
         this._role = "provider";
@@ -110,6 +110,15 @@ export default class Spiccato {
     get id() {
         return this.initOptions.id;
     }
+    get getters() {
+        return this._getters;
+    }
+    get setters() {
+        return this._setters;
+    }
+    get methods() {
+        return this._methods;
+    }
     init() {
         this._applyState();
         this._initialized = true;
@@ -126,13 +135,13 @@ export default class Spiccato {
         }
         for (let k in this._state) {
             if (this.initOptions.dynamicGetters) {
-                this.getters[formatAccessor(k, "get")] = () => {
+                this._getters[formatAccessor(k, "get")] = () => {
                     // this accesses `this.state` and NOT `this._state`. If the getter returns a higher level object, that object should be immutable
                     return this.state[k];
                 };
             }
             if (this.initOptions.dynamicSetters) {
-                this.setters[formatAccessor(k, "set")] = (v, callback, options) => {
+                this._setters[formatAccessor(k, "set")] = (v, callback, options) => {
                     options = Object.assign(Object.assign({}, DEFAULT_DYNAMIC_SETTER_OPTIONS), options);
                     return new Promise((resolve) => __awaiter(this, void 0, void 0, function* () {
                         resolve(yield this.setState({ [k]: v }, callback, (options === null || options === void 0 ? void 0 : options.explicitUpdatePath) ? [[k]] : null));
@@ -147,7 +156,7 @@ export default class Spiccato {
             const nestedPaths = getNestedRoutes(this._state);
             for (let path of nestedPaths) {
                 if (createNestedGetters) {
-                    this.getters[formatAccessor(path, "get")] = () => {
+                    this._getters[formatAccessor(path, "get")] = () => {
                         let value = this._state[path[0]];
                         for (let i = 1; i < path.length; i++) {
                             value = value === null || value === void 0 ? void 0 : value[path[i]];
@@ -156,7 +165,7 @@ export default class Spiccato {
                     };
                 }
                 if (createNestedSetters) {
-                    this.setters[formatAccessor(path, "set")] = (v, callback, options) => {
+                    this._setters[formatAccessor(path, "set")] = (v, callback, options) => {
                         options = Object.assign(Object.assign({}, DEFAULT_DYNAMIC_SETTER_OPTIONS), options);
                         const updatedState = nestedSetterFactory(this._state, path)(v);
                         return new Promise((resolve) => __awaiter(this, void 0, void 0, function* () {
@@ -239,28 +248,28 @@ export default class Spiccato {
             throw new InitializationError("`addCustomGetters` called before init(). This may lead to unexpected behavior with dynamic getter overrides");
         }
         for (let [key, callback] of Object.entries(getters)) {
-            if (!(key in this.getters) || (key in this.getters && this.initOptions.allowDynamicAccessorOverride)) {
+            if (!(key in this._getters) || (key in this._getters && this.initOptions.allowDynamicAccessorOverride)) {
                 getters[key] = callback.bind(this);
             }
         }
-        this.getters = Object.assign(Object.assign({}, this.getters), getters);
+        this._getters = Object.assign(Object.assign({}, this._getters), getters);
     }
     addCustomSetters(setters) {
         if (!this._initialized) {
             throw new InitializationError("`addCustomSetters` called before init(). This may lead to unexpected behavior with dynamic setter overrides");
         }
         for (let [key, callback] of Object.entries(setters)) {
-            if (!(key in this.setters) || (key in this.setters && this.initOptions.allowDynamicAccessorOverride)) {
+            if (!(key in this._setters) || (key in this._setters && this.initOptions.allowDynamicAccessorOverride)) {
                 setters[key] = callback.bind(this);
             }
         }
-        this.setters = Object.assign(Object.assign({}, this.setters), setters);
+        this._setters = Object.assign(Object.assign({}, this._setters), setters);
     }
     addCustomMethods(methods) {
         for (let [key, callback] of Object.entries(methods)) {
             methods[key] = callback.bind(this);
         }
-        this.methods = Object.assign(Object.assign({}, this.methods), methods);
+        this._methods = Object.assign(Object.assign({}, this._methods), methods);
     }
     addNamespacedMethods(namespaces) {
         for (let ns in namespaces) {

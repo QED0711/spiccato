@@ -39,3 +39,24 @@ export type EventPayload = {
     value?: any;
     state?: StateObject;
 };
+export type SpiccatoInstance<State, Getters, Setters, Methods> = {
+    state: State;
+    getters: Getters;
+    setters: Setters;
+    methods: Methods;
+    setState: (updater: StateObject | Function, callback?: StateUpdateCallback | null, updatedPaths?: string[][] | PathNode[] | null) => Promise<StateObject>;
+};
+export type GettersSchema<ThisType> = {
+    [key: string]: (this: ThisType, ...args: any[]) => any;
+};
+export type SettersSchema<ThisType> = {
+    [key: string]: (this: ThisType, ...args: any[]) => any;
+};
+export type MethodsSchema<ThisType> = {
+    [key: string]: (this: ThisType, ...args: any[]) => any;
+};
+export type NamespacedMethods<Instance> = {
+    [namespace: string]: {
+        [key: string]: (this: Instance, ...args: any[]) => any;
+    };
+};
