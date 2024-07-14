@@ -38,13 +38,9 @@ export default class Spiccato<State extends StateSchema = StateSchema, Getters e
     private _persistToLocalStorage;
     getStateFromPath(path: string | string[]): any | undefined;
     setState(updater: StateObject | Function, callback?: StateUpdateCallback | null, updatedPaths?: string[][] | PathNode[] | null): Promise<StateObject>;
-    addCustomGetters(getters: {
-        [key: string]: Function;
-    }): void;
+    addCustomGetters(getters: GettersSchema<SpiccatoInstance<State, Getters, Setters, Methods>>): void;
     addCustomSetters(setters: SettersSchema<SpiccatoInstance<State, Getters, Setters, Methods>>): void;
-    addCustomMethods(methods: {
-        [key: string]: Function;
-    }): void;
+    addCustomMethods(methods: MethodsSchema<SpiccatoInstance<State, Getters, Setters, Methods>>): void;
     addNamespacedMethods(namespaces: NamespacedMethods<SpiccatoInstance<State, Getters, Setters, Methods>>): void;
     /********** EVENTS **********/
     addEventListener(eventType: string | string[] | PathNode, callback: Function): void;

@@ -54,6 +54,9 @@ const PROTECTED_NAMESPACES = {
     paths: true,
     _schema: true,
     _state: true,
+    _getters: true,
+    _setters: true,
+    _methods: true,
     _bindToLocalStorage: true,
     windowManager: true,
     eventListeners: true
@@ -62,7 +65,7 @@ const RESERVED_STATE_KEYS = [
     "*"
 ];
 /* SPICCATO */
-export default class Spiccato {
+class Spiccato {
     static registerManager(instance) {
         if (instance.initOptions.id in this.managers) {
             console.warn(`State Manager with id: '${instance.initOptions.id}' already exists. It has been overwritten`);
@@ -273,10 +276,10 @@ export default class Spiccato {
     }
     addNamespacedMethods(namespaces) {
         for (let ns in namespaces) {
-            if (PROTECTED_NAMESPACES[ns]) {
-                throw new ProtectedNamespaceError(`The namespace '${ns}' is protected. Please choose a different namespace for you methods.`);
+            if (PROTECTED_NAMESPACES["_" + ns]) {
+                throw new ProtectedNamespaceError(`The namespace '_${ns}' is protected. Please choose a different namespace for you methods.`);
             }
-            this[ns] = {};
+            this["_" + ns] = {};
             for (let [key, callback] of Object.entries(namespaces[ns])) {
                 this[ns][key] = callback.bind(this);
             }
@@ -385,3 +388,4 @@ export default class Spiccato {
 }
 /* Class Properties */
 Spiccato.managers = {};
+export default Spiccato;

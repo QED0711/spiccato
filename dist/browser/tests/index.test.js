@@ -27,16 +27,31 @@ const initState = {
     override: "override this setter",
     overrideGetter: "override this getter",
 };
-const testManager = new Spiccato(initState, {
-    id: "TEST"
-});
+// @createNamespace<typeof initState, Getters, Setters, Methods, ApiNamespace>("api")
+// @createNamespace<typeof initState, Getters, Setters, Methods, OtherNamespace>("other")
+class AdaptiveSpiccato extends Spiccato {
+    get api() {
+        return this._api;
+    }
+    get other() {
+        return this._other;
+    }
+}
+const testManager = new AdaptiveSpiccato(initState, { id: "TEST" });
 testManager.init();
 testManager.addCustomGetters({
+    getUser: function () {
+        const user = this.state.user;
+        return user;
+    },
     getAddedNums: function () {
         return this.state.num1 + this.state.num2;
     },
-    getOverrideGetter() {
+    getOverrideGetter: function () {
         return "this is not the string you're looking for";
+    },
+    getNum1: function () {
+        return this.state.num1;
     }
 });
 testManager.addCustomSetters({
@@ -53,7 +68,7 @@ testManager.addCustomSetters({
 });
 testManager.addCustomMethods({
     deriveAdditionToNum1(num) {
-        return this._getters.getNum1() + num;
+        return this.getters.getNum1() + num;
     }
 });
 try {
@@ -72,6 +87,11 @@ catch (err) {
                     this.setters.setUser(user);
                 }
             },
+            other: {
+                iAmNamespaced(s, n) {
+                    return s.repeat(n);
+                }
+            }
         });
     }
 }
@@ -193,13 +213,13 @@ describe("State Interactions", () => {
     });
     describe("Getters", () => {
         test("Dynamic getters", () => {
-            expect(testManager._getters.getMyVal()).toBe(1);
+            expect(testManager.getters.getMyVal()).toBe(1);
         });
         test("Custom getters", () => {
-            expect(testManager._getters.getAddedNums()).toBe(15);
+            expect(testManager.getters.getAddedNums()).toBe(15);
         });
         test("Dynamic getters override", () => {
-            expect(testManager._getters.getOverrideGetter()).toBe("this is not the string you're looking for");
+            expect(testManager.getters.getOverrideGetter()).toBe("this is not the string you're looking for");
         });
         test("Nested Getters", () => {
             expect(testManager._getters.getLevel1()).toStrictEqual({ level2: { level3: 3 }, level2Val: "hello" });
@@ -442,14 +462,14 @@ describe("Events", () => {
             expect(payload.value).toBe("Hi Again!!!");
         }));
         test("Full State Update", () => __awaiter(void 0, void 0, void 0, function* () {
-            var _g;
+            var _a;
             const payload = yield new Promise(resolve => {
                 testManager.addEventListener("update", (payload) => {
                     resolve(payload);
                 });
                 testManager.setState({ myVal: 84 });
             });
-            expect((_g = payload.state) === null || _g === void 0 ? void 0 : _g.myVal).toBe(84);
+            expect((_a = payload.state) === null || _a === void 0 ? void 0 : _a.myVal).toBe(84);
         }));
         test("removeEventListener", () => __awaiter(void 0, void 0, void 0, function* () {
             const value = yield new Promise((resolve) => __awaiter(void 0, void 0, void 0, function* () {

@@ -84,6 +84,9 @@ const PROTECTED_NAMESPACES: { [key: string]: any } = {
     paths: true,
     _schema: true,
     _state: true,
+    _getters: true,
+    _setters: true,
+    _methods: true,
     _bindToLocalStorage: true,
     windowManager: true,
     eventListeners: true
@@ -323,13 +326,13 @@ export default class Spiccato<
         })
     }
 
-    addCustomGetters(getters: { [key: string]: Function }) {
+    addCustomGetters(getters: GettersSchema<SpiccatoInstance<State, Getters, Setters, Methods>>) {
         if (!this._initialized) {
             throw new InitializationError("`addCustomGetters` called before init(). This may lead to unexpected behavior with dynamic getter overrides")
         }
         for (let [key, callback] of Object.entries(getters)) {
             if (!(key in this._getters) || (key in this._getters && this.initOptions.allowDynamicAccessorOverride)) {
-                getters[key] = callback.bind(this);
+                getters[key] = callback.bind(this as SpiccatoInstance<State, Getters, Setters, Methods>);
             }
         }
         this._getters = { ...this._getters, ...getters }
@@ -347,19 +350,19 @@ export default class Spiccato<
         this._setters = { ...this._setters, ...setters };
     }
 
-    addCustomMethods(methods: { [key: string]: Function }) {
+    addCustomMethods(methods: MethodsSchema<SpiccatoInstance<State, Getters, Setters, Methods>>) {
         for (let [key, callback] of Object.entries(methods)) {
-            methods[key] = callback.bind(this);
+            methods[key] = callback.bind(this as SpiccatoInstance<State, Getters, Setters, Methods>);
         }
         this._methods = { ...this._methods, ...methods };
     }
 
     addNamespacedMethods(namespaces: NamespacedMethods<SpiccatoInstance<State, Getters, Setters, Methods>>) {
         for (let ns in namespaces) {
-            if (PROTECTED_NAMESPACES[ns]) {
-                throw new ProtectedNamespaceError(`The namespace '${ns}' is protected. Please choose a different namespace for you methods.`)
+            if (PROTECTED_NAMESPACES["_" + ns]) {
+                throw new ProtectedNamespaceError(`The namespace '_${ns}' is protected. Please choose a different namespace for you methods.`)
             }
-            (this as any)[ns] = {} as NamespacedMethods<SpiccatoInstance<State, Getters, Setters, Methods>>;
+            (this as any)["_" + ns] = {} as NamespacedMethods<SpiccatoInstance<State, Getters, Setters, Methods>>;
             for (let [key, callback] of Object.entries(namespaces[ns])) {
                 (this as any)[ns][key] = callback.bind(this as SpiccatoInstance<State, Getters, Setters, Methods>);
             }

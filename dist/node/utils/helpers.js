@@ -1,6 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.PathTree = exports.PathNode = exports._localStorage = exports.WindowManager = exports.stateSchemaHasFunctions = exports.hasCircularReference = exports.getUpdatedPaths = exports.restoreState = exports.sanitizeState = exports.nestedSetterFactory = exports.getNestedRoutes = exports.formatAccessor = exports.createStateProxy = void 0;
+exports.PathTree = exports.PathNode = exports._localStorage = exports.WindowManager = exports.getUpdatedPaths = exports.restoreState = exports.sanitizeState = exports.nestedSetterFactory = exports.getNestedRoutes = exports.formatAccessor = exports.createStateProxy = void 0;
+exports.hasCircularReference = hasCircularReference;
+exports.stateSchemaHasFunctions = stateSchemaHasFunctions;
 const errors_1 = require("../errors");
 const proxyHandlers = {
     set(obj, property, value) {
@@ -145,7 +147,6 @@ function hasCircularReference(stateSchema) {
     }
     return false;
 }
-exports.hasCircularReference = hasCircularReference;
 function stateSchemaHasFunctions(stateSchema) {
     for (const key in stateSchema) {
         if (typeof stateSchema[key] === "function")
@@ -158,7 +159,6 @@ function stateSchemaHasFunctions(stateSchema) {
     }
     return false;
 }
-exports.stateSchemaHasFunctions = stateSchemaHasFunctions;
 const createParamsString = (params) => {
     let str = "";
     for (let param of Object.keys(params)) {

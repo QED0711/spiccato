@@ -56,6 +56,9 @@ const PROTECTED_NAMESPACES = {
     paths: true,
     _schema: true,
     _state: true,
+    _getters: true,
+    _setters: true,
+    _methods: true,
     _bindToLocalStorage: true,
     windowManager: true,
     eventListeners: true
@@ -275,10 +278,10 @@ class Spiccato {
     }
     addNamespacedMethods(namespaces) {
         for (let ns in namespaces) {
-            if (PROTECTED_NAMESPACES[ns]) {
-                throw new errors_1.ProtectedNamespaceError(`The namespace '${ns}' is protected. Please choose a different namespace for you methods.`);
+            if (PROTECTED_NAMESPACES["_" + ns]) {
+                throw new errors_1.ProtectedNamespaceError(`The namespace '_${ns}' is protected. Please choose a different namespace for you methods.`);
             }
-            this[ns] = {};
+            this["_" + ns] = {};
             for (let [key, callback] of Object.entries(namespaces[ns])) {
                 this[ns][key] = callback.bind(this);
             }
@@ -385,6 +388,6 @@ class Spiccato {
         }
     }
 }
-exports.default = Spiccato;
 /* Class Properties */
 Spiccato.managers = {};
+exports.default = Spiccato;

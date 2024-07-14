@@ -1,5 +1,6 @@
 import Spiccato, { WINDOW } from '../index'
-import { EventPayload, SpiccatoInstance, StateObject, StateSchema } from '../types';
+import { EventPayload, GettersSchema, MethodsSchema, SettersSchema, SpiccatoInstance, StateObject, StateSchema } from '../types';
+import { createNamespace } from '../utils';
 import { PathNode } from '../utils/helpers';
 
 const initState = {
@@ -21,37 +22,68 @@ const initState = {
     overrideGetter: "override this getter",
 }
 
-
 type Getters = {
-    getUser: (this: InstanceSignature) => {[key: string]: any}
+    getUser: () => {[key: string]: any},
+    getAddedNums: () => number,
+    getOverrideGetter: () => string,
+    getNum1: () => number,
+    getMyVal: () => number,
 }
+
 type Setters = {
-    setA: (this: InstanceSignature, n: number) => void, 
+    setA: (n: number) => void, 
     setUser: ( user: {[key: string]: any}) => void,
 }
-type Methods = {}
+
+type Methods = {
+    deriveAdditionToNum1: (n: number) => number,
+}
+
+type ApiNamespace = {
+    getUser: (userID: number) => void;
+}
+
+type OtherNamespace = {
+    iAmNamespaced: (s: string, n: number) => string,
+}
 
 type InstanceSignature = SpiccatoInstance<typeof initState, Getters, Setters, Methods>
 
-const testManager = new Spiccato<typeof initState, Getters, Setters, Methods>(
+@createNamespace<typeof initState, Getters, Setters, Methods, ApiNamespace>("api")
+@createNamespace<typeof initState, Getters, Setters, Methods, OtherNamespace>("other")
+class AdaptiveSpiccato extends Spiccato<typeof initState, Getters, Setters, Methods> {
+    get api(): ApiNamespace {
+        return this._api as ApiNamespace;
+    }
+    get other(): OtherNamespace {
+        return this._other as OtherNamespace;
+    }
+}
+
+const testManager = new AdaptiveSpiccato(
     initState,
-    {
-        id: "TEST"
-    },
+    {id: "TEST"},
 );
-
-
 testManager.init();
 
+
 testManager.addCustomGetters({
-    getAddedNums: function (this: InstanceSignature) {
+    getUser: function(): {[key: string]: any} {
+        const user = this.state.user;
+        return user
+    },
+    getAddedNums: function (): number {
         return this.state.num1 + this.state.num2;
     },
-
-    getOverrideGetter() {
+    getOverrideGetter: function(): string {
         return "this is not the string you're looking for"
+    },
+    getNum1: function(): number {
+        return this.state.num1;
     }
 })
+
+
 
 testManager.addCustomSetters({
     setBothNums(num1: number, num2: number) {
@@ -69,11 +101,10 @@ testManager.addCustomSetters({
 })
 
 testManager.addCustomMethods({
-    deriveAdditionToNum1(this: Spiccato, num: number) {
-        return this._getters.getNum1() + num;
+    deriveAdditionToNum1(num: number) {
+        return this.getters.getNum1() + num;
     }
 })
-
 
 try {
     testManager.addNamespacedMethods({
@@ -90,11 +121,14 @@ try {
                     this.setters.setUser(user);
                 }
             },
+            other: {
+                iAmNamespaced(s: string, n: number) {
+                    return s.repeat(n);
+                }
+            }
         })
     }
 }
-
-
 
 
 describe("Initialization:", () => {
@@ -228,15 +262,15 @@ describe("State Interactions", () => {
 
     describe("Getters", () => {
         test("Dynamic getters", () => {
-            expect(testManager._getters.getMyVal()).toBe(1);
+            expect(testManager.getters.getMyVal()).toBe(1);
         });
 
         test("Custom getters", () => {
-            expect(testManager._getters.getAddedNums()).toBe(15);
+            expect(testManager.getters.getAddedNums()).toBe(15);
         });
 
         test("Dynamic getters override", () => {
-            expect(testManager._getters.getOverrideGetter()).toBe("this is not the string you're looking for");
+            expect(testManager.getters.getOverrideGetter()).toBe("this is not the string you're looking for");
         })
 
         test("Nested Getters", () => {
