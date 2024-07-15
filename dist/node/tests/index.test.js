@@ -220,13 +220,14 @@ describe("State Interactions", () => {
             expect(shouldFail(["arr", "0"], "This should work")).toBe(1); // only object properties are protected from mutation. Arrays within a schema are mutatable
         });
         describe("Disabled write protection", () => {
+            const initState = { myVal: 1 };
             const performanceManager = new index_1.default({ myVal: 1 }, { id: "performanceManager", enableWriteProtection: false });
             performanceManager.init();
             test("allows normal state operations", () => {
-                performanceManager._setters.setMyVal(100);
-                expect(performanceManager._getters.getMyVal()).toBe(100);
+                performanceManager.setters.setMyVal(100);
+                expect(performanceManager.getters.getMyVal()).toBe(100);
                 performanceManager.setState({ myVal: 1 });
-                expect(performanceManager._getters.getMyVal()).toBe(1);
+                expect(performanceManager.getters.getMyVal()).toBe(1);
             });
             test("allows unsafe mutation", () => {
                 performanceManager.state.myVal = 2;
@@ -245,22 +246,22 @@ describe("State Interactions", () => {
             expect(testManager.getters.getOverrideGetter()).toBe("this is not the string you're looking for");
         });
         test("Nested Getters", () => {
-            expect(testManager._getters.getLevel1()).toStrictEqual({ level2: { level3: 3 }, level2Val: "hello" });
-            expect(testManager._getters.getLevel1_level2()).toStrictEqual({ level3: 3 });
-            expect(testManager._getters.getLevel1_level2_level3()).toBe(3);
+            expect(testManager.getters.getLevel1()).toStrictEqual({ level2: { level3: 3 }, level2Val: "hello" });
+            expect(testManager.getters.getLevel1_level2()).toStrictEqual({ level3: 3 });
+            expect(testManager.getters.getLevel1_level2_level3()).toBe(3);
         });
         test("Getters return null/undefined", () => {
-            const shouldBeNull = testManager._getters.getIsNull();
-            const shouldBeUndefined = testManager._getters.getIsUndefined();
+            const shouldBeNull = testManager.getters.getIsNull();
+            const shouldBeUndefined = testManager.getters.getIsUndefined();
             expect(shouldBeNull).toEqual(null);
             expect(shouldBeUndefined).toEqual(undefined);
-            expect(testManager._getters.getNested_isNull()).toEqual(null);
-            expect(testManager._getters.getNested_isUndefined()).toEqual(undefined);
+            expect(testManager.getters.getNested_isNull()).toEqual(null);
+            expect(testManager.getters.getNested_isUndefined()).toEqual(undefined);
         });
         test("Getters return immutable state", () => {
             function shouldFail() {
                 try {
-                    const level1Obj = testManager._getters.getLevel1();
+                    const level1Obj = testManager.getters.getLevel1();
                     level1Obj.level2 = "This shouldn't be allowed";
                     return 0;
                 }
@@ -302,14 +303,14 @@ describe("State Interactions", () => {
     describe("Setters", () => {
         test("setState", () => {
             testManager.setState({ myVal: 2 });
-            expect(testManager._getters.getMyVal()).toBe(2);
+            expect(testManager.getters.getMyVal()).toBe(2);
         });
         test("setState with functional argument", () => {
             testManager.setState(function (prevState) {
                 const myVal = prevState.myVal;
                 return { myVal: myVal + 1 };
             });
-            expect(testManager._getters.getMyVal()).toBe(3);
+            expect(testManager.getters.getMyVal()).toBe(3);
         });
         test("setState function argument with returning updated path", () => {
             testManager.setState(function (prevState) {
@@ -318,37 +319,37 @@ describe("State Interactions", () => {
             expect(testManager.state.myVal).toBe(123);
         });
         test("Dynamic Setters", () => {
-            testManager._setters.setMyVal(4);
-            expect(testManager._getters.getMyVal()).toBe(4);
+            testManager.setters.setMyVal(4);
+            expect(testManager.getters.getMyVal()).toBe(4);
         });
         test("Custom Setters", () => {
             testManager.setters.setBothNums(50, 100);
-            expect(testManager._getters.getAddedNums()).toBe(150);
+            expect(testManager.getters.getAddedNums()).toBe(150);
         });
         test("Dynamic Setter Override", () => {
-            testManager._setters.setOverride("This is some new string");
-            expect(testManager._getters.getOverride()).toBe("constant string");
+            testManager.setters.setOverride("This is some new string");
+            expect(testManager.getters.getOverride()).toBe("constant string");
         });
         test("Nested Setters", () => {
-            testManager._setters.setLevel1_level2_level3(300);
-            testManager._setters.setLevel1_level2Val("world");
-            expect(testManager._getters.getLevel1_level2_level3()).toBe(300);
-            expect(testManager._getters.getLevel1_level2Val()).toBe("world");
+            testManager.setters.setLevel1_level2_level3(300);
+            testManager.setters.setLevel1_level2Val("world");
+            expect(testManager.getters.getLevel1_level2_level3()).toBe(300);
+            expect(testManager.getters.getLevel1_level2Val()).toBe("world");
         });
         test("Setters Can Change null/undefined", () => {
-            testManager._setters.setIsNull("not null");
-            testManager._setters.setIsUndefined("not undefined");
-            testManager._setters.setNested_isNull("not null");
-            testManager._setters.setNested_isUndefined("not undefined");
+            testManager.setters.setIsNull("not null");
+            testManager.setters.setIsUndefined("not undefined");
+            testManager.setters.setNested_isNull("not null");
+            testManager.setters.setNested_isUndefined("not undefined");
             expect(testManager.state.isNull).toBe("not null");
             expect(testManager.state.isUndefined).toBe("not undefined");
             expect(testManager.state.nested.isNull).toBe("not null");
             expect(testManager.state.nested.isUndefined).toBe("not undefined");
             // return to null/undefined
-            testManager._setters.setIsNull(null);
-            testManager._setters.setIsUndefined(undefined);
-            testManager._setters.setNested_isNull(null);
-            testManager._setters.setNested_isUndefined(undefined);
+            testManager.setters.setIsNull(null);
+            testManager.setters.setIsUndefined(undefined);
+            testManager.setters.setNested_isNull(null);
+            testManager.setters.setNested_isUndefined(undefined);
             expect(testManager.state.isNull).toBe(null);
             expect(testManager.state.isUndefined).toBe(undefined);
             expect(testManager.state.nested.isNull).toBe(null);
@@ -357,11 +358,11 @@ describe("State Interactions", () => {
     });
     describe("Methods", () => {
         test("Custom Methods", () => {
-            expect(testManager._methods.deriveAdditionToNum1(10)).toBe(60);
+            expect(testManager.methods.deriveAdditionToNum1(10)).toBe(60);
         });
         test("Namespaced Methods", () => {
             testManager.api.getUser(1);
-            const user = testManager._getters.getUser();
+            const user = testManager.getters.getUser();
             expect(user.name).toBe("test");
             expect(user.id).toBe(1);
         });
@@ -374,7 +375,7 @@ describe("Events", () => {
                 testManager.addEventListener(testManager.paths.myVal, (payload) => {
                     resolve(payload);
                 });
-                testManager._setters.setMyVal(42);
+                testManager.setters.setMyVal(42);
             });
             expect(payload.path).toEqual(["myVal"]);
             expect(payload.value).toBe(42);
@@ -384,22 +385,22 @@ describe("Events", () => {
                 testManager.addEventListener(testManager.paths.level1.level2Val, (payload) => {
                     resolve(payload);
                 });
-                testManager._setters.setLevel1_level2Val("Goodbye");
+                testManager.setters.setLevel1_level2Val("Goodbye");
             });
             expect(payload.path).toEqual(["level1", "level2Val"]);
             expect(payload.value).toBe("Goodbye");
         }));
         test("null/undefined Values", () => __awaiter(void 0, void 0, void 0, function* () {
-            testManager._setters.setIsNull("not null");
-            testManager._setters.setIsUndefined("not undefined");
-            testManager._setters.setNested_isNull("not null");
-            testManager._setters.setNested_isUndefined("not undefined");
+            testManager.setters.setIsNull("not null");
+            testManager.setters.setIsUndefined("not undefined");
+            testManager.setters.setNested_isNull("not null");
+            testManager.setters.setNested_isUndefined("not undefined");
             // top level isNull
             let payload = yield new Promise(resolve => {
                 testManager.addEventListener(["isNull"], (payload) => {
                     resolve(payload);
                 });
-                testManager._setters.setIsNull(null);
+                testManager.setters.setIsNull(null);
             });
             expect(payload.path).toEqual(["isNull"]);
             expect(payload.value).toEqual(null);
@@ -408,7 +409,7 @@ describe("Events", () => {
                 testManager.addEventListener(["isUndefined"], (payload) => {
                     resolve(payload);
                 });
-                testManager._setters.setIsUndefined(undefined);
+                testManager.setters.setIsUndefined(undefined);
             });
             expect(payload2.path).toEqual(["isUndefined"]);
             expect(payload2.value).toEqual(undefined);
@@ -428,7 +429,7 @@ describe("Events", () => {
                 testManager.addEventListener(["nested", "isUndefined"], (payload) => {
                     resolve(payload);
                 });
-                testManager._setters.setNested_isUndefined(undefined);
+                testManager.setters.setNested_isUndefined(undefined);
             });
             expect(payload4.path).toEqual(["nested", "isUndefined"]);
             expect(payload4.value).toEqual(undefined);
@@ -438,7 +439,7 @@ describe("Events", () => {
                 testManager.addEventListener("on_level1_update", (payload) => {
                     resolve(payload);
                 });
-                testManager._setters.setLevel1_level2Val("Hi there again!");
+                testManager.setters.setLevel1_level2Val("Hi there again!");
             });
             expect(payload.path).toEqual(["level1"]);
             expect(payload.value.level2Val).toBe("Hi there again!");
@@ -501,10 +502,10 @@ describe("Events", () => {
                         resolve(payload.value); // if it makes it to the third call this will resolve to '3' and will fail the test
                 };
                 testManager.addEventListener("on_myVal_update", callback);
-                yield testManager._setters.setMyVal(1);
-                yield testManager._setters.setMyVal(2);
+                yield testManager.setters.setMyVal(1);
+                yield testManager.setters.setMyVal(2);
                 testManager.removeEventListener(testManager.paths.myVal, callback);
-                yield testManager._setters.setMyVal(3);
+                yield testManager.setters.setMyVal(3);
                 resolve(0);
             }));
             expect(value).toBe(0);
@@ -546,7 +547,7 @@ describe("Local Storage Peristance", () => {
             privateState: [manager.paths.e, manager.paths.a.b.c]
         });
         manager.init();
-        manager._setters.setA_d(10);
+        manager.setters.setA_d(10);
         expect(manager.state.a.b.c).toBe(3);
         expect(manager.state.e).toBe(5);
         expect(manager.state.a.d).toBe(10);
@@ -570,7 +571,8 @@ describe("Local Storage Peristance", () => {
         index_1.default.clear();
         index_1.WINDOW.name = "someSubscriber";
         index_1.WINDOW.localStorage.setItem("init", JSON.stringify({ a: 100 }));
-        const manager = new index_1.default({ a: 1, b: 2 }, { id: "localStorageInit" });
+        const initState = { a: 1, b: 2 };
+        const manager = new index_1.default(initState, { id: "localStorageInit" });
         manager.connectToLocalStorage({
             persistKey: "init",
             subscriberIDs: ["someSubscriber"],
@@ -582,8 +584,8 @@ describe("Local Storage Peristance", () => {
         expect(manager.state.a).toEqual(100);
         expect(manager.state.b).toBeUndefined();
         expect("b" in manager.state).toBe(true);
-        expect(manager._setters.setB).toBeDefined();
-        manager._setters.setA(100);
+        expect(manager.setters.setB).toBeDefined();
+        manager.setters.setA(100);
         expect(manager.state.a).toBe(100);
         expect(manager.state.b).toBeUndefined();
         expect("b" in manager.state).toBe(true);

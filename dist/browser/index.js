@@ -78,18 +78,6 @@ class Spiccato {
     static clear() {
         this.managers = {};
     }
-    static appendNamespace(namespace, BaseClass) {
-        const Base = BaseClass !== null && BaseClass !== void 0 ? BaseClass : this;
-        return class ExtendedClass extends Base {
-            constructor(...args) {
-                super(...args);
-                this[`_${namespace}`] = {};
-            }
-            get [namespace]() {
-                return this[`_${namespace}`];
-            }
-        };
-    }
     constructor(stateSchema = {}, options) {
         this.initOptions = Object.assign(Object.assign({}, DEFAULT_INIT_OPTIONS), options);
         if (hasCircularReference(stateSchema)) {

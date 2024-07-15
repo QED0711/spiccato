@@ -102,11 +102,8 @@ const RESERVED_STATE_KEYS: string[] = [
 /* SPICCATO */
 export default class Spiccato<
     State extends StateSchema = StateSchema,
-    // Getters extends GettersSchema<SpiccatoInstance<State, Getters, Setters, Methods>> = {},
     Getters extends GettersSchema<SpiccatoExtended<SpiccatoInstance<State, Getters, Setters, Methods>, Extensions>> = {},
-    // Setters extends SettersSchema<SpiccatoInstance<State, Getters, Setters, Methods>> = {},
     Setters extends SettersSchema<SpiccatoExtended<SpiccatoInstance<State, Getters, Setters, Methods>, Extensions>> = {},
-    // Methods extends MethodsSchema<SpiccatoInstance<State, Getters, Setters, Methods>> = {},
     Methods extends MethodsSchema<SpiccatoExtended<SpiccatoInstance<State, Getters, Setters, Methods>, Extensions>> = {},
     Extensions extends ExtensionSchema<SpiccatoExtended<SpiccatoInstance<State, Getters, Setters, Methods>, Extensions>> = {}
 > {
@@ -128,40 +125,21 @@ export default class Spiccato<
         this.managers = {};
     }
 
-    static appendNamespace<NSMethods>(namespace: string, BaseClass?: any) {
-        const Base = BaseClass ?? this;
-        return class ExtendedClass<
-            State extends StateSchema = StateSchema,
-            Getters extends GettersSchema<SpiccatoInstance<State, Getters, Setters, Methods>> = {},
-            Setters extends SettersSchema<SpiccatoInstance<State, Getters, Setters, Methods>> = {},
-            Methods extends MethodsSchema<SpiccatoInstance<State, Getters, Setters, Methods>> = {},
-        > extends Base {
-            constructor(...args: any[]) {
-                super(...args)
-                this[`_${namespace}`] = {}
-            }
-            get [namespace](): NSMethods {
-                return (this as any)[`_${namespace}`] as NSMethods;
-            }
-
-            // static appendNamespace = (Base as any).appendNamespace;
-        }
-    }
-
     /* Instance Properties */
     private initOptions: InitializationOptions;
     public _schema: StateSchema
     public _state: StateObject;
 
-    _getters: { [key: string]: Function };
-    _setters: { [key: string]: Function };
-    _methods: { [key: string]: Function };
+    private _getters: { [key: string]: Function };
+    private _setters: { [key: string]: Function };
+    private _methods: { [key: string]: Function };
 
     private _bindToLocalStorage: boolean;
     private _initialized: boolean;
     private _role: string;
     windowManager: (WindowManager | null);
     private _eventListeners: { [key: string]: Function[] }
+    paths: PathNode
     [key: string]: any; /* for runtime added properties */
 
     constructor(stateSchema: StateSchema = {}, options: InitializationOptions) {

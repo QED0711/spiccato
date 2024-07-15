@@ -1,5 +1,5 @@
 import Spiccato from "..";
-import { PathNode } from "../utils/helpers";
+import { PathNode, PathTree, WindowManager } from "../utils/helpers";
 
 export interface StateObject { [key: string]: any };
 export interface StateSchema { [key: string]: null | undefined | boolean | number | string | any[] | object };
@@ -37,11 +37,13 @@ export type EventPayload = {
 }
 
 export type SpiccatoInstance<State, Getters, Setters, Methods> = {
-    state: State,
-    getters: Getters,
-    setters: Setters,
-    methods: Methods,
-    setState: (updater: StateObject | Function, callback?: StateUpdateCallback | null, updatedPaths?: string[][] | PathNode[] | null) => Promise<StateObject>
+    state: State;
+    getters: Getters;
+    setters: Setters;
+    methods: Methods;
+    setState: (updater: StateObject | Function, callback?: StateUpdateCallback | null, updatedPaths?: string[][] | PathNode[] | null) => Promise<StateObject>;
+    paths: PathNode;
+    windowManager: WindowManager | null
 }
 
 export type SpiccatoExtended<Base, Extensions> = Base & Extensions;
@@ -58,7 +60,7 @@ export type NamespacedMethods<Instance> = {
 
 // Utility type to create getters for a single level of the object
 type SingleLevelGetters<T, Depth extends number, Prefix extends string = ''> = {
-    [K in keyof T as Depth extends 12 ? `get${Capitalize<Prefix>}${Lowercase<string & K>}` : `get${Capitalize<Prefix>}${Lowercase<string & K>}`]: () => T[K]
+    [K in keyof T as Depth extends 12 ? `get${Capitalize<Prefix>}${Uncapitalize<string & K>}` : `get${Capitalize<Prefix>}${Uncapitalize<string & K>}`]: () => T[K]
 };
 
 // Recursive type to create getters for nested objects up to a certain depth
@@ -77,7 +79,7 @@ export type AutoGetters<T, Depth extends number = 12, Prefix extends string = ''
 
 // Utility type to create setters for a single level of the object
 type SingleLevelSetters<T, Depth extends number, Prefix extends string = ''> = {
-    [K in keyof T as Depth extends 12 ? `set${Capitalize<Prefix>}${Lowercase<string & K>}` : `set${Capitalize<Prefix>}${Lowercase<string & K>}`]: () => T[K]
+    [K in keyof T as Depth extends 12 ? `set${Capitalize<Prefix>}${Uncapitalize<string & K>}` : `set${Capitalize<Prefix>}${Uncapitalize<string & K>}`]: () => T[K]
 };
 
 // Recursive type to create setters for nested objects up to a certain depth
@@ -87,7 +89,7 @@ type NestedSetters<T, Depth extends number, Prefix extends string = ''> = Depth 
         [K in keyof T]: T[K] extends Array<any>
             ? SingleLevelSetters<T, Depth, Prefix> // Stop recursion for arrays
             : T[K] extends object
-                ? SingleLevelSetters<T[K], Depth, `${Capitalize<Prefix>}${Lowercase<string & K>}_`> & NestedSetters<T[K], Decrement<Depth>, `${Prefix}${string & K}_`>
+                ? SingleLevelSetters<T[K], Depth, `${Capitalize<Prefix>}${Uncapitalize<string & K>}_`> & NestedSetters<T[K], Decrement<Depth>, `${Prefix}${string & K}_`>
                 : {}
     }[keyof T];
 

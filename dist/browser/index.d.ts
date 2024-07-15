@@ -9,29 +9,18 @@ export default class Spiccato<State extends StateSchema = StateSchema, Getters e
     private static registerManager;
     static getManagerById(id: managerID): Spiccato<StateSchema, {}, {}, {}, {}>;
     static clear(): void;
-    static appendNamespace<NSMethods>(namespace: string, BaseClass?: any): {
-        new <State extends StateSchema = StateSchema, Getters extends GettersSchema<SpiccatoInstance<State, Getters, Setters, Methods>> = {}, Setters extends SettersSchema<SpiccatoInstance<State, Getters, Setters, Methods>> = {}, Methods extends MethodsSchema<SpiccatoInstance<State, Getters, Setters, Methods>> = {}>(...args: any[]): {
-            [x: string]: any;
-        };
-        [x: string]: any;
-    };
     private initOptions;
     _schema: StateSchema;
     _state: StateObject;
-    _getters: {
-        [key: string]: Function;
-    };
-    _setters: {
-        [key: string]: Function;
-    };
-    _methods: {
-        [key: string]: Function;
-    };
+    private _getters;
+    private _setters;
+    private _methods;
     private _bindToLocalStorage;
     private _initialized;
     private _role;
     windowManager: (WindowManager | null);
     private _eventListeners;
+    paths: PathNode;
     [key: string]: any;
     constructor(stateSchema: StateSchema | undefined, options: InitializationOptions);
     get state(): State;

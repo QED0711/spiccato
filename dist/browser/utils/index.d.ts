@@ -7,6 +7,8 @@ export declare function applyNamespace<State extends StateSchema, Getters extend
         setters: Setters;
         methods: Methods;
         setState: (updater: import("../types").StateObject | Function, callback?: import("../types").StateUpdateCallback | null, updatedPaths?: string[][] | import("./helpers").PathNode[] | null) => Promise<import("../types").StateObject>;
+        paths: import("./helpers").PathNode;
+        windowManager: import("./helpers").WindowManager | null;
     };
 } & TBase;
 export declare function withNamespaceMixin<TBase extends new (...args: any[]) => any, NSMethods extends MethodsSchema<InstanceType<TBase>>>(Base: TBase, namespace: string): TBase & {

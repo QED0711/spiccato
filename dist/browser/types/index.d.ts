@@ -1,4 +1,4 @@
-import { PathNode } from "../utils/helpers";
+import { PathNode, WindowManager } from "../utils/helpers";
 export interface StateObject {
     [key: string]: any;
 }
@@ -45,6 +45,8 @@ export type SpiccatoInstance<State, Getters, Setters, Methods> = {
     setters: Setters;
     methods: Methods;
     setState: (updater: StateObject | Function, callback?: StateUpdateCallback | null, updatedPaths?: string[][] | PathNode[] | null) => Promise<StateObject>;
+    paths: PathNode;
+    windowManager: WindowManager | null;
 };
 export type SpiccatoExtended<Base, Extensions> = Base & Extensions;
 export type GettersSchema<ThisType> = {
@@ -65,17 +67,17 @@ export type NamespacedMethods<Instance> = {
     };
 };
 type SingleLevelGetters<T, Depth extends number, Prefix extends string = ''> = {
-    [K in keyof T as Depth extends 12 ? `get${Capitalize<Prefix>}${Lowercase<string & K>}` : `get${Capitalize<Prefix>}${Lowercase<string & K>}`]: () => T[K];
+    [K in keyof T as Depth extends 12 ? `get${Capitalize<Prefix>}${Uncapitalize<string & K>}` : `get${Capitalize<Prefix>}${Uncapitalize<string & K>}`]: () => T[K];
 };
 type NestedGetters<T, Depth extends number, Prefix extends string = ''> = Depth extends 0 ? {} : {
     [K in keyof T]: T[K] extends Array<any> ? SingleLevelGetters<T, Depth, Prefix> : T[K] extends object ? SingleLevelGetters<T[K], Depth, `${Capitalize<Prefix>}${Lowercase<string & K>}_`> & NestedGetters<T[K], Decrement<Depth>, `${Prefix}${string & K}_`> : {};
 }[keyof T];
 export type AutoGetters<T, Depth extends number = 12, Prefix extends string = ''> = SingleLevelGetters<T, Depth, Prefix> & NestedGetters<T, Depth, Prefix>;
 type SingleLevelSetters<T, Depth extends number, Prefix extends string = ''> = {
-    [K in keyof T as Depth extends 12 ? `set${Capitalize<Prefix>}${Lowercase<string & K>}` : `set${Capitalize<Prefix>}${Lowercase<string & K>}`]: () => T[K];
+    [K in keyof T as Depth extends 12 ? `set${Capitalize<Prefix>}${Uncapitalize<string & K>}` : `set${Capitalize<Prefix>}${Uncapitalize<string & K>}`]: () => T[K];
 };
 type NestedSetters<T, Depth extends number, Prefix extends string = ''> = Depth extends 0 ? {} : {
-    [K in keyof T]: T[K] extends Array<any> ? SingleLevelSetters<T, Depth, Prefix> : T[K] extends object ? SingleLevelSetters<T[K], Depth, `${Capitalize<Prefix>}${Lowercase<string & K>}_`> & NestedSetters<T[K], Decrement<Depth>, `${Prefix}${string & K}_`> : {};
+    [K in keyof T]: T[K] extends Array<any> ? SingleLevelSetters<T, Depth, Prefix> : T[K] extends object ? SingleLevelSetters<T[K], Depth, `${Capitalize<Prefix>}${Uncapitalize<string & K>}_`> & NestedSetters<T[K], Decrement<Depth>, `${Prefix}${string & K}_`> : {};
 }[keyof T];
 export type AutoSetters<T, Depth extends number = 12, Prefix extends string = ''> = SingleLevelSetters<T, Depth, Prefix> & NestedSetters<T, Depth, Prefix>;
 type Decrement<N extends number> = N extends 12 ? 11 : N extends 11 ? 10 : N extends 10 ? 9 : N extends 9 ? 8 : N extends 8 ? 7 : N extends 7 ? 6 : N extends 6 ? 5 : N extends 5 ? 4 : N extends 4 ? 3 : N extends 3 ? 2 : N extends 2 ? 1 : N extends 1 ? 0 : 0;
