@@ -44,9 +44,12 @@ export type SpiccatoInstance<State, Getters, Setters, Methods> = {
     setState: (updater: StateObject | Function, callback?: StateUpdateCallback | null, updatedPaths?: string[][] | PathNode[] | null) => Promise<StateObject>
 }
 
+export type SpiccatoExtended<Base, Extensions> = Base & Extensions;
+
 export type GettersSchema<ThisType> = { [key: string]: (this: ThisType, ...args: any[]) => any; }
 export type SettersSchema<ThisType> = { [key: string]: (this: ThisType, ...args: any[]) => any; }
 export type MethodsSchema<ThisType> = { [key: string]: (this: ThisType, ...args: any[]) => any; }
+export type ExtensionSchema<ThisType> = {[key: string]: any};
 export type NamespacedMethods<Instance> = {
     [namespace: string]: {
         [key: string]: (this: Instance, ...args: any[]) => any

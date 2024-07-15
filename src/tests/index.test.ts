@@ -1,6 +1,6 @@
 import Spiccato, { WINDOW } from '../index'
-import { EventPayload, GettersSchema, MethodsSchema, SettersSchema, SpiccatoInstance, StateObject, StateSchema } from '../types';
-import { createNamespace } from '../utils';
+import { EventPayload, GettersSchema, MethodsSchema, SettersSchema, SpiccatoExtended, SpiccatoInstance, StateObject, StateSchema } from '../types';
+import { applyNamespace, createNamespace } from '../utils';
 import { PathNode } from '../utils/helpers';
 
 const initState = {
@@ -23,7 +23,7 @@ const initState = {
 }
 
 type Getters = {
-    getUser: () => {[key: string]: any},
+    getUser: () => { [key: string]: any },
     getAddedNums: () => number,
     getOverrideGetter: () => string,
     getNum1: () => number,
@@ -31,8 +31,9 @@ type Getters = {
 }
 
 type Setters = {
-    setA: (n: number) => void, 
-    setUser: ( user: {[key: string]: any}) => void,
+    setA: (n: number) => void,
+    setUser: (user: { [key: string]: any }) => void,
+    setBothNums: (num1: number, num2: number) => void,
 }
 
 type Methods = {
@@ -41,6 +42,7 @@ type Methods = {
 
 type ApiNamespace = {
     getUser: (userID: number) => void;
+    hello: () => void;
 }
 
 type OtherNamespace = {
@@ -49,9 +51,16 @@ type OtherNamespace = {
 
 type InstanceSignature = SpiccatoInstance<typeof initState, Getters, Setters, Methods>
 
-@createNamespace<typeof initState, Getters, Setters, Methods, ApiNamespace>("api")
-@createNamespace<typeof initState, Getters, Setters, Methods, OtherNamespace>("other")
-class AdaptiveSpiccato extends Spiccato<typeof initState, Getters, Setters, Methods> {
+interface NamespaceExtensions {
+    api: ApiNamespace,
+    other: OtherNamespace,
+}
+
+// type ExtendedSignature = SpiccatoExtended<InstanceSignature, NamespaceExtensions>
+
+// @createNamespace<typeof initState, Getters, Setters, Methods, ApiNamespace>("api")
+// @createNamespace<typeof initState, Getters, Setters, Methods, OtherNamespace>("other")
+class AdaptiveSpiccato extends Spiccato<typeof initState, Getters, Setters, Methods, NamespaceExtensions> {
     get api(): ApiNamespace {
         return this._api as ApiNamespace;
     }
@@ -62,23 +71,22 @@ class AdaptiveSpiccato extends Spiccato<typeof initState, Getters, Setters, Meth
 
 const testManager = new AdaptiveSpiccato(
     initState,
-    {id: "TEST"},
+    { id: "TEST" },
 );
 testManager.init();
 
-
 testManager.addCustomGetters({
-    getUser: function(): {[key: string]: any} {
+    getUser: function (): { [key: string]: any } {
         const user = this.state.user;
         return user
     },
     getAddedNums: function (): number {
         return this.state.num1 + this.state.num2;
     },
-    getOverrideGetter: function(): string {
+    getOverrideGetter: function (): string {
         return "this is not the string you're looking for"
     },
-    getNum1: function(): number {
+    getNum1: function (): number {
         return this.state.num1;
     }
 })
@@ -109,7 +117,7 @@ testManager.addCustomMethods({
 try {
     testManager.addNamespacedMethods({
         state: {
-            test(this: InstanceSignature) {} 
+            test() { }
         }
     })
 } catch (err: any) {
@@ -119,7 +127,7 @@ try {
                 getUser(userID: number) {
                     const user = { name: "test", id: userID };
                     this.setters.setUser(user);
-                }
+                },
             },
             other: {
                 iAmNamespaced(s: string, n: number) {
@@ -129,7 +137,6 @@ try {
         })
     }
 }
-
 
 describe("Initialization:", () => {
     test("Init", () => {
@@ -357,7 +364,7 @@ describe("State Interactions", () => {
         });
 
         test("Custom Setters", () => {
-            testManager._setters.setBothNums(50, 100);
+            testManager.setters.setBothNums(50, 100);
             expect(testManager._getters.getAddedNums()).toBe(150);
         });
 
@@ -671,7 +678,7 @@ describe("Local Storage Peristance", () => {
         WINDOW.name = "sanitizedSubscriber"
         WINDOW.localStorage.setItem("init", JSON.stringify({ a: 100 }))
 
-        const initState = {a: 1, b: 2};
+        const initState = { a: 1, b: 2 };
         type Getters = {
 
         }

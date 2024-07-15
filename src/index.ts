@@ -28,7 +28,9 @@ import {
     SettersSchema,
     MethodsSchema,
     SpiccatoInstance,
-    NamespacedMethods
+    NamespacedMethods,
+    ExtensionSchema,
+    SpiccatoExtended
 } from './types/index'
 import {
     InvalidStateSchemaError,
@@ -100,9 +102,13 @@ const RESERVED_STATE_KEYS: string[] = [
 /* SPICCATO */
 export default class Spiccato<
     State extends StateSchema = StateSchema,
-    Getters extends GettersSchema<SpiccatoInstance<State, Getters, Setters, Methods>> = {},
-    Setters extends SettersSchema<SpiccatoInstance<State, Getters, Setters, Methods>> = {},
-    Methods extends MethodsSchema<SpiccatoInstance<State, Getters, Setters, Methods>> = {},
+    // Getters extends GettersSchema<SpiccatoInstance<State, Getters, Setters, Methods>> = {},
+    Getters extends GettersSchema<SpiccatoExtended<SpiccatoInstance<State, Getters, Setters, Methods>, Extensions>> = {},
+    // Setters extends SettersSchema<SpiccatoInstance<State, Getters, Setters, Methods>> = {},
+    Setters extends SettersSchema<SpiccatoExtended<SpiccatoInstance<State, Getters, Setters, Methods>, Extensions>> = {},
+    // Methods extends MethodsSchema<SpiccatoInstance<State, Getters, Setters, Methods>> = {},
+    Methods extends MethodsSchema<SpiccatoExtended<SpiccatoInstance<State, Getters, Setters, Methods>, Extensions>> = {},
+    Extensions extends ExtensionSchema<SpiccatoExtended<SpiccatoInstance<State, Getters, Setters, Methods>, Extensions>> = {}
 > {
     /* Class Properties */
     private static managers: { [key: string]: Spiccato } = {};
@@ -122,14 +128,34 @@ export default class Spiccato<
         this.managers = {};
     }
 
+    static appendNamespace<NSMethods>(namespace: string, BaseClass?: any) {
+        const Base = BaseClass ?? this;
+        return class ExtendedClass<
+            State extends StateSchema = StateSchema,
+            Getters extends GettersSchema<SpiccatoInstance<State, Getters, Setters, Methods>> = {},
+            Setters extends SettersSchema<SpiccatoInstance<State, Getters, Setters, Methods>> = {},
+            Methods extends MethodsSchema<SpiccatoInstance<State, Getters, Setters, Methods>> = {},
+        > extends Base {
+            constructor(...args: any[]) {
+                super(...args)
+                this[`_${namespace}`] = {}
+            }
+            get [namespace](): NSMethods {
+                return (this as any)[`_${namespace}`] as NSMethods;
+            }
+
+            // static appendNamespace = (Base as any).appendNamespace;
+        }
+    }
+
     /* Instance Properties */
     private initOptions: InitializationOptions;
     public _schema: StateSchema
     public _state: StateObject;
 
-    _getters: {[key: string]: Function};
-    _setters: {[key: string]: Function};
-    _methods: {[key: string]: Function};
+    _getters: { [key: string]: Function };
+    _setters: { [key: string]: Function };
+    _methods: { [key: string]: Function };
 
     private _bindToLocalStorage: boolean;
     private _initialized: boolean;
@@ -156,7 +182,7 @@ export default class Spiccato<
             throw new ReservedStateKeyError(`The key: '${stateKeyViolations[0]}' is reserved at this level. Please select a different key for this state resource.`)
         }
 
-        this._getters = {} 
+        this._getters = {}
         this._setters = {}
         this._methods = {}
 
@@ -185,7 +211,7 @@ export default class Spiccato<
 
     public get getters(): Getters {
         return this._getters as Getters;
-    }    
+    }
 
     public get setters(): Setters {
         return this._setters as Setters;
@@ -326,159 +352,160 @@ export default class Spiccato<
         })
     }
 
-    addCustomGetters(getters: GettersSchema<SpiccatoInstance<State, Getters, Setters, Methods>>) {
+    addCustomGetters(getters: GettersSchema<SpiccatoExtended<SpiccatoInstance<State, Getters, Setters, Methods>, Extensions>>) {
         if (!this._initialized) {
             throw new InitializationError("`addCustomGetters` called before init(). This may lead to unexpected behavior with dynamic getter overrides")
         }
         for (let [key, callback] of Object.entries(getters)) {
             if (!(key in this._getters) || (key in this._getters && this.initOptions.allowDynamicAccessorOverride)) {
-                getters[key] = callback.bind(this as SpiccatoInstance<State, Getters, Setters, Methods>);
+                getters[key] = callback.bind(this as unknown as SpiccatoExtended<SpiccatoInstance<State, Getters, Setters, Methods>, Extensions>);
             }
         }
         this._getters = { ...this._getters, ...getters }
     }
 
-    addCustomSetters(setters: SettersSchema<SpiccatoInstance<State, Getters, Setters, Methods>>) {
+    addCustomSetters(setters: SettersSchema<SpiccatoExtended<SpiccatoInstance<State, Getters, Setters, Methods>, Extensions>>) {
         if (!this._initialized) {
             throw new InitializationError("`addCustomSetters` called before init(). This may lead to unexpected behavior with dynamic setter overrides")
         }
         for (let [key, callback] of Object.entries(setters)) {
             if (!(key in this._setters) || (key in this._setters && this.initOptions.allowDynamicAccessorOverride)) {
-                setters[key] = callback.bind(this as SpiccatoInstance<State, Getters, Setters, Methods>);
+                setters[key] = callback.bind(this as unknown as SpiccatoExtended<SpiccatoInstance<State, Getters, Setters, Methods>, Extensions>);
             }
         }
         this._setters = { ...this._setters, ...setters };
     }
 
-    addCustomMethods(methods: MethodsSchema<SpiccatoInstance<State, Getters, Setters, Methods>>) {
+    addCustomMethods(methods: MethodsSchema<SpiccatoExtended<SpiccatoInstance<State, Getters, Setters, Methods>, Extensions>>) {
         for (let [key, callback] of Object.entries(methods)) {
-            methods[key] = callback.bind(this as SpiccatoInstance<State, Getters, Setters, Methods>);
+            methods[key] = callback.bind(this as unknown as SpiccatoExtended<SpiccatoInstance<State, Getters, Setters, Methods>, Extensions>);
         }
         this._methods = { ...this._methods, ...methods };
     }
 
-    addNamespacedMethods(namespaces: NamespacedMethods<SpiccatoInstance<State, Getters, Setters, Methods>>) {
-        for (let ns in namespaces) {
-            if (PROTECTED_NAMESPACES["_" + ns]) {
-                throw new ProtectedNamespaceError(`The namespace '_${ns}' is protected. Please choose a different namespace for you methods.`)
-            }
-            (this as any)["_" + ns] = {} as NamespacedMethods<SpiccatoInstance<State, Getters, Setters, Methods>>;
-            for (let [key, callback] of Object.entries(namespaces[ns])) {
-                (this as any)[ns][key] = callback.bind(this as SpiccatoInstance<State, Getters, Setters, Methods>);
-            }
+    addNamespacedMethods(namespaces: NamespacedMethods<SpiccatoExtended<SpiccatoInstance<State, Getters, Setters, Methods>, Extensions>>) {
+    for (let ns in namespaces) {
+        if (PROTECTED_NAMESPACES["_" + ns]) {
+            throw new ProtectedNamespaceError(`The namespace '_${ns}' is protected. Please choose a different namespace for you methods.`)
+        }
+        (this as any)["_" + ns] = {} as NamespacedMethods<SpiccatoInstance<State, Getters, Setters, Methods>>;
+        for (let [key, callback] of Object.entries(namespaces[ns])) {
+            (this as any)[ns][key] = callback.bind(this as unknown as SpiccatoExtended<SpiccatoInstance<State, Getters, Setters, Methods>, Extensions>);
         }
     }
 
-    /********** EVENTS **********/
+}
 
-    addEventListener(eventType: string | string[] | PathNode, callback: Function) {
-        if (Array.isArray(eventType)) {
-            eventType = "on_" + eventType.join("_") + "_update";
-        }
-        if (eventType instanceof PathNode) {
-            eventType = "on_" + eventType.__$path.join("_") + "_update";
-        }
-        if (eventType in this._eventListeners) {
-            this._eventListeners[eventType].push(callback);
-        } else {
-            this._eventListeners[eventType] = [callback];
-        }
-    }
+/********** EVENTS **********/
 
-    removeEventListener(eventType: string | string[] | PathNode, callback: Function) {
-        if (Array.isArray(eventType)) {
-            eventType = "on_" + eventType.join("_") + "_update"
-        }
-        if (eventType instanceof PathNode) {
-            eventType = "on_" + eventType.__$path.join("_") + "_update";
-        }
-        this._eventListeners[eventType] = this._eventListeners[eventType]?.filter(cb => cb !== callback);
+addEventListener(eventType: string | string[] | PathNode, callback: Function) {
+    if (Array.isArray(eventType)) {
+        eventType = "on_" + eventType.join("_") + "_update";
     }
+    if (eventType instanceof PathNode) {
+        eventType = "on_" + eventType.__$path.join("_") + "_update";
+    }
+    if (eventType in this._eventListeners) {
+        this._eventListeners[eventType].push(callback);
+    } else {
+        this._eventListeners[eventType] = [callback];
+    }
+}
+
+removeEventListener(eventType: string | string[] | PathNode, callback: Function) {
+    if (Array.isArray(eventType)) {
+        eventType = "on_" + eventType.join("_") + "_update"
+    }
+    if (eventType instanceof PathNode) {
+        eventType = "on_" + eventType.__$path.join("_") + "_update";
+    }
+    this._eventListeners[eventType] = this._eventListeners[eventType]?.filter(cb => cb !== callback);
+}
 
     private emitEvent(eventType: string, payload: EventPayload) {
-        this._eventListeners[eventType]?.forEach(callback => {
-            callback(payload);
-        })
-    }
+    this._eventListeners[eventType]?.forEach(callback => {
+        callback(payload);
+    })
+}
 
     private emitUpdateEventFromPath(path: string[] | PathNode) {
-        if (path instanceof PathNode) path = path.__$path;
-        let p: string[], v: any;
-        for (let i = 0; i < path.length; i++) {
-            p = path.slice(0, i + 1)
-            v = this._state
-            for (let key of p) {
-                v = v[key]
-            }
-            this.emitEvent("on_" + p.join("_") + "_update", { path: p, value: v })
+    if (path instanceof PathNode) path = path.__$path;
+    let p: string[], v: any;
+    for (let i = 0; i < path.length; i++) {
+        p = path.slice(0, i + 1)
+        v = this._state
+        for (let key of p) {
+            v = v[key]
         }
+        this.emitEvent("on_" + p.join("_") + "_update", { path: p, value: v })
+    }
+}
+
+/********** LOCAL STORAGE **********/
+connectToLocalStorage(storageOptions: StorageOptions) {
+    if (this._initialized) {
+        throw new InitializationError("`init()` method called before `connectToLocalStorage()`.")
+    }
+    this.storageOptions = { ...DEFAULT_STORAGE_OPTIONS, ...storageOptions };
+    this.storageOptions.privateState = this.storageOptions.privateState.map((ps: string | string[] | PathNode) => ps instanceof PathNode ? ps.__$path : typeof ps === "string" ? [ps] : ps);
+
+    // if window does not have a "name" property, default to the provider window id
+    if (!WINDOW.name && this.storageOptions.providerID) {
+        WINDOW.name = this.storageOptions.providerID;
     }
 
-    /********** LOCAL STORAGE **********/
-    connectToLocalStorage(storageOptions: StorageOptions) {
-        if (this._initialized) {
-            throw new InitializationError("`init()` method called before `connectToLocalStorage()`.")
-        }
-        this.storageOptions = { ...DEFAULT_STORAGE_OPTIONS, ...storageOptions };
-        this.storageOptions.privateState = this.storageOptions.privateState.map((ps: string | string[] | PathNode) => ps instanceof PathNode ? ps.__$path : typeof ps === "string" ? [ps] : ps);
+    if (!WINDOW.name) {
+        console.error("If connecting to localStorage, providerID must be defined in storageOptions passed to 'connectToToLocalStorage'");
+        return;
+    }
 
-        // if window does not have a "name" property, default to the provider window id
-        if (!WINDOW.name && this.storageOptions.providerID) {
-            WINDOW.name = this.storageOptions.providerID;
-        }
+    this.initOptions.debug && console.log("DEBUG: window.name", WINDOW.name)
+    this.initOptions.debug && console.assert(!!WINDOW.name)
 
-        if (!WINDOW.name) {
-            console.error("If connecting to localStorage, providerID must be defined in storageOptions passed to 'connectToToLocalStorage'");
-            return;
-        }
+    const isProviderWindow = WINDOW.name === this.storageOptions.providerID;
+    const isSubscriberWindow = (this.storageOptions.subscriberIDs ?? []).includes(WINDOW.name);
+    this._role = isProviderWindow ? "provider" : isSubscriberWindow ? "subscriber" : ""
 
-        this.initOptions.debug && console.log("DEBUG: window.name", WINDOW.name)
-        this.initOptions.debug && console.assert(!!WINDOW.name)
+    this._bindToLocalStorage = true;
 
-        const isProviderWindow = WINDOW.name === this.storageOptions.providerID;
-        const isSubscriberWindow = (this.storageOptions.subscriberIDs ?? []).includes(WINDOW.name);
-        this._role = isProviderWindow ? "provider" : isSubscriberWindow ? "subscriber" : ""
-
-        this._bindToLocalStorage = true;
-
-        if (this.storageOptions.initializeFromLocalStorage || isSubscriberWindow) {
-            if (!!WINDOW.localStorage.getItem(this.storageOptions.persistKey)) {
-                if (isProviderWindow && !isSubscriberWindow) {
-                    this._state = {
-                        ...this._state,
-                        ...JSON.parse(WINDOW.localStorage.getItem(this.storageOptions.persistKey)),
-                    }
-                } else if (isSubscriberWindow) {
-                    this._state = JSON.parse(WINDOW.localStorage.getItem(this.storageOptions.persistKey))
-                } else {
-                    IS_BROWSER && console.warn("window is not a provider and has not been identified as a subscriber. State will not be loaded. See docs on provider and subscriber roles");
-                    this._bindToLocalStorage = false;
+    if (this.storageOptions.initializeFromLocalStorage || isSubscriberWindow) {
+        if (!!WINDOW.localStorage.getItem(this.storageOptions.persistKey)) {
+            if (isProviderWindow && !isSubscriberWindow) {
+                this._state = {
+                    ...this._state,
+                    ...JSON.parse(WINDOW.localStorage.getItem(this.storageOptions.persistKey)),
                 }
+            } else if (isSubscriberWindow) {
+                this._state = JSON.parse(WINDOW.localStorage.getItem(this.storageOptions.persistKey))
+            } else {
+                IS_BROWSER && console.warn("window is not a provider and has not been identified as a subscriber. State will not be loaded. See docs on provider and subscriber roles");
+                this._bindToLocalStorage = false;
             }
         }
-
-        if ("addEventListener" in WINDOW && this._bindToLocalStorage) {
-            WINDOW.addEventListener("storage", () => {
-                this._updateFromLocalStorage()
-            })
-        }
     }
+
+    if ("addEventListener" in WINDOW && this._bindToLocalStorage) {
+        WINDOW.addEventListener("storage", () => {
+            this._updateFromLocalStorage()
+        })
+    }
+}
 
     private _updateFromLocalStorage() {
-        this.setState({ ...this._state, ...JSON.parse(WINDOW.localStorage.getItem(this.storageOptions.persistKey)) })
-    }
+    this.setState({ ...this._state, ...JSON.parse(WINDOW.localStorage.getItem(this.storageOptions.persistKey)) })
+}
 
     private handleUnload(event: { [key: string]: any }) {
-        // clear local storage only if specified by user AND the window being closed is the provider window
-        if (this.storageOptions.clearStorageOnUnload && this.storageOptions.providerID === WINDOW?.name) {
-            WINDOW?.localStorage.removeItem(this.storageOptions.persistKey)
-        }
-
-        // close all children (and grand children) windows if this functionality has been specified by the user   
-        if (this.storageOptions.removeChildrenOnUnload) {
-            this.windowManager?.removeSubscribers();
-        }
+    // clear local storage only if specified by user AND the window being closed is the provider window
+    if (this.storageOptions.clearStorageOnUnload && this.storageOptions.providerID === WINDOW?.name) {
+        WINDOW?.localStorage.removeItem(this.storageOptions.persistKey)
     }
+
+    // close all children (and grand children) windows if this functionality has been specified by the user   
+    if (this.storageOptions.removeChildrenOnUnload) {
+        this.windowManager?.removeSubscribers();
+    }
+}
 
 }
 
