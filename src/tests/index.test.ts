@@ -1,5 +1,5 @@
 import Spiccato, { WINDOW } from '../index'
-import { EventPayload, GettersSchema, MethodsSchema, SettersSchema, SpiccatoExtended, SpiccatoInstance, StateObject, StateSchema } from '../types';
+import { AutoGetters, EventPayload, GetterMethods, GettersSchema, MethodsSchema, SetterMethods, SettersSchema, SpiccatoExtended, SpiccatoInstance, StateObject, StateSchema } from '../types';
 import { applyNamespace, createNamespace } from '../utils';
 import { PathNode } from '../utils/helpers';
 
@@ -22,19 +22,23 @@ const initState = {
     overrideGetter: "override this getter",
 }
 
-type Getters = {
-    getUser: () => { [key: string]: any },
-    getAddedNums: () => number,
-    getOverrideGetter: () => string,
-    getNum1: () => number,
-    getMyVal: () => number,
+type CustomGetters = {
+    getUser: () => { [key: string]: any };
+    getAddedNums: () => number;
+    getOverrideGetter: () => string;
+    getNum1: () => number;
 }
 
-type Setters = {
+// type Getters = CustomGetters & AutoGetters<typeof initState> & GettersSchema<any>;
+type Getters = GetterMethods<typeof initState, CustomGetters>;
+
+type CustomSetters = {
     setA: (n: number) => void,
     setUser: (user: { [key: string]: any }) => void,
     setBothNums: (num1: number, num2: number) => void,
 }
+
+type Setters = SetterMethods<typeof initState, CustomSetters>;
 
 type Methods = {
     deriveAdditionToNum1: (n: number) => number,
@@ -49,17 +53,11 @@ type OtherNamespace = {
     iAmNamespaced: (s: string, n: number) => string,
 }
 
-type InstanceSignature = SpiccatoInstance<typeof initState, Getters, Setters, Methods>
-
 interface NamespaceExtensions {
     api: ApiNamespace,
     other: OtherNamespace,
 }
 
-// type ExtendedSignature = SpiccatoExtended<InstanceSignature, NamespaceExtensions>
-
-// @createNamespace<typeof initState, Getters, Setters, Methods, ApiNamespace>("api")
-// @createNamespace<typeof initState, Getters, Setters, Methods, OtherNamespace>("other")
 class AdaptiveSpiccato extends Spiccato<typeof initState, Getters, Setters, Methods, NamespaceExtensions> {
     get api(): ApiNamespace {
         return this._api as ApiNamespace;

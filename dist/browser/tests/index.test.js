@@ -27,9 +27,6 @@ const initState = {
     override: "override this setter",
     overrideGetter: "override this getter",
 };
-// type ExtendedSignature = SpiccatoExtended<InstanceSignature, NamespaceExtensions>
-// @createNamespace<typeof initState, Getters, Setters, Methods, ApiNamespace>("api")
-// @createNamespace<typeof initState, Getters, Setters, Methods, OtherNamespace>("other")
 class AdaptiveSpiccato extends Spiccato {
     get api() {
         return this._api;
@@ -58,7 +55,6 @@ testManager.addCustomGetters({
 testManager.addCustomSetters({
     setBothNums(num1, num2) {
         this.setState((prevState) => {
-            console.log(this.other.iAmNamespaced("Hello ", 3));
             return { num1, num2 };
         });
     },
@@ -86,12 +82,8 @@ catch (err) {
             api: {
                 getUser(userID) {
                     const user = { name: "test", id: userID };
-                    this.api.hello();
                     this.setters.setUser(user);
                 },
-                hello() {
-                    console.log("HELLO WORLD");
-                }
             },
             other: {
                 iAmNamespaced(s, n) {
