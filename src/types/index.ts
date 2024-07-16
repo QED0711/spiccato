@@ -6,6 +6,14 @@ export interface StateSchema { [key: string]: null | undefined | boolean | numbe
 export interface StateUpdateCallback {
     (state: { [key: string]: any }): void;
 };
+
+export type StatePath = {__$path: string[]}
+export type StatePaths<T> = {
+  [K in keyof T]: T[K] extends StateSchema ? StatePaths<T[K]> : StatePath;
+};
+
+
+
 export type managerID = string;
 export interface InitializationOptions {
     id: managerID,
@@ -24,7 +32,7 @@ export interface StorageOptions {
     subscriberIDs?: string[],
     clearStorageOnUnload?: boolean,
     removeChildrenOnUnload?: boolean,
-    privateState?: (string | string[] | PathNode)[],
+    privateState?: (string | string[] | PathNode | StatePath)[],
     deepSanitizeState?: boolean,
 };
 export interface DynamicSetterOptions {
@@ -51,7 +59,7 @@ export type SpiccatoExtended<Base, Extensions> = Base & Extensions;
 export type GettersSchema<ThisType> = { [key: string]: (this: ThisType, ...args: any[]) => any; }
 export type SettersSchema<ThisType> = { [key: string]: (this: ThisType, ...args: any[]) => any; }
 export type MethodsSchema<ThisType> = { [key: string]: (this: ThisType, ...args: any[]) => any; }
-export type ExtensionSchema<ThisType> = {[key: string]: any};
+export type ExtensionSchema<ThisType> = { [key: string]: any };
 export type NamespacedMethods<Instance> = {
     [namespace: string]: {
         [key: string]: (this: Instance, ...args: any[]) => any
@@ -68,10 +76,10 @@ type NestedGetters<T, Depth extends number, Prefix extends string = ''> = Depth 
     ? {}
     : {
         [K in keyof T]: T[K] extends Array<any>
-            ? SingleLevelGetters<T, Depth, Prefix> // Stop recursion for arrays
-            : T[K] extends object
-                ? SingleLevelGetters<T[K], Depth, `${Capitalize<Prefix>}${Lowercase<string & K>}_`> & NestedGetters<T[K], Decrement<Depth>, `${Prefix}${string & K}_`>
-                : {}
+        ? SingleLevelGetters<T, Depth, Prefix> // Stop recursion for arrays
+        : T[K] extends object
+        ? SingleLevelGetters<T[K], Depth, `${Capitalize<Prefix>}${Lowercase<string & K>}_`> & NestedGetters<T[K], Decrement<Depth>, `${Prefix}${string & K}_`>
+        : {}
     }[keyof T];
 
 // Combine single-level and nested getters
@@ -87,10 +95,10 @@ type NestedSetters<T, Depth extends number, Prefix extends string = ''> = Depth 
     ? {}
     : {
         [K in keyof T]: T[K] extends Array<any>
-            ? SingleLevelSetters<T, Depth, Prefix> // Stop recursion for arrays
-            : T[K] extends object
-                ? SingleLevelSetters<T[K], Depth, `${Capitalize<Prefix>}${Uncapitalize<string & K>}_`> & NestedSetters<T[K], Decrement<Depth>, `${Prefix}${string & K}_`>
-                : {}
+        ? SingleLevelSetters<T, Depth, Prefix> // Stop recursion for arrays
+        : T[K] extends object
+        ? SingleLevelSetters<T[K], Depth, `${Capitalize<Prefix>}${Uncapitalize<string & K>}_`> & NestedSetters<T[K], Decrement<Depth>, `${Prefix}${string & K}_`>
+        : {}
     }[keyof T];
 
 // Combine single-level and nested setters
@@ -98,17 +106,17 @@ export type AutoSetters<T, Depth extends number = 12, Prefix extends string = ''
 
 // Utility type to decrement a number (limited depth recursion with a max depth of 12)
 type Decrement<N extends number> = N extends 12 ? 11 :
-                                   N extends 11 ? 10 :
-                                   N extends 10 ? 9 :
-                                   N extends 9 ? 8 :
-                                   N extends 8 ? 7 :
-                                   N extends 7 ? 6 :
-                                   N extends 6 ? 5 :
-                                   N extends 5 ? 4 :
-                                   N extends 4 ? 3 :
-                                   N extends 3 ? 2 :
-                                   N extends 2 ? 1 :
-                                   N extends 1 ? 0 : 0;
+    N extends 11 ? 10 :
+    N extends 10 ? 9 :
+    N extends 9 ? 8 :
+    N extends 8 ? 7 :
+    N extends 7 ? 6 :
+    N extends 6 ? 5 :
+    N extends 5 ? 4 :
+    N extends 4 ? 3 :
+    N extends 3 ? 2 :
+    N extends 2 ? 1 :
+    N extends 1 ? 0 : 0;
 
 
 export type GetterMethods<T, Custom, Depth extends number = 10> = AutoGetters<T, Depth> & Custom & GettersSchema<any>;

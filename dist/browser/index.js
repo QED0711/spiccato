@@ -88,7 +88,7 @@ class Spiccato {
         }
         this._schema = Object.freeze(Object.assign({}, stateSchema));
         this._state = stateSchema;
-        this.paths = new PathTree(this._schema).root;
+        this._paths = new PathTree(this._schema).root;
         const stateKeyViolations = RESERVED_STATE_KEYS.filter(k => Object.keys(this._state).includes(k));
         if (stateKeyViolations.length) {
             throw new ReservedStateKeyError(`The key: '${stateKeyViolations[0]}' is reserved at this level. Please select a different key for this state resource.`);
@@ -112,6 +112,9 @@ class Spiccato {
     }
     get id() {
         return this.initOptions.id;
+    }
+    get paths() {
+        return this._paths; // this is for intellisense support
     }
     get getters() {
         return this._getters;
@@ -290,7 +293,7 @@ class Spiccato {
         if (Array.isArray(eventType)) {
             eventType = "on_" + eventType.join("_") + "_update";
         }
-        if (eventType instanceof PathNode) {
+        if (eventType instanceof PathNode || eventType.__$path) {
             eventType = "on_" + eventType.__$path.join("_") + "_update";
         }
         if (eventType in this._eventListeners) {

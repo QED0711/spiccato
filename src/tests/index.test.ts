@@ -73,6 +73,8 @@ const testManager = new AdaptiveSpiccato(
 );
 testManager.init();
 
+console.log(testManager.paths.level1.level2Val)
+
 testManager.addCustomGetters({
     getUser: function (): { [key: string]: any } {
         const user = this.state.user;
@@ -184,12 +186,12 @@ describe("Initialization:", () => {
             expect(testManager.paths.isUndefined.__$path).toEqual(["isUndefined"]);
             expect(testManager.paths.myVal.__$path).toEqual(["myVal"]);
             expect(testManager.paths.num1.__$path).toEqual(["num1"]);
-            expect(testManager.paths.level1.level2.__$path).toEqual(["level1", "level2"]);
+            expect((testManager.paths.level1.level2 as any).__$path).toEqual(["level1", "level2"]);
             expect(testManager.paths.level1.level2.level3.__$path).toEqual(["level1", "level2", "level3"]);
         })
         test("Path Errors", () => {
             try {
-                testManager.paths.level1.level2.notHere
+                (testManager.paths.level1.level2 as any).notHere
             } catch (err) {
                 expect((err as Error).name).toBe("StatePathNotExistError")
             }

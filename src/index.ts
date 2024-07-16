@@ -30,7 +30,9 @@ import {
     SpiccatoInstance,
     NamespacedMethods,
     ExtensionSchema,
-    SpiccatoExtended
+    SpiccatoExtended,
+    StatePath,
+    StatePaths,
 } from './types/index'
 import {
     InvalidStateSchemaError,
@@ -139,7 +141,7 @@ export default class Spiccato<
     private _role: string;
     windowManager: (WindowManager | null);
     private _eventListeners: { [key: string]: Function[] }
-    paths: PathNode
+    private _paths: PathNode
     [key: string]: any; /* for runtime added properties */
 
     constructor(stateSchema: StateSchema = {}, options: InitializationOptions) {
@@ -153,7 +155,7 @@ export default class Spiccato<
 
         this._schema = Object.freeze({ ...stateSchema })
         this._state = stateSchema;
-        this.paths = new PathTree(this._schema).root;
+        this._paths = new PathTree(this._schema).root;
 
         const stateKeyViolations = RESERVED_STATE_KEYS.filter(k => Object.keys(this._state).includes(k));
         if (stateKeyViolations.length) {
@@ -185,6 +187,10 @@ export default class Spiccato<
 
     public get id(): managerID {
         return this.initOptions.id;
+    }
+
+    public get paths(): StatePaths<State> {
+        return this._paths as unknown as StatePaths<State>; // this is for intellisense support
     }
 
     public get getters(): Getters {
@@ -291,7 +297,7 @@ export default class Spiccato<
         }
     }
 
-    setState(updater: StateObject | Function, callback: StateUpdateCallback | null = null, updatedPaths: string[][] | PathNode[] | null = null): Promise<StateObject> {
+    setState(updater: StateObject | Function, callback: StateUpdateCallback | null = null, updatedPaths: string[][] | PathNode[] | StatePath[] | null = null): Promise<StateObject> {
 
         return new Promise(resolve => {
             if (typeof updater === 'object') {
@@ -322,7 +328,7 @@ export default class Spiccato<
             callback?.(updated);
             this.emitEvent("update", { state: updated })
             for (let path of updatedPaths) {
-                this.emitUpdateEventFromPath(path)
+                this.emitUpdateEventFromPath(path as string[] | PathNode)
             }
             if (this._bindToLocalStorage && this.storageOptions.persistKey) {
                 this._persistToLocalStorage(this._state)
@@ -376,28 +382,28 @@ export default class Spiccato<
 
 /********** EVENTS **********/
 
-addEventListener(eventType: string | string[] | PathNode, callback: Function) {
+addEventListener(eventType: string | string[] | PathNode | StatePath, callback: Function) {
     if (Array.isArray(eventType)) {
         eventType = "on_" + eventType.join("_") + "_update";
     }
-    if (eventType instanceof PathNode) {
-        eventType = "on_" + eventType.__$path.join("_") + "_update";
+    if (eventType instanceof PathNode || (eventType as StatePath).__$path) {
+        eventType = "on_" + (eventType as StatePath).__$path.join("_") + "_update";
     }
-    if (eventType in this._eventListeners) {
-        this._eventListeners[eventType].push(callback);
+    if ((eventType as string) in this._eventListeners) {
+        this._eventListeners[eventType as string].push(callback);
     } else {
-        this._eventListeners[eventType] = [callback];
+        this._eventListeners[eventType as string] = [callback];
     }
 }
 
-removeEventListener(eventType: string | string[] | PathNode, callback: Function) {
+removeEventListener(eventType: string | string[] | PathNode | StatePath, callback: Function) {
     if (Array.isArray(eventType)) {
         eventType = "on_" + eventType.join("_") + "_update"
     }
     if (eventType instanceof PathNode) {
         eventType = "on_" + eventType.__$path.join("_") + "_update";
     }
-    this._eventListeners[eventType] = this._eventListeners[eventType]?.filter(cb => cb !== callback);
+    this._eventListeners[eventType as string] = this._eventListeners[eventType as string]?.filter(cb => cb !== callback);
 }
 
     private emitEvent(eventType: string, payload: EventPayload) {

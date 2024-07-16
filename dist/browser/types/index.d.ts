@@ -10,6 +10,12 @@ export interface StateUpdateCallback {
         [key: string]: any;
     }): void;
 }
+export type StatePath = {
+    __$path: string[];
+};
+export type StatePaths<T> = {
+    [K in keyof T]: T[K] extends StateSchema ? StatePaths<T[K]> : StatePath;
+};
 export type managerID = string;
 export interface InitializationOptions {
     id: managerID;
@@ -28,7 +34,7 @@ export interface StorageOptions {
     subscriberIDs?: string[];
     clearStorageOnUnload?: boolean;
     removeChildrenOnUnload?: boolean;
-    privateState?: (string | string[] | PathNode)[];
+    privateState?: (string | string[] | PathNode | StatePath)[];
     deepSanitizeState?: boolean;
 }
 export interface DynamicSetterOptions {
