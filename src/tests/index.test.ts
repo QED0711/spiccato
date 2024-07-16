@@ -29,7 +29,6 @@ type CustomGetters = {
     getNum1: () => number;
 }
 
-// type Getters = CustomGetters & AutoGetters<typeof initState> & GettersSchema<any>;
 type Getters = GetterMethods<typeof initState, CustomGetters>;
 
 type CustomSetters = {
@@ -72,8 +71,6 @@ const testManager = new AdaptiveSpiccato(
     { id: "TEST" },
 );
 testManager.init();
-
-console.log(testManager.paths.level1.level2Val)
 
 testManager.addCustomGetters({
     getUser: function (): { [key: string]: any } {
