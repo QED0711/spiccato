@@ -37,7 +37,6 @@ class AdaptiveSpiccato extends Spiccato {
 }
 const testManager = new AdaptiveSpiccato(initState, { id: "TEST" });
 testManager.init();
-console.log(testManager.paths.level1.level2Val);
 testManager.addCustomGetters({
     getUser: function () {
         const user = this.state.user;

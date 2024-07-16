@@ -1,6 +1,5 @@
 import Spiccato, { WINDOW } from '../index'
-import { AutoGetters, EventPayload, GetterMethods, GettersSchema, MethodsSchema, SetterMethods, SettersSchema, SpiccatoExtended, SpiccatoInstance, StateObject, StateSchema } from '../types';
-import { applyNamespace, createNamespace } from '../utils';
+import { EventPayload, GetterMethods, SetterMethods, SpiccatoInstance, StateObject, StateSchema } from '../types';
 import { PathNode } from '../utils/helpers';
 
 const initState = {
