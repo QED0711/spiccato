@@ -7,8 +7,8 @@ export interface StateUpdateCallback {
     (state: { [key: string]: any }): void;
 };
 
-export type StatePath = {__$path: string[]}
-export type StatePaths<T> = {
+export type StatePath = {__$path: string[], extendPath: any}
+export type StatePaths<T> = {__$path: string[], extendPath: any } & {
   [K in keyof T]: T[K] extends StateSchema ? StatePaths<T[K]> : StatePath;
 };
 
@@ -121,8 +121,3 @@ type Decrement<N extends number> = N extends 12 ? 11 :
 
 export type GetterMethods<T, Custom, Depth extends number = 10> = AutoGetters<T, Depth> & Custom & GettersSchema<any>;
 export type SetterMethods<T, Custom, Depth extends number = 10> = AutoSetters<T, Depth> & Custom & SettersSchema<any>;
-
-
-
-// export type GetterMethods<T, Custom> = AutoGetters<T, ThisType> & Custom;
-// export type SetterMethods<T, Custom> = AutoSetters<T, ThisType> & Custom;

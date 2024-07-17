@@ -12,8 +12,12 @@ export interface StateUpdateCallback {
 }
 export type StatePath = {
     __$path: string[];
+    extendPath: any;
 };
 export type StatePaths<T> = {
+    __$path: string[];
+    extendPath: any;
+} & {
     [K in keyof T]: T[K] extends StateSchema ? StatePaths<T[K]> : StatePath;
 };
 export type managerID = string;
