@@ -656,15 +656,78 @@ import {/* SOME_ERROR_TYPE */} from 'spiccato/errors';
 ### Introduction
 `Spiccato` auto-generates much of its core functionality at runtime. As such, achieving full type safety through typescript can be challenging because the precise interface of state managers is not known at compile time. Several utility types have been included to help ease the burden of achieving type safety with `Spiccato` state managers. Even with these utility types, the user must supply some information about the interface that will be generated.
 
-### Instantiation Pattern in Typescript
+---
+
+### Instantiation Patterns in Typescript
 
 A basic typescript instantiation could be as simple as this:
 
 ```typescript
-const stateSchema = {myVal: 0, myString: 0};
+const stateSchema = {myVal: 0, myString: "hello"};
 
-const manager = Spiccato<typeof stateSchema>(stateSchema, {id: "tsManager"});
+const manager = new Spiccato<typeof stateSchema>(stateSchema, {id: "tsDemo"});
+manager.init()
 ```
+while this will work if you only want to consume state, it will fail to provide type safety for any dynamic or custom getters, setters, or methods. To achieve this, you can opt for a slightly more verbose pattern like the following:
+
+```typescript
+// IMPORTS
+import {GetterMethods, SetterMethods, StateObject, SpiccatoInstance} from 'spiccato/types';
+import Spiccato from 'spiccato';
+
+// STATE
+const stateSchema = {myVal: 0, myString: "hello"};
+
+// GETTERS
+type CustomGetters = {
+    myCustomGetter: () => string;
+}
+type Getters = GetterMethods<typeof stateSchema, CustomGetters>;
+
+// SETTERS
+type CustomSetters = {
+    myCustomSetter: (n: number) => Promise<StateObject>;
+}
+type Setters = SetterMethods<typeof stateSchema, CustomSetters>;
+
+// METHODS
+type Methods = {
+    myCustomMethod: (n: number) => void;
+}
+
+// SIGNATURE
+type InstanceSignature = SpiccatoInstance<typeof stateSchema, Getters, Setters, Methods>;
+
+// INSTANTIATION
+const tsManager = new Spiccato<typeof stateSchema, Getters, Setters, Methods>(stateSchema, {id: "tsDemo"})
+tsManager.init();
+
+// Apply custom functionality below
+tsManager.addCustomGetters({
+    myCustomGetter(this: InstanceSignature) {return this.state.myString.repeat(this.myVal)},
+})
+
+tsManager.addCustomSetters({
+    myCustomSetter(this: InstanceSignature, n: number) {
+        return this.setState((prevState: typeof stateSchema) => {
+            return { myString: prevState.myString.repeat(n) };
+        })
+    }
+})
+
+tsManager.addCustomMethods({
+    myCustomMethod(this: instanceSignature, n: number) {
+        console.log(n * this.state.myVal);
+    }
+})
+
+```
+
+There are a few points to highlight here. First are the utility types that you import from `spiccato/types`. Second, not the pattern for defining getters and setters. First, you define the shape of your custom getters/setters. This includes the function definition (arguments and return type) for each getter/setting that you will apply. Then you pass in the state type and these customization definitions to the `GetterMethods` and `SetterMethods` types respectively. By passing in the state, this types will auto generate the dynamic getter and setter type definitions for you, and then you extend those definitions with your customizations. 
+
+
+
+---
 
 ```typescript
 import {/* SOME TYPE HERE */} from 'spiccato/types';
