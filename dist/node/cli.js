@@ -13,6 +13,7 @@ const argString = process.argv.slice(2).join(" ")
 // const nameSearch = /\s?\w+\s?/g
 const rootSearch = /--root=[\w\.\/]+/
 const nameSearch = /--name=\w+/
+const typescriptSearch = /--typescript/
 const chainSearch = /\-[Sgsm]+/g
 const keywordSearch = /(state|getters|setters|methods)=\w+/g
 
@@ -78,21 +79,28 @@ const argParser = () => {
 ::::::::::::::::::
 */
 
-const writeManager = (root, name, supportFiles) => {
+const writeManager = (root, name, ts, supportFiles) => {
     let supportImports = ""
-    let sf;
-    for (let sfKey of Object.keys(supportFiles)) {
-        sf = supportFiles[sfKey]
-        // if(sf) supportImports += `const ${sf} = require('./${sf}')\n`
+    for (let sf of Object.values(supportFiles)) {
         if (sf) supportImports += `import ${sf} from './${sf}'\n`
     }
 
     const fileContents = `
 import Spiccato from 'spiccato';
-
+${ts ? `import {${capName(name)}State, ${capName(name)}Getters, ${capName(name)}Setters, ${capName(name)}Methods, ${capName(name)}Extensions} from './types'` : ""}
 ${supportImports}
-
-${supportFiles.stateSchema ? `const ${name}Manager = new Spiccato(${supportFiles.stateSchema}, {id: "${name}"})` : `const ${name}Manager = new Spiccato({}, {id: "${name}"})`}
+${ts ? `
+class SpiccatoExtended extends Spiccato<${capName(name)}State, ${capName(name)}Getters, ${capName(name)}Setters, ${capName(name)}Methods, ${capName(name)}Extensions> {
+    /* 
+    place 'get' methods here for your custom namespaces. See documentation for details.
+    Example: 
+    get myCustomNamespace(): MyCustomNamespace {
+        return this._myCustomNamespace as MyCustomNamespace
+    }
+    */
+}
+` : ""}
+${supportFiles.stateSchema ? `const ${name}Manager = new ${ts ? "SpiccatoExtended" : "Spiccato"}(${supportFiles.stateSchema}, {id: "${name}"})` : `const ${name}Manager = new Spiccato({}, {id: "${name}"})`}
 
 // Uncomment below to connect state to localStorage
 /*
@@ -116,19 +124,19 @@ export const ${name}Paths = ${name}Manager.paths;
     // create/overwrite previous directory of named resource
     try {
         fs.mkdirSync(`${root}/${name}`)
-    } catch(err){
-        if(err.code === "EEXIST") {
+    } catch (err) {
+        if (err.code === "EEXIST") {
             console.log("\n=== Root directory already exists ===\n")
         }
     }
 
     // create manager file
-    fs.writeFileSync(`${root}/${name}/${name}Manager.js`, fileContents)
-    console.log(`created ${root}/${name}/${name}Manager.js`)
+    fs.writeFileSync(`${root}/${name}/${name}Manager.${ts ? "ts" : "js"}`, fileContents)
+    console.log(`created ${root}/${name}/${name}Manager.${ts ? "ts" : "js"}`)
 }
 
 
-const writeSupportFiles = (root, name, files) => {
+const writeSupportFiles = (root, name, ts, files) => {
     let sf,
         fileContents
 
@@ -136,10 +144,62 @@ const writeSupportFiles = (root, name, files) => {
         sf = files[sfKey]
         if (sf) {
             fileContents = genSupportFileTemplate(sf, sfKey)
-            fs.writeFileSync(`${root}/${name}/${sf}.js`, fileContents)
-            console.log(`created ${root}/${name}/${sf}.js`)
+            fs.writeFileSync(`${root}/${name}/${sf}.${ts ? "ts" : "js"}`, fileContents)
+            console.log(`created ${root}/${name}/${sf}.${ts ? "ts" : "js"}`)
         }
     }
+}
+
+const writeTypesFile = (root, name, files) => {
+    const stateType = capName(name) + "State";
+    const fileContents = `
+import { GetterMethods, SetterMethods, SpiccatoInstance, SpiccatoExtended } from 'spiccato/types';
+import stateSchema from './${files.stateSchema}';
+
+// STATE
+export type ${stateType} = typeof ${files.stateSchema ?? "stateSchema"} & {
+
+};
+
+// GETTERS
+type CustomGetters = {
+    // place custom getter method type signatures here
+};
+export type ${capName(name)}Getters = GetterMethods<${stateType}, CustomGetters>;
+
+// SETTERS
+type CustomSetters = {
+    // place custom setter method type signatures here
+};
+export type ${capName(name)}Setters = SetterMethods<${stateType}, CustomSetters>;
+
+// METHODS
+export type ${capName(name)}Methods = {
+    // place custom method type signatures here
+};
+
+// NAMESPACE METHODS
+/* 
+Example:
+export type MyCustomNamespace = {
+    someNamespacedMethod: (n: number) => void;
+}
+*/
+
+// EXTENSIONS
+export type ${capName(name)}Extensions = {
+    // place custom namespaces here. Example:
+    // myCustomNamespace: MyCustomNamespace;
+};
+
+// INSTANCES
+type BaseInstance = SpiccatoInstance<${stateType}, ${capName(name)}Getters, ${capName(name)}Setters, ${capName(name)}Methods>;
+export type ${capName(name)}Instance = SpiccatoExtended<BaseInstance, ${capName(name)}Extensions>;
+`
+    // create types file
+    fs.writeFileSync(`${root}/${name}/types.ts`, fileContents);
+    console.log(`created ${root}/${name}/types.ts`);
+
 }
 
 
@@ -189,12 +249,15 @@ const noFiles = (files) => {
 */
 const run = async () => {
 
-    // 1a. get the root of the preject destination from the user (either from the --root flag or from prompt)
+    // 1a. get the root of the project destination from the user (either from the --root flag or from prompt)
     let root = argString.match(rootSearch)
     root = root ? root[0].split("=")[1] : await prompt("Where would you like to save this state resource: ")
     root = path.normalize(root);
 
-    // 1b. get the name of the state resource from the user (either from the --name flag or from prompt)
+    // 1b. get boolean if this is a typescript build
+    const ts = !!argString.match(typescriptSearch);
+
+    // 1c. get the name of the state resource from the user (either from the --name flag or from prompt)
     let name = argString.match(nameSearch)
     name = name ? name[0].split("=")[1] : await prompt("What would you like to name this state resource: ")
 
@@ -218,11 +281,14 @@ const run = async () => {
     rl.close()
 
     // 3. write the main provider file
-    writeManager(root, name, filesToMake)
+    writeManager(root, name, ts, filesToMake)
 
-    // 4. write support files
-    writeSupportFiles(root, name, filesToMake)
+    // 4. write types file if typescript indicated
+    ts && writeTypesFile(root, name, filesToMake);
+
+    // 5. write support files
+    writeSupportFiles(root, name, ts, filesToMake)
 
 }
 
-run()
+run();

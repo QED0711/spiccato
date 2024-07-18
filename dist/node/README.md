@@ -2,12 +2,14 @@
 
 # ⚠️ Beta Release Notice
 
-**This is a beta release (v1.0.0-beta) of the Spiccato package.**
+**This is a beta release (v1.0.1-beta) of the Spiccato package.**
 
-Please be aware that this version is currently in beta and may contain bugs or incomplete features. There is no warranty for the beta release. For a stable build, please use the latest version in the 0.x.x series. There are breaking changes between version 0.x.x and 1.0.0-beta.
+Please be aware that this version is currently in beta and may contain bugs or incomplete features. There is no warranty for the beta release. For a stable build, please use the latest version in the 0.x.x series. There are breaking changes between version 0.x.x and 1.0.1-beta.
+
+To install this beta version:
 
 ```bash
-npm install spiccato@latest
+npm install spiccato@1.0.1-beta
 ```
 ----
 
@@ -38,7 +40,7 @@ npm install spiccato@latest
         - [Event Payload](#event-payload)
         - [removeEventListener](#removeeventlistener)
     - [Errors](#errors)
-    - [Using With Typescript](#using-with-typescript)
+- [Typescript Support](#typescript-support)
 - [Connect To Local Storage](#connect-to-local-storage)
     - [LocalStorage Concepts](#localstorage-concepts)
     - [Basic Usage](#basic-usage-1)
@@ -648,11 +650,161 @@ import {/* SOME_ERROR_TYPE */} from 'spiccato/errors';
 | ManagerNotFoundError | The class method, `getManagerByID`, returns `undefined`. This error must be thrown manually. | Check that the ID supplied is associated with an existing manager ID. |
 
 ---
-### Using with Typescript
+## Typescript Support
+*Version 1.0.0 and higher includes improved typescript support for full type safety and intellisense*  
 
-`Spiccato` can be used with typescript, and exposes various types to be utilized in your project.
+### Introduction
+`Spiccato` auto-generates much of its core functionality at runtime. As such, achieving full type safety through typescript can be challenging because the precise interface of the state manager is not known at compile time. Several utility types have been included to help ease the burden of achieving type safety with `Spiccato` state managers. Even with these utility types, the user must supply some information about the interface that will be generated.
 
-```javascript
+---
+
+### Basic Instantiation Patterns in Typescript
+
+A basic typescript instantiation could be as simple as this:
+
+```typescript
+const stateSchema = {myVal: 0, myString: "hello"};
+
+const manager = new Spiccato<typeof stateSchema>(stateSchema, {id: "tsDemo"});
+manager.init()
+```
+while this will work if you only want to consume state, it will fail to provide type safety for any dynamic or custom getters, setters, or methods. To achieve this, you can opt for a slightly more verbose pattern like the following:
+
+```typescript
+// IMPORTS
+import {GetterMethods, SetterMethods, StateObject, SpiccatoInstance} from 'spiccato/types';
+import Spiccato from 'spiccato';
+
+// STATE
+const stateSchema = {myVal: 0, myString: "hello"};
+
+// GETTERS
+type CustomGetters = {
+    myCustomGetter: () => string;
+}
+type Getters = GetterMethods<typeof stateSchema, CustomGetters>;
+
+// SETTERS
+type CustomSetters = {
+    myCustomSetter: (n: number) => Promise<StateObject>;
+}
+type Setters = SetterMethods<typeof stateSchema, CustomSetters>;
+
+// METHODS
+type Methods = {
+    myCustomMethod: (n: number) => void;
+}
+
+// SIGNATURE
+type InstanceSignature = SpiccatoInstance<typeof stateSchema, Getters, Setters, Methods>;
+
+// INSTANTIATION
+const tsManager = new Spiccato<typeof stateSchema, Getters, Setters, Methods>(stateSchema, {id: "tsDemo"})
+tsManager.init();
+
+// Apply custom functionality below
+tsManager.addCustomGetters({
+    myCustomGetter(this: InstanceSignature) {return this.state.myString.repeat(this.myVal)},
+})
+
+tsManager.addCustomSetters({
+    myCustomSetter(this: InstanceSignature, n: number) {
+        return this.setState((prevState: typeof stateSchema) => {
+            return { myString: prevState.myString.repeat(n) };
+        })
+    }
+})
+
+tsManager.addCustomMethods({
+    myCustomMethod(this: instanceSignature, n: number) {
+        console.log(n * this.state.myVal);
+    }
+})
+
+```
+
+There are a few points to highlight here. First are the utility types that you import from `spiccato/types`. Second, note the pattern for defining getters and setters. First, you define the shape of your custom getters/setters. This includes the function definition (arguments and return type) for each getter/setting that you will apply. Then you pass in generics for the state type and these customization definitions to the `GetterMethods` and `SetterMethods` types respectively. By passing in the state, this types will auto generate the dynamic getter and setter type definitions for you, and then you extend those definitions with your customizations. If you don't want to auto generate setters and getters, you can simple pass `{}` in place of your state type. 
+
+### Advanced Instantiation Patterns in Typescript
+
+In the event that you want to add namespaced methods to your manager, you will need to extend the base `Spiccato` class to accomodate the added accessor properties. 
+
+```typescript
+import {GetterMethods, SetterMethods, StateObject, SpiccatoInstance, SpiccatoExtended} from 'spiccato/types';
+import Spiccato from 'spiccato';
+
+const stateSchema = {myVal: 0, myString: "hello"};
+
+type Getters = GetterMethods<typeof stateSchema, {}>;
+type Setters = SetterMethods<typeof stateSchema, {}>;
+type Methods = {};
+
+type CustomNamespace = {
+    someNamespacedMethod: () => void;
+}
+
+type Extensions = {
+    customMethods: CustomNamespace;
+}
+
+type BaseSignature = SpiccatoInstance<typeof state, Getters, Setters, Methods>;
+type InstanceSignature = SpiccatoExtended<BaseSignature, Extensions>;
+
+class SpiccatoExtended extends Spiccato<typeof stateSchema, Getters, Setters, Methods, Extensions> {
+    get customMethods(): CustomNamepsace { return this._customMethods as CustomNamespace };
+}
+
+
+const extendedManager = new SpiccatoExtended(stateSchema, {id: "extended"});
+extendedManager.init();
+
+extendedManager.addNamespacedMethods({
+    customMethods: {
+        someNamespaceMethod(this: InstanceSignature) {
+            console.log(this.state.myVal);
+        }
+    }
+})
+
+```
+
+In this example, the custom defined `SpiccatoExtended` class extends the base `Spiccato` class and adds a get method called `customMethods`. This get accessor is typed to return an object that adheres to the shape of the `CustomNamepsace` type. in the accessor implementation, note that it actually returns `this._customMethods`. Internally, the manager instance has `this._customMethods` as a property, but it is untyped. By wrapping it in a get accessor, we can supply typing information to enforce type safety and provide intellisense completion. 
+
+Finally, we call the `addNamespacedMethods` with an object that has `customMethods` as a property. This in turn points to another object with our actual method implementations. Note that we supply the `this` keyword definition in the signature, and assign it to the `InstanceSignature` type. This will give us full type safety and intellisens within the method.  
+
+---
+
+### Typing your State Schema
+
+When typing your state schema, there are some special considerations. These considerations apply to state that is initialized as `null` or `undefined`. Consider the following:
+
+```typescript
+const myState = {myVal: null, myString: null};
+```
+
+if you use the `typeof` keyword to cast this to a qualified typescript `Type`, it won't be able to determine useful types for your state properties. If initializing a state property to `null` or `undefined` is necessary, you should consider one of the following approaches:
+
+```typescript
+const myState = {myVal: null, myString: null};
+
+Type State = typeof myState & {
+    myVal: null | number,
+    myString: null | string
+}
+
+// === OR ===
+
+Type State = {
+    myVal: null | number,
+    myString: null | string
+}
+```
+
+
+
+---
+
+```typescript
 import {/* SOME TYPE HERE */} from 'spiccato/types';
 ```
 
@@ -862,6 +1014,12 @@ node ./node_modules/spiccato/cli.js --root=./path/to/root --name=main
 
 If you run the CLI without any options or flags set, you will be taken to a setup wizard which will walk you through setting up your Spiccato instance. Simply follow the instructions printed to your terminal. 
 
+### Keyword Options
+| Keyword Flag | Value | Description |
+| --- | --- | --- |
+| --root | file path string | Where to place the state resource files relative to the current directory |
+| --name | name of the state resource | the folder name and name of the state manager to be applied |
+| --typescript | none | Include this keyword flag to generate a `types.ts` file, and to build your manager file and resource files with typescript support |
 ### Support File Flags
 
 If you indicate any of the flags below, a support file for that item will be created, and it will automatically be added to your Spiccato instance. 

@@ -654,11 +654,11 @@ import {/* SOME_ERROR_TYPE */} from 'spiccato/errors';
 *Version 1.0.0 and higher includes improved typescript support for full type safety and intellisense*  
 
 ### Introduction
-`Spiccato` auto-generates much of its core functionality at runtime. As such, achieving full type safety through typescript can be challenging because the precise interface of state managers is not known at compile time. Several utility types have been included to help ease the burden of achieving type safety with `Spiccato` state managers. Even with these utility types, the user must supply some information about the interface that will be generated.
+`Spiccato` auto-generates much of its core functionality at runtime. As such, achieving full type safety through typescript can be challenging because the precise interface of the state manager is not known at compile time. Several utility types have been included to help ease the burden of achieving type safety with `Spiccato` state managers. Even with these utility types, the user must supply some information about the interface that will be generated.
 
 ---
 
-### Instantiation Patterns in Typescript
+### Basic Instantiation Patterns in Typescript
 
 A basic typescript instantiation could be as simple as this:
 
@@ -723,7 +723,82 @@ tsManager.addCustomMethods({
 
 ```
 
-There are a few points to highlight here. First are the utility types that you import from `spiccato/types`. Second, not the pattern for defining getters and setters. First, you define the shape of your custom getters/setters. This includes the function definition (arguments and return type) for each getter/setting that you will apply. Then you pass in the state type and these customization definitions to the `GetterMethods` and `SetterMethods` types respectively. By passing in the state, this types will auto generate the dynamic getter and setter type definitions for you, and then you extend those definitions with your customizations. 
+There are a few points to highlight here. First are the utility types that you import from `spiccato/types`. Second, note the pattern for defining getters and setters. First, you define the shape of your custom getters/setters. This includes the function definition (arguments and return type) for each getter/setting that you will apply. Then you pass in generics for the state type and these customization definitions to the `GetterMethods` and `SetterMethods` types respectively. By passing in the state, this types will auto generate the dynamic getter and setter type definitions for you, and then you extend those definitions with your customizations. If you don't want to auto generate setters and getters, you can simple pass `{}` in place of your state type. 
+
+### Advanced Instantiation Patterns in Typescript
+
+In the event that you want to add namespaced methods to your manager, you will need to extend the base `Spiccato` class to accomodate the added accessor properties. 
+
+```typescript
+import {GetterMethods, SetterMethods, StateObject, SpiccatoInstance, SpiccatoExtended} from 'spiccato/types';
+import Spiccato from 'spiccato';
+
+const stateSchema = {myVal: 0, myString: "hello"};
+
+type Getters = GetterMethods<typeof stateSchema, {}>;
+type Setters = SetterMethods<typeof stateSchema, {}>;
+type Methods = {};
+
+type CustomNamespace = {
+    someNamespacedMethod: () => void;
+}
+
+type Extensions = {
+    customMethods: CustomNamespace;
+}
+
+type BaseSignature = SpiccatoInstance<typeof state, Getters, Setters, Methods>;
+type InstanceSignature = SpiccatoExtended<BaseSignature, Extensions>;
+
+class SpiccatoExtended extends Spiccato<typeof stateSchema, Getters, Setters, Methods, Extensions> {
+    get customMethods(): CustomNamepsace { return this._customMethods as CustomNamespace };
+}
+
+
+const extendedManager = new SpiccatoExtended(stateSchema, {id: "extended"});
+extendedManager.init();
+
+extendedManager.addNamespacedMethods({
+    customMethods: {
+        someNamespaceMethod(this: InstanceSignature) {
+            console.log(this.state.myVal);
+        }
+    }
+})
+
+```
+
+In this example, the custom defined `SpiccatoExtended` class extends the base `Spiccato` class and adds a get method called `customMethods`. This get accessor is typed to return an object that adheres to the shape of the `CustomNamepsace` type. in the accessor implementation, note that it actually returns `this._customMethods`. Internally, the manager instance has `this._customMethods` as a property, but it is untyped. By wrapping it in a get accessor, we can supply typing information to enforce type safety and provide intellisense completion. 
+
+Finally, we call the `addNamespacedMethods` with an object that has `customMethods` as a property. This in turn points to another object with our actual method implementations. Note that we supply the `this` keyword definition in the signature, and assign it to the `InstanceSignature` type. This will give us full type safety and intellisens within the method.  
+
+---
+
+### Typing your State Schema
+
+When typing your state schema, there are some special considerations. These considerations apply to state that is initialized as `null` or `undefined`. Consider the following:
+
+```typescript
+const myState = {myVal: null, myString: null};
+```
+
+if you use the `typeof` keyword to cast this to a qualified typescript `Type`, it won't be able to determine useful types for your state properties. If initializing a state property to `null` or `undefined` is necessary, you should consider one of the following approaches:
+
+```typescript
+const myState = {myVal: null, myString: null};
+
+Type State = typeof myState & {
+    myVal: null | number,
+    myString: null | string
+}
+
+// === OR ===
+
+Type State = {
+    myVal: null | number,
+    myString: null | string
+}
+```
 
 
 
