@@ -4,7 +4,7 @@
 
 **This is a beta release (v1.0.0-beta) of the Spiccato package.**
 
-Please be aware that this version is currently in beta and may contain bugs or incomplete features. There is no warranty for the beta release. For a stable build, please use the latest version in the 0.x.x series.
+Please be aware that this version is currently in beta and may contain bugs or incomplete features. There is no warranty for the beta release. For a stable build, please use the latest version in the 0.x.x series. There are breaking changes between version 0.x.x and 1.0.0-beta.
 
 ```bash
 npm install spiccato@latest
