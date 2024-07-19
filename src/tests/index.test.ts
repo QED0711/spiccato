@@ -1,5 +1,5 @@
 import Spiccato, { WINDOW } from '../index'
-import { EventPayload, GetterMethods, SetterMethods, SpiccatoInstance, StateObject, StateSchema } from '../types';
+import type { EventPayload, GetterMethods, SetterMethods, SpiccatoInstance, StateObject, StateSchema } from '../types';
 import { PathNode } from '../utils/helpers';
 
 const initState = {

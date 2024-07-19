@@ -1,4 +1,4 @@
-import { StateSchema } from "../types";
+import type { StateSchema } from "../types";
 import { 
     sanitizeState, 
     restoreState, 
