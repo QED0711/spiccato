@@ -556,14 +556,14 @@ manager.addNamespacedMethods({
 manager._API.getOrderHistory(1);
 ```
 
-Note that in `v^1.0.0`, namespaces are prepended with a underscore (`_`). The reason for this is addressed in the [Advanced Instantiation Patterns in Typescript](#advanced-instantiation-patterns-in-typescript) section. In a typescript setting, you should follow the pattern outlined there for type safety. In a normal JavaScript setting, you can do something as simple as this to remove the underscore from the namespace.
+Note that in `v^1.0.0`, namespaces are by default prepended with a underscore (`_`). The reason for this is addressed in the [Advanced Instantiation Patterns in Typescript](#advanced-instantiation-patterns-in-typescript) section. In a typescript setting, you should follow the pattern outlined there for type safety. In a normal JavaScript setting, you can include a second argument to the `addNamespacedMethods` call. This is a boolean, and indicates if these typescript support guidelines should be followed. Set this to `false` and there will be no `_` prepended to your namespaced methods.
 
 ```javascript
 manager.addNamespacedMethods({
     API: {/* implementation here */}
-})
+}, false)
 
-manager.API = manager._API;
+manager.API // you can now access your namespace without the `_` prefix 
 ```
 
 ---
