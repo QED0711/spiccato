@@ -40,7 +40,12 @@ npm install spiccato@1.0.1-beta
         - [Event Payload](#event-payload)
         - [removeEventListener](#removeeventlistener)
     - [Errors](#errors)
-- [Typescript Support](#typescript-support)
+- [Typescript Support (improved in v^1.0.0)](#typescript-support)
+    - [Introduction](#introduction)
+    - [Basic Instantiation patterns in Typescript](#basic-instantiation-patterns-in-typescript)
+    - [Advanced Instantiation Patterns In Typescript](#advanced-instantiation-patterns-in-typescript)
+    - [Typing Your State Schema](#typing-your-state-schema)
+    - [Type Exports](#type-exports)
 - [Connect To Local Storage](#connect-to-local-storage)
     - [LocalStorage Concepts](#localstorage-concepts)
     - [Basic Usage](#basic-usage-1)
@@ -528,7 +533,7 @@ manager.methods.getUserFromID(1);
 
 #### addNamespacedMethods
 
-Namespaced methods are essentially custom methods, but that can be logically organized based on their purpose. The argument to `addNamespacedMethods` is also an object, but the first level of keys are the namespaces pointing to nested objects, and the nested objects are the function names and function definitions. 
+Namespaced methods are essentially custom methods, but that can be logically organized based on their purpose. The argument to `addNamespacedMethods` is also an object, but the first level of keys are the namespaces pointing to nested objects, and the nested objects are the function names and function implementations. 
 
 ```javascript
 const stateSchema = {orderHistory: []};
@@ -548,8 +553,19 @@ manager.addNamespacedMethods({
     }
 })
 
-manager.API.getOrderHistory(1);
+manager._API.getOrderHistory(1);
 ```
+
+Note that in `v^1.0.0`, namespaces are by default prepended with a underscore (`_`). The reason for this is addressed in the [Advanced Instantiation Patterns in Typescript](#advanced-instantiation-patterns-in-typescript) section. In a typescript setting, you should follow the pattern outlined there for type safety. In a normal JavaScript setting, you can include a second argument to the `addNamespacedMethods` call. This is a boolean, and indicates if these typescript support guidelines should be followed. Set this to `false` and there will be no `_` prepended to your namespaced methods.
+
+```javascript
+manager.addNamespacedMethods({
+    API: {/* implementation here */}
+}, false)
+
+manager.API // you can now access your namespace without the `_` prefix 
+```
+
 ---
 ### Events
 
@@ -727,7 +743,7 @@ There are a few points to highlight here. First are the utility types that you i
 
 ### Advanced Instantiation Patterns in Typescript
 
-In the event that you want to add namespaced methods to your manager, you will need to extend the base `Spiccato` class to accomodate the added accessor properties. 
+In the event that you want to add namespaced methods to your manager, you will need to extend the base `Spiccato` class to accommodate the added accessor properties. 
 
 ```typescript
 import {GetterMethods, SetterMethods, StateObject, SpiccatoInstance, SpiccatoExtended} from 'spiccato/types';
@@ -768,15 +784,17 @@ extendedManager.addNamespacedMethods({
 
 ```
 
-In this example, the custom defined `SpiccatoExtended` class extends the base `Spiccato` class and adds a get method called `customMethods`. This get accessor is typed to return an object that adheres to the shape of the `CustomNamepsace` type. in the accessor implementation, note that it actually returns `this._customMethods`. Internally, the manager instance has `this._customMethods` as a property, but it is untyped. By wrapping it in a get accessor, we can supply typing information to enforce type safety and provide intellisense completion. 
+In this example, the custom defined `SpiccatoExtended` class extends the base `Spiccato` class and adds a get accessor method called `customMethods`. This get accessor is typed to return an object that adheres to the shape of the `CustomNamepsace` type. in the accessor implementation, note that it actually returns `this._customMethods`. Internally, the manager instance has `this._customMethods` as a property, but it is untyped. By wrapping it in a get accessor, we can supply typing information to enforce type safety and provide intellisense completion. 
 
-Finally, we call the `addNamespacedMethods` with an object that has `customMethods` as a property. This in turn points to another object with our actual method implementations. Note that we supply the `this` keyword definition in the signature, and assign it to the `InstanceSignature` type. This will give us full type safety and intellisens within the method.  
+Finally, we call the `addNamespacedMethods` with an object that has `customMethods` as a property. This in turn points to another object with our actual method implementations. Note that we supply the `this` keyword definition in the signature, and assign it to the `InstanceSignature` type. This will give us full type safety and intellisense within the method.  
+
+> Note: If you use the included [command line interface](#command-line-interface) to generate your state resource file structure and you include the `--typescript`, flag, this advanced type initialization pattern will be followed. 
 
 ---
 
 ### Typing your State Schema
 
-When typing your state schema, there are some special considerations. These considerations apply to state that is initialized as `null` or `undefined`. Consider the following:
+When typing your state schema, there are some special considerations. These considerations particularly apply to state properties that are initialized as `null` or `undefined`, or properties that can take the form of multiple types. Consider the following:
 
 ```typescript
 const myState = {myVal: null, myString: null};
@@ -785,33 +803,49 @@ const myState = {myVal: null, myString: null};
 if you use the `typeof` keyword to cast this to a qualified typescript `Type`, it won't be able to determine useful types for your state properties. If initializing a state property to `null` or `undefined` is necessary, you should consider one of the following approaches:
 
 ```typescript
+// extension
 const myState = {myVal: null, myString: null};
 
 Type State = typeof myState & {
     myVal: null | number,
     myString: null | string
 }
+```
 
-// === OR ===
+Or:
 
+```typescript
+// manual typing
 Type State = {
     myVal: null | number,
     myString: null | string
 }
 ```
+It is also important that you follow one of these approaches if a particular state property can be multiple types.
 
+```typescript
+Type State = {
+    myVal: null | number | number[] // etc.
+}
+```
 
 
 ---
 
+### Type Exports
+
 ```typescript
-import {/* SOME TYPE HERE */} from 'spiccato/types';
+import type {/* SOME TYPE HERE */} from 'spiccato/types';
 ```
 
 | Type | Description |
 | --- | --- |
 | StateSchema | Type for the state schema passed into a `spiccato` initialization. |
 | StateObject | Type for the manifestation of state after `spiccato` instance is initialized |
+| SpiccatoInstance | Type that defines the baseline, unextended manager instance. Takes 4 generics <State = {}, Getters = {}, Setters ={}, Methods = {}>. These generics define the interfaces for state, getters, setters, and methods, respectively. |
+| SpiccatoExtended | Type that defines a manager instance that has namespace extensions. Takes 2 generics <BaseInstance, Extensions = {}>. The base instance is a `SpiccatoInstance`, and the extensions define the interface(s) to any added namespaces. |
+| GetterMethods | A utility type to merge auto generated getters with custom getter method definitions. Takes 3 generics <T, Custom, Depth=12>. `T` is the state type, `Custom` are the custom defined getter method definitions, and `Depth` defines how deep a nested getter traversal should burrow into the state definition (the max is 12 levels) |
+| SetterMethods | A utility type to merge auto generated setters with custom setter method definitions. Takes 3 generics <T, Custom, Depth=12>. `T` is the state type, `Custom` are the custom defined setter method definitions, and `Depth` defines how deep a nested setter traversal should burrow into the state definition (the max is 12 levels) |
 | managerID | Type for ID associated with a specific manager | 
 | EventPayload | Type for payload that is passed as an argument to the callback of a fired event |
 | InitializationOptions | Interface for initialization options passed to a `spiccato` initialization. |
@@ -1008,6 +1042,24 @@ node ./node_modules/spiccato/cli.js --root=./path/to/root --name=main
     |___setters.js (optional: custom setter definitions)
     |___methods.js (optional: custom method definitions)
 ```
+The `--typescript` flag is supported in version ^1.0.0. If this is included, all generated files will be `.ts` files, and an additional `types.ts` will be generated in the `<NAME>` directory. See the [Advanced Instantiation Patterns in Typescript](#advanced-instantiation-patterns-in-typescript) for details on how these `.ts` files are formatted. 
+
+Here is an example with the `--typescript` flag:
+
+```
+node ./node_modules/spiccato/cli.js --root=./path/to/root --name=main --typescript
+```
+```
+<ROOT>
+|___<NAME>
+    |___<NAME>Manager.ts (Spiccato initialization & configuration)
+    |___stateSchema.ts (required: default state for Spiccato instance)
+    |___getters.ts (optional: custom getter definitions)
+    |___setters.ts (optional: custom setter definitions)
+    |___methods.ts (optional: custom method definitions)
+    |___types.ts (included every time --typescript is used)
+```
+
 ### CLI Flags & Options
 
 > **Note**: the examples below assume you have setup a `package.json` script like the one shown above. Replace `spiccato-cli` with your script name, or simply run directly through node. If you are running through a `package.json` script, make sure to include the `--` before any arguments/flags so they get passed to the script.

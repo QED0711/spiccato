@@ -119,5 +119,5 @@ type Decrement<N extends number> = N extends 12 ? 11 :
     N extends 1 ? 0 : 0;
 
 
-export type GetterMethods<T, Custom, Depth extends number = 10> = AutoGetters<T, Depth> & Custom & GettersSchema<any>;
-export type SetterMethods<T, Custom, Depth extends number = 10> = AutoSetters<T, Depth> & Custom & SettersSchema<any>;
+export type GetterMethods<T, Custom, Depth extends number = 12> = AutoGetters<T, Depth> & Custom & GettersSchema<any>;
+export type SetterMethods<T, Custom, Depth extends number = 12> = AutoSetters<T, Depth> & Custom & SettersSchema<any>;

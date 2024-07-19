@@ -87,7 +87,7 @@ const writeManager = (root, name, ts, supportFiles) => {
 
     const fileContents = `
 import Spiccato from 'spiccato';
-${ts ? `import {${capName(name)}State, ${capName(name)}Getters, ${capName(name)}Setters, ${capName(name)}Methods, ${capName(name)}Extensions} from './types'` : ""}
+${ts ? `import type {${capName(name)}State, ${capName(name)}Getters, ${capName(name)}Setters, ${capName(name)}Methods, ${capName(name)}Extensions} from './types'` : ""}
 ${supportImports}
 ${ts ? `
 class SpiccatoExtended extends Spiccato<${capName(name)}State, ${capName(name)}Getters, ${capName(name)}Setters, ${capName(name)}Methods, ${capName(name)}Extensions> {
@@ -153,7 +153,7 @@ const writeSupportFiles = (root, name, ts, files) => {
 const writeTypesFile = (root, name, files) => {
     const stateType = capName(name) + "State";
     const fileContents = `
-import { GetterMethods, SetterMethods, SpiccatoInstance, SpiccatoExtended } from 'spiccato/types';
+import type { GetterMethods, SetterMethods, SpiccatoInstance, SpiccatoExtended } from 'spiccato/types';
 import stateSchema from './${files.stateSchema}';
 
 // STATE

@@ -37,7 +37,7 @@ export default class Spiccato<State extends StateSchema = StateSchema, Getters e
     addCustomGetters(getters: GettersSchema<SpiccatoExtended<SpiccatoInstance<State, Getters, Setters, Methods>, Extensions>>): void;
     addCustomSetters(setters: SettersSchema<SpiccatoExtended<SpiccatoInstance<State, Getters, Setters, Methods>, Extensions>>): void;
     addCustomMethods(methods: MethodsSchema<SpiccatoExtended<SpiccatoInstance<State, Getters, Setters, Methods>, Extensions>>): void;
-    addNamespacedMethods(namespaces: NamespacedMethods<SpiccatoExtended<SpiccatoInstance<State, Getters, Setters, Methods>, Extensions>>): void;
+    addNamespacedMethods(namespaces: NamespacedMethods<SpiccatoExtended<SpiccatoInstance<State, Getters, Setters, Methods>, Extensions>>, tsSupport?: boolean): void;
     /********** EVENTS **********/
     addEventListener(eventType: string | string[] | PathNode | StatePath, callback: Function): void;
     removeEventListener(eventType: string | string[] | PathNode | StatePath, callback: Function): void;

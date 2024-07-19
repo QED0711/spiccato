@@ -277,14 +277,14 @@ class Spiccato {
         }
         this._methods = Object.assign(Object.assign({}, this._methods), methods);
     }
-    addNamespacedMethods(namespaces) {
+    addNamespacedMethods(namespaces, tsSupport = true) {
         for (let ns in namespaces) {
-            if (PROTECTED_NAMESPACES["_" + ns]) {
-                throw new ProtectedNamespaceError(`The namespace '_${ns}' is protected. Please choose a different namespace for you methods.`);
+            if (PROTECTED_NAMESPACES["_" + ns] || PROTECTED_NAMESPACES[ns]) {
+                throw new ProtectedNamespaceError(`The namespace '_${ns}/${ns}' is protected. Please choose a different namespace for you methods.`);
             }
-            this["_" + ns] = {};
+            this[(tsSupport ? "_" : "") + ns] = {};
             for (let [key, callback] of Object.entries(namespaces[ns])) {
-                this[ns][key] = callback.bind(this);
+                this[(tsSupport ? "_" : "") + ns][key] = callback.bind(this);
             }
         }
     }

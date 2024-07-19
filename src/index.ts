@@ -367,14 +367,14 @@ export default class Spiccato<
         this._methods = { ...this._methods, ...methods };
     }
 
-    addNamespacedMethods(namespaces: NamespacedMethods<SpiccatoExtended<SpiccatoInstance<State, Getters, Setters, Methods>, Extensions>>) {
+    addNamespacedMethods(namespaces: NamespacedMethods<SpiccatoExtended<SpiccatoInstance<State, Getters, Setters, Methods>, Extensions>>, tsSupport: boolean = true) {
     for (let ns in namespaces) {
-        if (PROTECTED_NAMESPACES["_" + ns]) {
-            throw new ProtectedNamespaceError(`The namespace '_${ns}' is protected. Please choose a different namespace for you methods.`)
+        if (PROTECTED_NAMESPACES["_" + ns] || PROTECTED_NAMESPACES[ns]) {
+            throw new ProtectedNamespaceError(`The namespace '_${ns}/${ns}' is protected. Please choose a different namespace for you methods.`)
         }
-        (this as any)["_" + ns] = {} as NamespacedMethods<SpiccatoInstance<State, Getters, Setters, Methods>>;
+        (this as any)[(tsSupport ? "_" : "") + ns] = {} as NamespacedMethods<SpiccatoInstance<State, Getters, Setters, Methods>>;
         for (let [key, callback] of Object.entries(namespaces[ns])) {
-            (this as any)[ns][key] = callback.bind(this as unknown as SpiccatoExtended<SpiccatoInstance<State, Getters, Setters, Methods>, Extensions>);
+            (this as any)[(tsSupport ? "_" : "") + ns][key] = callback.bind(this as unknown as SpiccatoExtended<SpiccatoInstance<State, Getters, Setters, Methods>, Extensions>);
         }
     }
 
