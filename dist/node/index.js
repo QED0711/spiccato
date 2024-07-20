@@ -56,6 +56,9 @@ const PROTECTED_NAMESPACES = {
     paths: true,
     _schema: true,
     _state: true,
+    _getters: true,
+    _setters: true,
+    _methods: true,
     _bindToLocalStorage: true,
     windowManager: true,
     eventListeners: true
@@ -87,14 +90,14 @@ class Spiccato {
         }
         this._schema = Object.freeze(Object.assign({}, stateSchema));
         this._state = stateSchema;
-        this.paths = new helpers_1.PathTree(this._schema).root;
+        this._paths = new helpers_1.PathTree(this._schema).root;
         const stateKeyViolations = RESERVED_STATE_KEYS.filter(k => Object.keys(this._state).includes(k));
         if (stateKeyViolations.length) {
             throw new errors_1.ReservedStateKeyError(`The key: '${stateKeyViolations[0]}' is reserved at this level. Please select a different key for this state resource.`);
         }
-        this.getters = {};
-        this.setters = {};
-        this.methods = {};
+        this._getters = {};
+        this._setters = {};
+        this._methods = {};
         this._initialized = false;
         this._bindToLocalStorage = false;
         this._role = "provider";
@@ -107,14 +110,27 @@ class Spiccato {
         this.constructor.registerManager(this);
     }
     get state() {
-        return this.initOptions.enableWriteProtection ? (0, helpers_1.createStateProxy)(this._state, this._schema) : this._state;
+        return (this.initOptions.enableWriteProtection ? (0, helpers_1.createStateProxy)(this._state, this._schema) : this._state);
     }
     get id() {
         return this.initOptions.id;
     }
+    get paths() {
+        return this._paths; // this is for intellisense support
+    }
+    get getters() {
+        return this._getters;
+    }
+    get setters() {
+        return this._setters;
+    }
+    get methods() {
+        return this._methods;
+    }
     init() {
         this._applyState();
         this._initialized = true;
+        return this;
     }
     _applyState() {
         var _a;
@@ -128,13 +144,13 @@ class Spiccato {
         }
         for (let k in this._state) {
             if (this.initOptions.dynamicGetters) {
-                this.getters[(0, helpers_1.formatAccessor)(k, "get")] = () => {
+                this._getters[(0, helpers_1.formatAccessor)(k, "get")] = () => {
                     // this accesses `this.state` and NOT `this._state`. If the getter returns a higher level object, that object should be immutable
                     return this.state[k];
                 };
             }
             if (this.initOptions.dynamicSetters) {
-                this.setters[(0, helpers_1.formatAccessor)(k, "set")] = (v, callback, options) => {
+                this._setters[(0, helpers_1.formatAccessor)(k, "set")] = (v, callback, options) => {
                     options = Object.assign(Object.assign({}, DEFAULT_DYNAMIC_SETTER_OPTIONS), options);
                     return new Promise((resolve) => __awaiter(this, void 0, void 0, function* () {
                         resolve(yield this.setState({ [k]: v }, callback, (options === null || options === void 0 ? void 0 : options.explicitUpdatePath) ? [[k]] : null));
@@ -149,7 +165,7 @@ class Spiccato {
             const nestedPaths = (0, helpers_1.getNestedRoutes)(this._state);
             for (let path of nestedPaths) {
                 if (createNestedGetters) {
-                    this.getters[(0, helpers_1.formatAccessor)(path, "get")] = () => {
+                    this._getters[(0, helpers_1.formatAccessor)(path, "get")] = () => {
                         let value = this._state[path[0]];
                         for (let i = 1; i < path.length; i++) {
                             value = value === null || value === void 0 ? void 0 : value[path[i]];
@@ -158,7 +174,7 @@ class Spiccato {
                     };
                 }
                 if (createNestedSetters) {
-                    this.setters[(0, helpers_1.formatAccessor)(path, "set")] = (v, callback, options) => {
+                    this._setters[(0, helpers_1.formatAccessor)(path, "set")] = (v, callback, options) => {
                         options = Object.assign(Object.assign({}, DEFAULT_DYNAMIC_SETTER_OPTIONS), options);
                         const updatedState = (0, helpers_1.nestedSetterFactory)(this._state, path)(v);
                         return new Promise((resolve) => __awaiter(this, void 0, void 0, function* () {
@@ -184,9 +200,14 @@ class Spiccato {
         else if (Array.isArray(path)) {
             let val = this.state;
             for (let p of path) {
-                val = val[p];
-                if (val === undefined)
+                if (val && typeof val === "object" && p in val) {
+                    val = val[p];
+                }
+                else {
                     return undefined;
+                }
+                // val = val[p];
+                // if (val === undefined) return undefined
             }
             return val;
         }
@@ -236,11 +257,11 @@ class Spiccato {
             throw new errors_1.InitializationError("`addCustomGetters` called before init(). This may lead to unexpected behavior with dynamic getter overrides");
         }
         for (let [key, callback] of Object.entries(getters)) {
-            if (!(key in this.getters) || (key in this.getters && this.initOptions.allowDynamicAccessorOverride)) {
+            if (!(key in this._getters) || (key in this._getters && this.initOptions.allowDynamicAccessorOverride)) {
                 getters[key] = callback.bind(this);
             }
         }
-        this.getters = Object.assign(Object.assign({}, this.getters), getters);
+        this._getters = Object.assign(Object.assign({}, this._getters), getters);
         return this;
     }
     addCustomSetters(setters) {
@@ -248,28 +269,28 @@ class Spiccato {
             throw new errors_1.InitializationError("`addCustomSetters` called before init(). This may lead to unexpected behavior with dynamic setter overrides");
         }
         for (let [key, callback] of Object.entries(setters)) {
-            if (!(key in this.setters) || (key in this.setters && this.initOptions.allowDynamicAccessorOverride)) {
+            if (!(key in this._setters) || (key in this._setters && this.initOptions.allowDynamicAccessorOverride)) {
                 setters[key] = callback.bind(this);
             }
         }
-        this.setters = Object.assign(Object.assign({}, this.setters), setters);
+        this._setters = Object.assign(Object.assign({}, this._setters), setters);
         return this;
     }
     addCustomMethods(methods) {
         for (let [key, callback] of Object.entries(methods)) {
             methods[key] = callback.bind(this);
         }
-        this.methods = Object.assign(Object.assign({}, this.methods), methods);
+        this._methods = Object.assign(Object.assign({}, this._methods), methods);
         return this;
     }
-    addNamespacedMethods(namespaces) {
+    addNamespacedMethods(namespaces, tsSupport = true) {
         for (let ns in namespaces) {
-            if (PROTECTED_NAMESPACES[ns]) {
-                throw new errors_1.ProtectedNamespaceError(`The namespace '${ns}' is protected. Please choose a different namespace for you methods.`);
+            if (PROTECTED_NAMESPACES["_" + ns] || PROTECTED_NAMESPACES[ns]) {
+                throw new errors_1.ProtectedNamespaceError(`The namespace '_${ns}/${ns}' is protected. Please choose a different namespace for you methods.`);
             }
-            this[ns] = {};
+            this[(tsSupport ? "_" : "") + ns] = {};
             for (let [key, callback] of Object.entries(namespaces[ns])) {
-                this[ns][key] = callback.bind(this);
+                this[(tsSupport ? "_" : "") + ns][key] = callback.bind(this);
             }
         }
         return this;
@@ -279,7 +300,7 @@ class Spiccato {
         if (Array.isArray(eventType)) {
             eventType = "on_" + eventType.join("_") + "_update";
         }
-        if (eventType instanceof helpers_1.PathNode) {
+        if (eventType instanceof helpers_1.PathNode || eventType.__$path) {
             eventType = "on_" + eventType.__$path.join("_") + "_update";
         }
         if (eventType in this._eventListeners) {

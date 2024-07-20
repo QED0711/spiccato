@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 import Spiccato, { WINDOW } from '../index';
 import { PathNode } from '../utils/helpers';
-const testManager = new Spiccato({
+const initState = {
     isNull: null,
     isUndefined: undefined,
     nested: { isNull: null, isUndefined: undefined },
@@ -26,16 +26,33 @@ const testManager = new Spiccato({
     arr: [1, 2, 3],
     override: "override this setter",
     overrideGetter: "override this getter",
-}, {
-    id: "TEST"
-});
+    CapitalizedPath: {
+        AnotherCapitalizedProperty: ""
+    },
+};
+class AdaptiveSpiccato extends Spiccato {
+    get api() {
+        return this._api;
+    }
+    get other() {
+        return this._other;
+    }
+}
+const testManager = new AdaptiveSpiccato(initState, { id: "TEST" });
 testManager.init();
 testManager.addCustomGetters({
+    getUser: function () {
+        const user = this.state.user;
+        return user;
+    },
     getAddedNums: function () {
         return this.state.num1 + this.state.num2;
     },
-    getOverrideGetter() {
+    getOverrideGetter: function () {
         return "this is not the string you're looking for";
+    },
+    getNum1: function () {
+        return this.state.num1;
     }
 });
 testManager.addCustomSetters({
@@ -67,10 +84,15 @@ catch (err) {
         testManager.addNamespacedMethods({
             api: {
                 getUser(userID) {
-                    const user = { name: "test", id: 1 };
+                    const user = { name: "test", id: userID };
                     this.setters.setUser(user);
-                }
+                },
             },
+            other: {
+                iAmNamespaced(s, n) {
+                    return s.repeat(n);
+                }
+            }
         });
     }
 }
@@ -176,6 +198,7 @@ describe("State Interactions", () => {
             expect(shouldFail(["arr", "0"], "This should work")).toBe(1); // only object properties are protected from mutation. Arrays within a schema are mutatable
         });
         describe("Disabled write protection", () => {
+            const initState = { myVal: 1 };
             const performanceManager = new Spiccato({ myVal: 1 }, { id: "performanceManager", enableWriteProtection: false });
             performanceManager.init();
             test("allows normal state operations", () => {
@@ -483,7 +506,7 @@ describe("Local Storage Peristance", () => {
     test("Persistance doesn't mutate local state", () => {
         Spiccato.clear();
         delete WINDOW.name;
-        const manager = new Spiccato({
+        const initPersistState = {
             a: {
                 b: {
                     c: 3
@@ -491,7 +514,8 @@ describe("Local Storage Peristance", () => {
                 d: 4
             },
             e: 5
-        }, {
+        };
+        const manager = new Spiccato(initPersistState, {
             id: "Persist",
         });
         manager.connectToLocalStorage({
@@ -525,7 +549,8 @@ describe("Local Storage Peristance", () => {
         Spiccato.clear();
         WINDOW.name = "someSubscriber";
         WINDOW.localStorage.setItem("init", JSON.stringify({ a: 100 }));
-        const manager = new Spiccato({ a: 1, b: 2 }, { id: "localStorageInit" });
+        const initState = { a: 1, b: 2 };
+        const manager = new Spiccato(initState, { id: "localStorageInit" });
         manager.connectToLocalStorage({
             persistKey: "init",
             subscriberIDs: ["someSubscriber"],
@@ -547,7 +572,8 @@ describe("Local Storage Peristance", () => {
         Spiccato.clear();
         WINDOW.name = "sanitizedSubscriber";
         WINDOW.localStorage.setItem("init", JSON.stringify({ a: 100 }));
-        const manager = new Spiccato({ a: 1, b: 2 }, { id: "localStorageInit" });
+        const initState = { a: 1, b: 2 };
+        const manager = new Spiccato(initState, { id: "localStorageInit" });
         manager.connectToLocalStorage({
             persistKey: "init",
             subscriberIDs: ["sanitizedSubscriber"],

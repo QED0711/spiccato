@@ -34,7 +34,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 const index_1 = __importStar(require("../index"));
 const helpers_1 = require("../utils/helpers");
-const testManager = new index_1.default({
+const initState = {
     isNull: null,
     isUndefined: undefined,
     nested: { isNull: null, isUndefined: undefined },
@@ -51,16 +51,33 @@ const testManager = new index_1.default({
     arr: [1, 2, 3],
     override: "override this setter",
     overrideGetter: "override this getter",
-}, {
-    id: "TEST"
-});
+    CapitalizedPath: {
+        AnotherCapitalizedProperty: ""
+    },
+};
+class AdaptiveSpiccato extends index_1.default {
+    get api() {
+        return this._api;
+    }
+    get other() {
+        return this._other;
+    }
+}
+const testManager = new AdaptiveSpiccato(initState, { id: "TEST" });
 testManager.init();
 testManager.addCustomGetters({
+    getUser: function () {
+        const user = this.state.user;
+        return user;
+    },
     getAddedNums: function () {
         return this.state.num1 + this.state.num2;
     },
-    getOverrideGetter() {
+    getOverrideGetter: function () {
         return "this is not the string you're looking for";
+    },
+    getNum1: function () {
+        return this.state.num1;
     }
 });
 testManager.addCustomSetters({
@@ -92,10 +109,15 @@ catch (err) {
         testManager.addNamespacedMethods({
             api: {
                 getUser(userID) {
-                    const user = { name: "test", id: 1 };
+                    const user = { name: "test", id: userID };
                     this.setters.setUser(user);
-                }
+                },
             },
+            other: {
+                iAmNamespaced(s, n) {
+                    return s.repeat(n);
+                }
+            }
         });
     }
 }
@@ -201,6 +223,7 @@ describe("State Interactions", () => {
             expect(shouldFail(["arr", "0"], "This should work")).toBe(1); // only object properties are protected from mutation. Arrays within a schema are mutatable
         });
         describe("Disabled write protection", () => {
+            const initState = { myVal: 1 };
             const performanceManager = new index_1.default({ myVal: 1 }, { id: "performanceManager", enableWriteProtection: false });
             performanceManager.init();
             test("allows normal state operations", () => {
@@ -508,7 +531,7 @@ describe("Local Storage Peristance", () => {
     test("Persistance doesn't mutate local state", () => {
         index_1.default.clear();
         delete index_1.WINDOW.name;
-        const manager = new index_1.default({
+        const initPersistState = {
             a: {
                 b: {
                     c: 3
@@ -516,7 +539,8 @@ describe("Local Storage Peristance", () => {
                 d: 4
             },
             e: 5
-        }, {
+        };
+        const manager = new index_1.default(initPersistState, {
             id: "Persist",
         });
         manager.connectToLocalStorage({
@@ -550,7 +574,8 @@ describe("Local Storage Peristance", () => {
         index_1.default.clear();
         index_1.WINDOW.name = "someSubscriber";
         index_1.WINDOW.localStorage.setItem("init", JSON.stringify({ a: 100 }));
-        const manager = new index_1.default({ a: 1, b: 2 }, { id: "localStorageInit" });
+        const initState = { a: 1, b: 2 };
+        const manager = new index_1.default(initState, { id: "localStorageInit" });
         manager.connectToLocalStorage({
             persistKey: "init",
             subscriberIDs: ["someSubscriber"],
@@ -572,7 +597,8 @@ describe("Local Storage Peristance", () => {
         index_1.default.clear();
         index_1.WINDOW.name = "sanitizedSubscriber";
         index_1.WINDOW.localStorage.setItem("init", JSON.stringify({ a: 100 }));
-        const manager = new index_1.default({ a: 1, b: 2 }, { id: "localStorageInit" });
+        const initState = { a: 1, b: 2 };
+        const manager = new index_1.default(initState, { id: "localStorageInit" });
         manager.connectToLocalStorage({
             persistKey: "init",
             subscriberIDs: ["sanitizedSubscriber"],

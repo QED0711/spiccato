@@ -1,4 +1,4 @@
-import { StateSchema } from "../types";
+import type { StateSchema } from "../types";
 import { 
     sanitizeState, 
     restoreState, 
@@ -23,8 +23,8 @@ describe("Helpers", () => {
         }
 
         const [sanitized, removed] = sanitizeState(state, [["e"], ["a", "b", "c"]]);
-        expect(sanitized.a.b.c).toBe(undefined);
-        expect(sanitized.e).toBe(undefined);
+        expect((sanitized as any).a.b.c).toBe(undefined);
+        expect((sanitized as any).e).toBe(undefined);
 
         const restored = restoreState(state, removed)
         expect(restored.a.b.c).toBe(1);
