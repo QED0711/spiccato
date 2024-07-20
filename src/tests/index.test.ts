@@ -19,10 +19,13 @@ const initState = {
     arr: [1, 2, 3],
     override: "override this setter",
     overrideGetter: "override this getter",
+    CapitalizedPath: {
+        AnotherCapitalizedProperty: ""
+    },
 }
 
 type CustomGetters = {
-    getUser: () => { [key: string]: any };
+    getUser: () => { id: number, name: string };
     getAddedNums: () => number;
     getOverrideGetter: () => string;
     getNum1: () => number;
@@ -34,6 +37,11 @@ type CustomSetters = {
     setA: (n: number) => void,
     setUser: (user: { [key: string]: any }) => void,
     setBothNums: (num1: number, num2: number) => void,
+
+    setIsNull: (val: any) => void;
+    setIsUndefined: (val: any) => void;
+    setNested_isNull: (val: any) => void;
+    setNested_isUndefined: (val: any) => void;
 }
 
 type Setters = SetterMethods<typeof initState, CustomSetters>;
@@ -298,7 +306,7 @@ describe("State Interactions", () => {
             function shouldFail() {
                 try {
                     const level1Obj = testManager.getters.getLevel1();
-                    level1Obj.level2 = "This shouldn't be allowed";
+                    (level1Obj as any).level2 = "This shouldn't be allowed";
                     return 0
                 } catch (err: any) {
                     if (err.name === "ImmutableStateError") {
@@ -409,7 +417,7 @@ describe("State Interactions", () => {
 
         test("Namespaced Methods", () => {
             testManager.api.getUser(1);
-            const user = testManager.getters.getUser();
+            const user = testManager.getters.getUser() as {id: number, name: string};
             expect(user.name).toBe("test");
             expect(user.id).toBe(1);
         });

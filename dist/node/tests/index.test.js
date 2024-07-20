@@ -51,6 +51,9 @@ const initState = {
     arr: [1, 2, 3],
     override: "override this setter",
     overrideGetter: "override this getter",
+    CapitalizedPath: {
+        AnotherCapitalizedProperty: ""
+    },
 };
 class AdaptiveSpiccato extends index_1.default {
     get api() {

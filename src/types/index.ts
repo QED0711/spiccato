@@ -7,9 +7,9 @@ export interface StateUpdateCallback {
     (state: { [key: string]: any }): void;
 };
 
-export type StatePath = {__$path: string[], extendPath: any}
-export type StatePaths<T> = {__$path: string[], extendPath: any } & {
-  [K in keyof T]: T[K] extends StateSchema ? StatePaths<T[K]> : StatePath;
+export type StatePath = { __$path: string[], extendPath: any }
+export type StatePaths<T> = { __$path: string[], extendPath: any } & {
+    [K in keyof T]: T[K] extends StateSchema ? StatePaths<T[K]> : StatePath;
 };
 
 
@@ -66,9 +66,14 @@ export type NamespacedMethods<Instance> = {
     }
 }
 
+type FormatAccessName<S extends string> = 
+  S extends `${infer First}${infer Second}${infer Third}${infer Fourth}${infer Rest}` 
+  ? `${First}${Second}${Third}${Uppercase<Fourth>}${Rest}` 
+  : S;
+
 // Utility type to create getters for a single level of the object
-type SingleLevelGetters<T, Depth extends number, Prefix extends string = ''> = {
-    [K in keyof T as Depth extends 12 ? `get${Capitalize<Prefix>}${Uncapitalize<string & K>}` : `get${Capitalize<Prefix>}${Uncapitalize<string & K>}`]: () => T[K]
+type SingleLevelGetters<T, Prefix extends string = ''> = {
+    [K in keyof T as `${FormatAccessName<`get${Prefix}${string & K}`>}`]: () => T[K]
 };
 
 // Recursive type to create getters for nested objects up to a certain depth
@@ -76,18 +81,18 @@ type NestedGetters<T, Depth extends number, Prefix extends string = ''> = Depth 
     ? {}
     : {
         [K in keyof T]: T[K] extends Array<any>
-        ? SingleLevelGetters<T, Depth, Prefix> // Stop recursion for arrays
+        ? SingleLevelGetters<T, Prefix> // Stop recursion for arrays
         : T[K] extends object
-        ? SingleLevelGetters<T[K], Depth, `${Capitalize<Prefix>}${Lowercase<string & K>}_`> & NestedGetters<T[K], Decrement<Depth>, `${Prefix}${string & K}_`>
+        ? SingleLevelGetters<T[K], `${Prefix}${string & K}_`> & NestedGetters<T[K], Decrement<Depth>, `${Prefix}${string & K}_`>
         : {}
     }[keyof T];
 
 // Combine single-level and nested getters
-export type AutoGetters<T, Depth extends number = 12, Prefix extends string = ''> = SingleLevelGetters<T, Depth, Prefix> & NestedGetters<T, Depth, Prefix>;
+export type AutoGetters<T, Depth extends number = 12, Prefix extends string = ''> = SingleLevelGetters<T, Prefix> & NestedGetters<T, Depth, Prefix>;
 
 // Utility type to create setters for a single level of the object
-type SingleLevelSetters<T, Depth extends number, Prefix extends string = ''> = {
-    [K in keyof T as Depth extends 12 ? `set${Capitalize<Prefix>}${Uncapitalize<string & K>}` : `set${Capitalize<Prefix>}${Uncapitalize<string & K>}`]: () => T[K]
+type SingleLevelSetters<T, Prefix extends string = ''> = {
+    [K in keyof T as `${FormatAccessName<`set${Prefix}${string & K}`>}`]: (val: T[K]) => Promise<StateObject>
 };
 
 // Recursive type to create setters for nested objects up to a certain depth
@@ -95,14 +100,14 @@ type NestedSetters<T, Depth extends number, Prefix extends string = ''> = Depth 
     ? {}
     : {
         [K in keyof T]: T[K] extends Array<any>
-        ? SingleLevelSetters<T, Depth, Prefix> // Stop recursion for arrays
+        ? SingleLevelSetters<T,  Prefix> // Stop recursion for arrays
         : T[K] extends object
-        ? SingleLevelSetters<T[K], Depth, `${Capitalize<Prefix>}${Uncapitalize<string & K>}_`> & NestedSetters<T[K], Decrement<Depth>, `${Prefix}${string & K}_`>
+        ? SingleLevelSetters<T[K], `${Prefix}${string & K}_`> & NestedSetters<T[K], Decrement<Depth>, `${Prefix}${string & K}_`>
         : {}
     }[keyof T];
 
 // Combine single-level and nested setters
-export type AutoSetters<T, Depth extends number = 12, Prefix extends string = ''> = SingleLevelSetters<T, Depth, Prefix> & NestedSetters<T, Depth, Prefix>;
+export type AutoSetters<T, Depth extends number = 12, Prefix extends string = ''> = SingleLevelSetters<T, Prefix> & NestedSetters<T, Depth, Prefix>;
 
 // Utility type to decrement a number (limited depth recursion with a max depth of 12)
 type Decrement<N extends number> = N extends 12 ? 11 :
