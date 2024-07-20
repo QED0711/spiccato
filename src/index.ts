@@ -71,7 +71,7 @@ const DEFAULT_DYNAMIC_SETTER_OPTIONS = {
 }
 
 let IS_BROWSER: boolean;
-export let WINDOW: { [key: string]: any };
+export let WINDOW: Record<string, any>;
 try {
     WINDOW = window;
     IS_BROWSER = true;
@@ -81,7 +81,7 @@ try {
 }
 if (!("localStorage" in WINDOW)) WINDOW.localStorage = new _localStorage
 
-const PROTECTED_NAMESPACES: { [key: string]: any } = {
+const PROTECTED_NAMESPACES: Record<string, any> = {
     state: true,
     setters: true,
     getters: true,
@@ -112,7 +112,7 @@ export default class Spiccato<
     Extensions extends ExtensionSchema<SpiccatoExtended<SpiccatoInstance<State, Getters, Setters, Methods>, Extensions>> = {}
 > {
     /* Class Properties */
-    private static managers: { [key: string]: Spiccato } = {};
+    private static managers: Record<string, Spiccato> = {};
 
     private static registerManager(instance: Spiccato) {
         if (instance.initOptions.id in this.managers) {
@@ -140,7 +140,7 @@ export default class Spiccato<
     private _initialized: boolean;
     private _role: string;
     windowManager: (WindowManager | null);
-    private _eventListeners: { [key: string]: Function[] }
+    private _eventListeners: Record<string, Function[]>
     private _paths: PathNode
     [key: string]: any; /* for runtime added properties */
 
@@ -492,7 +492,7 @@ connectToLocalStorage(storageOptions: StorageOptions) {
     this.setState({ ...this._state, ...JSON.parse(WINDOW.localStorage.getItem(this.storageOptions.persistKey)) })
 }
 
-    private handleUnload(event: { [key: string]: any }) {
+    private handleUnload(event: Record<string, any>) {
     // clear local storage only if specified by user AND the window being closed is the provider window
     if (this.storageOptions.clearStorageOnUnload && this.storageOptions.providerID === WINDOW?.name) {
         WINDOW?.localStorage.removeItem(this.storageOptions.persistKey)
