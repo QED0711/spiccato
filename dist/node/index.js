@@ -1,4 +1,5 @@
 "use strict";
+/************************************* IMPORTS **************************************/
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -10,7 +11,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.WINDOW = void 0;
-/************************************* IMPORTS **************************************/
 const helpers_1 = require("./utils/helpers");
 const errors_1 = require("./errors");
 /************************************* DEFAULTS **************************************/
@@ -241,6 +241,7 @@ class Spiccato {
             }
         }
         this.getters = Object.assign(Object.assign({}, this.getters), getters);
+        return this;
     }
     addCustomSetters(setters) {
         if (!this._initialized) {
@@ -252,12 +253,14 @@ class Spiccato {
             }
         }
         this.setters = Object.assign(Object.assign({}, this.setters), setters);
+        return this;
     }
     addCustomMethods(methods) {
         for (let [key, callback] of Object.entries(methods)) {
             methods[key] = callback.bind(this);
         }
         this.methods = Object.assign(Object.assign({}, this.methods), methods);
+        return this;
     }
     addNamespacedMethods(namespaces) {
         for (let ns in namespaces) {
@@ -269,6 +272,7 @@ class Spiccato {
                 this[ns][key] = callback.bind(this);
             }
         }
+        return this;
     }
     /********** EVENTS **********/
     addEventListener(eventType, callback) {
@@ -284,6 +288,7 @@ class Spiccato {
         else {
             this._eventListeners[eventType] = [callback];
         }
+        return this;
     }
     removeEventListener(eventType, callback) {
         var _a;
@@ -294,6 +299,7 @@ class Spiccato {
             eventType = "on_" + eventType.__$path.join("_") + "_update";
         }
         this._eventListeners[eventType] = (_a = this._eventListeners[eventType]) === null || _a === void 0 ? void 0 : _a.filter(cb => cb !== callback);
+        return this;
     }
     emitEvent(eventType, payload) {
         var _a;

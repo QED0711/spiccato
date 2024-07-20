@@ -1,14 +1,9 @@
 import { PathNode } from "../utils/helpers";
-export interface StateObject {
-    [key: string]: any;
-}
-export interface StateSchema {
-    [key: string]: null | undefined | boolean | number | string | any[] | object;
-}
+export type StateObject = Record<string, any>;
+export type StateGenericValue = null | undefined | boolean | number | string | any[] | object;
+export type StateSchema = Record<string, StateGenericValue>;
 export interface StateUpdateCallback {
-    (state: {
-        [key: string]: any;
-    }): void;
+    (state: Record<string, any>): void;
 }
 export type managerID = string;
 export interface InitializationOptions {

@@ -1,6 +1,6 @@
 /************************************* IMPORTS **************************************/
 import { WindowManager, PathNode } from './utils/helpers';
-import { StateObject, StateUpdateCallback, InitializationOptions, StorageOptions, managerID, StateSchema } from './types/index';
+import type { StateObject, StateUpdateCallback, InitializationOptions, StorageOptions, managerID, StateSchema } from './types/index';
 export declare let WINDOW: {
     [key: string]: any;
 };
@@ -12,15 +12,9 @@ export default class Spiccato {
     private initOptions;
     _schema: StateSchema;
     _state: StateObject;
-    getters: {
-        [key: string]: Function;
-    };
-    setters: {
-        [key: string]: Function;
-    };
-    methods: {
-        [key: string]: Function;
-    };
+    getters: Record<string, Function>;
+    setters: Record<string, Function>;
+    methods: Record<string, Function>;
     private _bindToLocalStorage;
     private _initialized;
     private _role;
@@ -35,23 +29,15 @@ export default class Spiccato {
     private _persistToLocalStorage;
     getStateFromPath(path: string | string[]): any | undefined;
     setState(updater: StateObject | Function, callback?: StateUpdateCallback | null, updatedPaths?: string[][] | PathNode[] | null): Promise<StateObject>;
-    addCustomGetters(getters: {
-        [key: string]: Function;
-    }): void;
-    addCustomSetters(setters: {
-        [key: string]: Function;
-    }): void;
-    addCustomMethods(methods: {
-        [key: string]: Function;
-    }): void;
+    addCustomGetters(getters: Record<string, Function>): Spiccato;
+    addCustomSetters(setters: Record<string, Function>): Spiccato;
+    addCustomMethods(methods: Record<string, Function>): Spiccato;
     addNamespacedMethods(namespaces: {
-        [key: string]: {
-            [key: string]: Function;
-        };
-    }): void;
+        [key: string]: Record<string, Function>;
+    }): Spiccato;
     /********** EVENTS **********/
-    addEventListener(eventType: string | string[] | PathNode, callback: Function): void;
-    removeEventListener(eventType: string | string[] | PathNode, callback: Function): void;
+    addEventListener(eventType: "update" | string | string[] | PathNode, callback: Function): Spiccato;
+    removeEventListener(eventType: "update" | string | string[] | PathNode, callback: Function): Spiccato;
     private emitEvent;
     private emitUpdateEventFromPath;
     /********** LOCAL STORAGE **********/

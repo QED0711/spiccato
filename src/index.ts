@@ -1,4 +1,5 @@
 /************************************* IMPORTS **************************************/
+
 import {
     formatAccessor,
     getNestedRoutes,
@@ -15,7 +16,7 @@ import {
     PathTree,
 } from './utils/helpers'
 
-import {
+import type {
     StateObject,
     StateUpdateCallback,
     InitializationOptions,
@@ -25,6 +26,7 @@ import {
     StateSchema,
     DynamicSetterOptions
 } from './types/index'
+
 import { 
     InvalidStateSchemaError, 
     ProtectedNamespaceError, 
@@ -113,9 +115,9 @@ export default class Spiccato {
     private initOptions: InitializationOptions;
     public _schema: StateSchema
     public _state: StateObject;
-    getters: { [key: string]: Function };
-    setters: { [key: string]: Function };
-    methods: { [key: string]: Function };
+    getters: Record<string, Function>;
+    setters: Record<string, Function>;
+    methods: Record<string, Function>;
     private _bindToLocalStorage: boolean;
     private _initialized: boolean;
     private _role: string;
@@ -294,7 +296,7 @@ export default class Spiccato {
         })
     }
 
-    addCustomGetters(getters: { [key: string]: Function }) {
+    addCustomGetters(getters: Record<string, Function>): Spiccato {
         if(!this._initialized) {
             throw new InitializationError("`addCustomGetters` called before init(). This may lead to unexpected behavior with dynamic getter overrides")
         }
@@ -304,9 +306,11 @@ export default class Spiccato {
             }
         }
         this.getters = { ...this.getters, ...getters }
+
+        return this
     }
 
-    addCustomSetters(setters: { [key: string]: Function }) {
+    addCustomSetters(setters: Record<string, Function>): Spiccato {
         if(!this._initialized) {
             throw new InitializationError("`addCustomSetters` called before init(). This may lead to unexpected behavior with dynamic setter overrides")
         }
@@ -316,16 +320,20 @@ export default class Spiccato {
             }
         }
         this.setters = { ...this.setters, ...setters };
+
+        return this
     }
 
-    addCustomMethods(methods: { [key: string]: Function }) {
+    addCustomMethods(methods: Record<string, Function>): Spiccato {
         for (let [key, callback] of Object.entries(methods)) {
             methods[key] = callback.bind(this);
         }
         this.methods = { ...this.methods, ...methods };
+
+        return this
     }
 
-    addNamespacedMethods(namespaces: { [key: string]: { [key: string]: Function } }) {
+    addNamespacedMethods(namespaces: { [key: string]: Record<string, Function> }): Spiccato {
         for (let ns in namespaces) {
             if (PROTECTED_NAMESPACES[ns]) {
                 throw new ProtectedNamespaceError(`The namespace '${ns}' is protected. Please choose a different namespace for you methods.`)
@@ -335,11 +343,13 @@ export default class Spiccato {
                 this[ns][key] = callback.bind(this);
             }
         }
+
+        return this
     }
 
     /********** EVENTS **********/
 
-    addEventListener(eventType: string | string[] | PathNode, callback: Function) {
+    addEventListener(eventType: "update" | string | string[] | PathNode, callback: Function): Spiccato {
         if (Array.isArray(eventType)) {
             eventType = "on_" + eventType.join("_") + "_update";
         }
@@ -351,9 +361,11 @@ export default class Spiccato {
         } else {
             this._eventListeners[eventType] = [callback];
         }
+
+        return this
     }
 
-    removeEventListener(eventType: string | string[] | PathNode, callback: Function) {
+    removeEventListener(eventType: "update" | string | string[] | PathNode, callback: Function): Spiccato {
         if (Array.isArray(eventType)) {
             eventType = "on_" + eventType.join("_") + "_update"
         }
@@ -361,6 +373,8 @@ export default class Spiccato {
             eventType = "on_" + eventType.__$path.join("_") + "_update";
         }
         this._eventListeners[eventType] = this._eventListeners[eventType]?.filter(cb => cb !== callback);
+
+        return this
     }
 
     private emitEvent(eventType: string, payload: EventPayload) {
@@ -449,6 +463,3 @@ export default class Spiccato {
     }
 
 }
-
-
-
