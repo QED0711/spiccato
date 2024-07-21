@@ -2,14 +2,14 @@
 
 # ⚠️ Beta Release Notice
 
-**This is a beta release (v1.0.1-beta) of the Spiccato package.**
+**This is a beta release (v1.0.3-beta) of the Spiccato package.**
 
-Please be aware that this version is currently in beta and may contain bugs or incomplete features. There is no warranty for the beta release. For a stable build, please use the latest version in the 0.x.x series. There are breaking changes between version 0.x.x and 1.0.1-beta.
+Please be aware that this version is currently in beta and may contain bugs or incomplete features. There is no warranty for the beta release. For a stable build, please use the latest version in the 0.x.x series. There are breaking changes between version 0.x.x and 1.x.x-beta.
 
 To install this beta version:
 
 ```bash
-npm install spiccato@1.0.1-beta
+npm install spiccato@1.0.3-beta
 ```
 ----
 
@@ -35,6 +35,7 @@ npm install spiccato@1.0.1-beta
         - [addCustomSetters](#addcustomsetters)
         - [addCustomMethods](#addcustommethods)
         - [addNamespacedMethod](#addnamespacedmethods)
+        - [Customization Chaining](#customization-chaining)
     - [Events](#events)
         - [addEventListener](#addeventlistener)
         - [Event Payload](#event-payload)
@@ -564,6 +565,21 @@ manager.addNamespacedMethods({
 }, false)
 
 manager.API // you can now access your namespace without the `_` prefix 
+```
+#### Customization Chaining
+
+You can chain the `addCustomGetters`, `addCustomSetters`, `addCustomMethods`, and `addNamespacedMethods` calls after the `init` call.
+
+```javascript
+
+const manager = new Spiccato({/* your state here */}, { id: "chaining" });
+
+manager.init()
+    .addCustomGetters({ /* custom getters */ })
+    .addCustomSetters({ /* custom setters */ })
+    .addCustomMethods({ /* custom methods */ })
+    .addNamespacedMethods({ /* custom namespaces */ });
+
 ```
 
 ---

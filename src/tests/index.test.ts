@@ -77,46 +77,41 @@ const testManager = new AdaptiveSpiccato(
     initState,
     { id: "TEST" },
 );
-testManager.init();
+testManager.init()
+    .addCustomGetters({
+        getUser: function (): { [key: string]: any } {
+            const user = this.state.user;
+            return user
+        },
+        getAddedNums: function (): number {
+            return this.state.num1 + this.state.num2;
+        },
+        getOverrideGetter: function (): string {
+            return "this is not the string you're looking for"
+        },
+        getNum1: function (): number {
+            return this.state.num1;
+        }
+    })
+    .addCustomSetters({
+        setBothNums(num1: number, num2: number) {
+            this.setState((prevState: StateObject) => {
+                return { num1, num2 };
+            })
+        },
 
-testManager.addCustomGetters({
-    getUser: function (): { [key: string]: any } {
-        const user = this.state.user;
-        return user
-    },
-    getAddedNums: function (): number {
-        return this.state.num1 + this.state.num2;
-    },
-    getOverrideGetter: function (): string {
-        return "this is not the string you're looking for"
-    },
-    getNum1: function (): number {
-        return this.state.num1;
-    }
-})
+        setOverride(text: string) {
+            this.setState((prevState: StateObject) => {
+                return [{ override: "constant string" }, []]; // does nothing, nothing is set
+            })
+        }
 
-
-
-testManager.addCustomSetters({
-    setBothNums(num1: number, num2: number) {
-        this.setState((prevState: StateObject) => {
-            return { num1, num2 };
-        })
-    },
-
-    setOverride(text: string) {
-        this.setState((prevState: StateObject) => {
-            return [{ override: "constant string" }, []]; // does nothing, nothing is set
-        })
-    }
-
-})
-
-testManager.addCustomMethods({
-    deriveAdditionToNum1(num: number) {
-        return this.getters.getNum1() + num;
-    }
-})
+    })
+    .addCustomMethods({
+        deriveAdditionToNum1(num: number) {
+            return this.getters.getNum1() + num;
+        }
+    })
 
 try {
     testManager.addNamespacedMethods({
@@ -249,11 +244,11 @@ describe("State Interactions", () => {
             expect(shouldFail(["myVal"], 14, "delete")).toBe(0);
             expect(shouldFail(["level1", "level2", "level3"], "TEST")).toBe(0);
             expect(shouldFail(["someNewVal"], "I'm New!!!")).toBe(0);
-            expect(shouldFail(["arr", "0"], "This should work")).toBe(1); // only object properties are protected from mutation. Arrays within a schema are mutatable
+            expect(shouldFail(["arr", "0"], "This should work")).toBe(1); // only object properties are protected from mutation. Arrays within a schema are mutable
         })
 
         describe("Disabled write protection", () => {
-            const initState = {myVal: 1};
+            const initState = { myVal: 1 };
             type Getters = GetterMethods<typeof initState, {}>
             type Setters = SetterMethods<typeof initState, {}>
             const performanceManager = new Spiccato<typeof initState, Getters, Setters>({ myVal: 1 }, { id: "performanceManager", enableWriteProtection: false });
@@ -417,7 +412,7 @@ describe("State Interactions", () => {
 
         test("Namespaced Methods", () => {
             testManager.api.getUser(1);
-            const user = testManager.getters.getUser() as {id: number, name: string};
+            const user = testManager.getters.getUser() as { id: number, name: string };
             expect(user.name).toBe("test");
             expect(user.id).toBe(1);
         });

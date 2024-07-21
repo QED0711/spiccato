@@ -398,6 +398,6 @@ class Spiccato {
         }
     }
 }
-exports.default = Spiccato;
 /* Class Properties */
 Spiccato.managers = {};
+exports.default = Spiccato;

@@ -63,9 +63,7 @@ export type SettersSchema<ThisType> = {
 export type MethodsSchema<ThisType> = {
     [key: string]: (this: ThisType, ...args: any[]) => any;
 };
-export type ExtensionSchema<ThisType> = {
-    [key: string]: any;
-};
+export type ExtensionSchema<ThisType> = Record<string, any>;
 export type NamespacedMethods<Instance> = {
     [namespace: string]: {
         [key: string]: (this: Instance, ...args: any[]) => any;

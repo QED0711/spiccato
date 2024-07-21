@@ -64,8 +64,8 @@ class AdaptiveSpiccato extends index_1.default {
     }
 }
 const testManager = new AdaptiveSpiccato(initState, { id: "TEST" });
-testManager.init();
-testManager.addCustomGetters({
+testManager.init()
+    .addCustomGetters({
     getUser: function () {
         const user = this.state.user;
         return user;
@@ -79,8 +79,8 @@ testManager.addCustomGetters({
     getNum1: function () {
         return this.state.num1;
     }
-});
-testManager.addCustomSetters({
+})
+    .addCustomSetters({
     setBothNums(num1, num2) {
         this.setState((prevState) => {
             return { num1, num2 };
@@ -91,8 +91,8 @@ testManager.addCustomSetters({
             return [{ override: "constant string" }, []]; // does nothing, nothing is set
         });
     }
-});
-testManager.addCustomMethods({
+})
+    .addCustomMethods({
     deriveAdditionToNum1(num) {
         return this.getters.getNum1() + num;
     }
@@ -220,7 +220,7 @@ describe("State Interactions", () => {
             expect(shouldFail(["myVal"], 14, "delete")).toBe(0);
             expect(shouldFail(["level1", "level2", "level3"], "TEST")).toBe(0);
             expect(shouldFail(["someNewVal"], "I'm New!!!")).toBe(0);
-            expect(shouldFail(["arr", "0"], "This should work")).toBe(1); // only object properties are protected from mutation. Arrays within a schema are mutatable
+            expect(shouldFail(["arr", "0"], "This should work")).toBe(1); // only object properties are protected from mutation. Arrays within a schema are mutable
         });
         describe("Disabled write protection", () => {
             const initState = { myVal: 1 };
@@ -489,14 +489,14 @@ describe("Events", () => {
             expect(payload.value).toBe("Hi Again!!!");
         }));
         test("Full State Update", () => __awaiter(void 0, void 0, void 0, function* () {
-            var _g;
+            var _a;
             const payload = yield new Promise(resolve => {
                 testManager.addEventListener("update", (payload) => {
                     resolve(payload);
                 });
                 testManager.setState({ myVal: 84 });
             });
-            expect((_g = payload.state) === null || _g === void 0 ? void 0 : _g.myVal).toBe(84);
+            expect((_a = payload.state) === null || _a === void 0 ? void 0 : _a.myVal).toBe(84);
         }));
         test("removeEventListener", () => __awaiter(void 0, void 0, void 0, function* () {
             const value = yield new Promise((resolve) => __awaiter(void 0, void 0, void 0, function* () {

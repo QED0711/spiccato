@@ -65,7 +65,7 @@ const RESERVED_STATE_KEYS = [
     "*"
 ];
 /* SPICCATO */
-export default class Spiccato {
+class Spiccato {
     static registerManager(instance) {
         if (instance.initOptions.id in this.managers) {
             console.warn(`State Manager with id: '${instance.initOptions.id}' already exists. It has been overwritten`);
@@ -398,3 +398,4 @@ export default class Spiccato {
 }
 /* Class Properties */
 Spiccato.managers = {};
+export default Spiccato;

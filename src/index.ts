@@ -205,7 +205,7 @@ export default class Spiccato<
         return this._methods as Methods;
     }
 
-    init(): Spiccato {
+    init() {
         this._applyState();
         this._initialized = true
 
@@ -338,7 +338,7 @@ export default class Spiccato<
         })
     }
 
-    addCustomGetters(getters: GettersSchema<SpiccatoExtended<SpiccatoInstance<State, Getters, Setters, Methods>, Extensions>>): Spiccato {
+    addCustomGetters(getters: GettersSchema<SpiccatoExtended<SpiccatoInstance<State, Getters, Setters, Methods>, Extensions>>) {
         if (!this._initialized) {
             throw new InitializationError("`addCustomGetters` called before init(). This may lead to unexpected behavior with dynamic getter overrides")
         }
@@ -352,7 +352,7 @@ export default class Spiccato<
         return this
     }
 
-    addCustomSetters(setters: SettersSchema<SpiccatoExtended<SpiccatoInstance<State, Getters, Setters, Methods>, Extensions>>): Spiccato {
+    addCustomSetters(setters: SettersSchema<SpiccatoExtended<SpiccatoInstance<State, Getters, Setters, Methods>, Extensions>>) {
         if (!this._initialized) {
             throw new InitializationError("`addCustomSetters` called before init(). This may lead to unexpected behavior with dynamic setter overrides")
         }
@@ -366,7 +366,7 @@ export default class Spiccato<
         return this
     }
 
-    addCustomMethods(methods: MethodsSchema<SpiccatoExtended<SpiccatoInstance<State, Getters, Setters, Methods>, Extensions>>): Spiccato {
+    addCustomMethods(methods: MethodsSchema<SpiccatoExtended<SpiccatoInstance<State, Getters, Setters, Methods>, Extensions>>) {
         for (let [key, callback] of Object.entries(methods)) {
             methods[key] = callback.bind(this as unknown as SpiccatoExtended<SpiccatoInstance<State, Getters, Setters, Methods>, Extensions>);
         }
@@ -375,7 +375,7 @@ export default class Spiccato<
         return this
     }
 
-    addNamespacedMethods(namespaces: NamespacedMethods<SpiccatoExtended<SpiccatoInstance<State, Getters, Setters, Methods>, Extensions>>, tsSupport: boolean = true): Spiccato {
+    addNamespacedMethods(namespaces: NamespacedMethods<SpiccatoExtended<SpiccatoInstance<State, Getters, Setters, Methods>, Extensions>>, tsSupport: boolean = true) {
         for (let ns in namespaces) {
             if (PROTECTED_NAMESPACES["_" + ns] || PROTECTED_NAMESPACES[ns]) {
                 throw new ProtectedNamespaceError(`The namespace '_${ns}/${ns}' is protected. Please choose a different namespace for you methods.`)
