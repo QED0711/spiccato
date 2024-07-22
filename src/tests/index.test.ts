@@ -371,6 +371,26 @@ describe("State Interactions", () => {
             expect(testManager.state.myVal).toBe(123);
         });
 
+        test("setStateUnsafe errors when enableWriteProtection is true", () => {
+            function shouldFail() {
+                try {
+                    testManager.setStateUnsafe(state => {
+                        state.myVal = -1
+                        return [testManager.paths.myVal];
+                    })
+                    return 0
+                } catch (err: any) {
+                    if (err.name === "ImmutableStateError") {
+                        return 1
+                    } else {
+                        return 0
+                    }
+                }
+            }
+            expect(shouldFail()).toEqual(1)
+            expect(testManager.state.myVal).toBe(123); // should not have changed since last test
+        })
+
         test("Dynamic Setters", () => {
             testManager.setters.setMyVal(4);
             expect(testManager.getters.getMyVal()).toBe(4);
