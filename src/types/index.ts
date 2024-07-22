@@ -9,7 +9,8 @@ export interface StateUpdateCallback {
     (state: Record<string, any>): void;
 };
 
-export type SetStateFunction<State> = (prevState: State) =>  StateObject | [StateObject, string[][] | PathNode[] | StatePath[]]
+export type SetStateFunction<State> = (prevState: State) =>  StateObject | [StateObject, string[][] | PathNode[] | StatePath[]];
+export type SetStateUnsafeFunction<State> = (state: State) => string[][] | PathNode[] | StatePath[];
 
 export type StatePath = { __$path: string[], extendPath: any }
 export type StatePaths<T> = { __$path: string[], extendPath: any } & {

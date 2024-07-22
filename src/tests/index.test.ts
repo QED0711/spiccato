@@ -268,6 +268,15 @@ describe("State Interactions", () => {
                 performanceManager.state.myVal = 2;
                 expect(performanceManager.state.myVal).toBe(2);
             })
+
+            test("setStateUnsafe", () => {
+                performanceManager.setStateUnsafe((state) => {
+                    state.myVal = 0;
+                    return [performanceManager.paths.myVal];
+                })
+                expect(performanceManager.state.myVal).toBe(0);
+            })
+
         })
     })
 

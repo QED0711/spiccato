@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 import { formatAccessor, getNestedRoutes, nestedSetterFactory, sanitizeState, restoreState, WindowManager, _localStorage, getUpdatedPaths, createStateProxy, hasCircularReference, stateSchemaHasFunctions, PathNode, PathTree, } from './utils/helpers';
-import { InvalidStateSchemaError, ProtectedNamespaceError, ReservedStateKeyError, InvalidStateUpdateError, InitializationError } from './errors';
+import { InvalidStateSchemaError, ProtectedNamespaceError, ReservedStateKeyError, InvalidStateUpdateError, InitializationError, ImmutableStateError } from './errors';
 /************************************* DEFAULTS **************************************/
 const DEFAULT_INIT_OPTIONS = {
     id: "",
@@ -242,6 +242,22 @@ class Spiccato {
             resolve(updated);
             callback === null || callback === void 0 ? void 0 : callback(updated);
             this.emitEvent("update", { state: updated });
+            for (let path of updatedPaths) {
+                this.emitUpdateEventFromPath(path);
+            }
+            if (this._bindToLocalStorage && this.storageOptions.persistKey) {
+                this._persistToLocalStorage(this._state);
+            }
+        });
+    }
+    setStateUnsafe(updater, callback) {
+        if (this.initOptions.enableWriteProtection) {
+            throw new ImmutableStateError(`Manager '${this.id}' has been initialized with the {enableWriteProtection: true}. When this is set to true, you cannot call 'setStateUnsafe'.`);
+        }
+        return new Promise(resolve => {
+            const updatedPaths = updater(this._state);
+            resolve(this._state); // we can return _state here because we've already confirmed that enableWriteProtection is false 
+            callback === null || callback === void 0 ? void 0 : callback(this._state);
             for (let path of updatedPaths) {
                 this.emitUpdateEventFromPath(path);
             }

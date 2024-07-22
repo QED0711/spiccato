@@ -252,6 +252,22 @@ class Spiccato {
             }
         });
     }
+    setStateUnsafe(updater, callback) {
+        if (this.initOptions.enableWriteProtection) {
+            throw new errors_1.ImmutableStateError(`Manager '${this.id}' has been initialized with the {enableWriteProtection: true}. When this is set to true, you cannot call 'setStateUnsafe'.`);
+        }
+        return new Promise(resolve => {
+            const updatedPaths = updater(this._state);
+            resolve(this._state); // we can return _state here because we've already confirmed that enableWriteProtection is false 
+            callback === null || callback === void 0 ? void 0 : callback(this._state);
+            for (let path of updatedPaths) {
+                this.emitUpdateEventFromPath(path);
+            }
+            if (this._bindToLocalStorage && this.storageOptions.persistKey) {
+                this._persistToLocalStorage(this._state);
+            }
+        });
+    }
     addCustomGetters(getters) {
         if (!this._initialized) {
             throw new errors_1.InitializationError("`addCustomGetters` called before init(). This may lead to unexpected behavior with dynamic getter overrides");

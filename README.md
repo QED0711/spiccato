@@ -583,6 +583,33 @@ manager.init()
 ```
 
 ---
+
+### Performance Implications & setStateUnsafe
+
+In typical usage you will use dynamic or custom setters to mutate state. This is a safe operation as the underlying logic prevents state mutations from occuring without firing the associated state update events. However, in situations where state updates are comming at a high rate, this may not be the most performant solution. The reason is that each update potentially causes a traversal of state to determine what has changed, and complex state properties (like objects and arrays) will copy their contents to a new object and let garbage collection clean up the old instance. 
+
+For this reason, `setStateUnsafe` is provided as a hyper performant option. There are a few things to consider when using this method. First, as the name suggest, this is an unsafe state update as it allows you to mutate state directly. The expectation is that the user supplies an array indicating what has changed so the proper state update events can be fired. However, this is not enforced, hence the unsafe nature of the method.
+
+Second, in order to mutate state directly, you must initialize your spiccato instance with `enableWriteProtection` set to `false`. If this is not done and you attempt to call `setStateUnsafe`, it will throw an `ImmutableStateError`. 
+
+The `setStateUnsafe` method has one required argument, and one optional argument. The required argument is a function that receives the current state for direct mutation. This function must return an array indicating what has been updated (see [AddEventListener](#addeventlistener) for acceptable array formats that will trigger events). The second optional argument is a callback that will receive the updated state as its only argument. An alternative to callback is to await the call to `setStateUnsafe`. It returns a promise which will resolve to the updated state. 
+
+```javascript
+const performanceManager = new Spiccato({complexVal: {val1: 1, val2: "hello"}}, {id: "performance", enableWriteProtection: false});
+performanceManager.init();
+
+async function unsafeButFast() {
+    const updated = await performanceManager.setStateUnsafe((state) => {
+        state.complexVal = {val1: 0, val2: "goodbye};
+        return [performanceManager.paths.complexVal]
+    })
+}
+```
+
+You should use `setStateUnsafe` with caution and only when performance is a high priority. Otherwise, you should opt for dynamic or custom setters whenever possible.  
+
+---
+
 ### Events
 
 When a `Spiccato` instance is initialized, it dynamically creates events for all the properties defined in the state schema. 

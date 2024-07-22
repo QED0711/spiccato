@@ -90,7 +90,7 @@ testManager.init()
         this.setState((prevState) => {
             return [{ override: "constant string" }, []]; // does nothing, nothing is set
         });
-    }
+    },
 })
     .addCustomMethods({
     deriveAdditionToNum1(num) {
@@ -235,6 +235,13 @@ describe("State Interactions", () => {
             test("allows unsafe mutation", () => {
                 performanceManager.state.myVal = 2;
                 expect(performanceManager.state.myVal).toBe(2);
+            });
+            test("setStateUnsafe", () => {
+                performanceManager.setStateUnsafe((state) => {
+                    state.myVal = 0;
+                    return [performanceManager.paths.myVal];
+                });
+                expect(performanceManager.state.myVal).toBe(0);
             });
         });
     });

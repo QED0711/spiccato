@@ -35,6 +35,7 @@ import type {
     StatePath,
     StatePaths,
     SetStateFunction,
+    SetStateUnsafeFunction,
 } from './types/index'
 
 import {
@@ -42,7 +43,8 @@ import {
     ProtectedNamespaceError,
     ReservedStateKeyError,
     InvalidStateUpdateError,
-    InitializationError
+    InitializationError,
+    ImmutableStateError
 } from './errors';
 
 /************************************* DEFAULTS **************************************/
@@ -331,12 +333,31 @@ export default class Spiccato<
             callback?.(updated);
             this.emitEvent("update", { state: updated })
             for (let path of updatedPaths) {
-                this.emitUpdateEventFromPath(path as string[] | PathNode)
+                this.emitUpdateEventFromPath(path as string[] | PathNode | StatePath)
             }
             if (this._bindToLocalStorage && this.storageOptions.persistKey) {
                 this._persistToLocalStorage(this._state)
             }
         })
+    }
+
+    setStateUnsafe(updater: SetStateUnsafeFunction<State>, callback?: StateUpdateCallback | null): Promise<State> {
+        if(this.initOptions.enableWriteProtection) {
+            throw new ImmutableStateError(`Manager '${this.id}' has been initialized with the {enableWriteProtection: true}. When this is set to true, you cannot call 'setStateUnsafe'.`)
+        }
+
+        return new Promise(resolve => {
+            const updatedPaths = updater(this._state as State);
+            resolve(this._state as State); // we can return _state here because we've already confirmed that enableWriteProtection is false 
+            callback?.(this._state);
+            for(let path of updatedPaths) {
+                this.emitUpdateEventFromPath(path as string[] | PathNode | StatePath);
+            }
+            if(this._bindToLocalStorage && this.storageOptions.persistKey) {
+                this._persistToLocalStorage(this._state);
+            }
+        })
+
     }
 
     addCustomGetters(getters: GettersSchema<SpiccatoExtended<SpiccatoInstance<State, Getters, Setters, Methods>, Extensions>>) {
