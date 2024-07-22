@@ -2,14 +2,14 @@
 
 # ⚠️ Beta Release Notice
 
-**This is a beta release (v1.0.3-beta) of the Spiccato package.**
+**This is a beta release (v1.0.4-beta) of the Spiccato package.**
 
 Please be aware that this version is currently in beta and may contain bugs or incomplete features. There is no warranty for the beta release. For a stable build, please use the latest version in the 0.x.x series. There are breaking changes between version 0.x.x and 1.x.x-beta.
 
 To install this beta version:
 
 ```bash
-npm install spiccato@1.0.3-beta
+npm install spiccato@1.0.4-beta
 ```
 ----
 
@@ -36,6 +36,7 @@ npm install spiccato@1.0.3-beta
         - [addCustomMethods](#addcustommethods)
         - [addNamespacedMethod](#addnamespacedmethods)
         - [Customization Chaining](#customization-chaining)
+        - [Performance Implications & setStateUnsafe](#performance-implications--setstateunsafe)
     - [Events](#events)
         - [addEventListener](#addeventlistener)
         - [Event Payload](#event-payload)
@@ -586,7 +587,7 @@ manager.init()
 
 ### Performance Implications & setStateUnsafe
 
-In typical usage you will use dynamic or custom setters to mutate state. This is a safe operation as the underlying logic prevents state mutations from occuring without firing the associated state update events. However, in situations where state updates are comming at a high rate, this may not be the most performant solution. The reason is that each update potentially causes a traversal of state to determine what has changed, and complex state properties (like objects and arrays) will copy their contents to a new object and let garbage collection clean up the old instance. 
+In typical usage you will use dynamic or custom setters to mutate state. This is a safe operation as the underlying logic prevents state mutations from occurring without firing the associated state update events. However, in situations where state updates are coming at a high rate, this may not be the most performant solution. The reason is that each update potentially causes a traversal of state to determine what has changed, and complex state properties (like objects and arrays) will copy their contents to a new object and let garbage collection clean up the old instance. 
 
 For this reason, `setStateUnsafe` is provided as a hyper performant option. There are a few things to consider when using this method. First, as the name suggest, this is an unsafe state update as it allows you to mutate state directly. The expectation is that the user supplies an array indicating what has changed so the proper state update events can be fired. However, this is not enforced, hence the unsafe nature of the method.
 
@@ -600,7 +601,7 @@ performanceManager.init();
 
 async function unsafeButFast() {
     const updated = await performanceManager.setStateUnsafe((state) => {
-        state.complexVal = {val1: 0, val2: "goodbye};
+        state.complexVal = {val1: 0, val2: "goodbye"};
         return [performanceManager.paths.complexVal]
     })
 }
