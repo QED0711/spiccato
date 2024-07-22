@@ -52,7 +52,8 @@ export type SpiccatoInstance<State, Getters, Setters, Methods> = {
     getters: Getters;
     setters: Setters;
     methods: Methods;
-    setState: (updater: StateObject | Function, callback?: StateUpdateCallback | null, updatedPaths?: string[][] | PathNode[] | null) => Promise<StateObject>;
+    setState: (updater: StateObject | SetStateFunction<State>, callback?: StateUpdateCallback | null, updatedPaths?: string[][] | PathNode[] | StatePath[] | null) => Promise<StateObject>;
+    setStateUnsafe: (updater: SetStateUnsafeFunction<State>, callback?: StateUpdateCallback | null) => Promise<State>;
     paths: PathNode;
     windowManager: WindowManager | null
 }

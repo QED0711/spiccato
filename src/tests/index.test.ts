@@ -95,7 +95,7 @@ testManager
     })
     .addCustomSetters({
         setBothNums(num1: number, num2: number) {
-            this.setState((prevState: StateObject) => {
+            this.setState((prevState) => {
                 return { num1, num2 };
             })
         },
