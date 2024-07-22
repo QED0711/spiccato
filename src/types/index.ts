@@ -9,6 +9,8 @@ export interface StateUpdateCallback {
     (state: Record<string, any>): void;
 };
 
+export type SetStateFunction<State> = (prevState: State) =>  StateObject | [StateObject, string[][] | PathNode[] | StatePath[]]
+
 export type StatePath = { __$path: string[], extendPath: any }
 export type StatePaths<T> = { __$path: string[], extendPath: any } & {
     [K in keyof T]: T[K] extends StateSchema ? StatePaths<T[K]> : StatePath;

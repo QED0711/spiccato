@@ -5,6 +5,7 @@ export type StateSchema = Record<string, StateGenericValue>;
 export interface StateUpdateCallback {
     (state: Record<string, any>): void;
 }
+export type SetStateFunction<State> = (prevState: State) => StateObject | [StateObject, string[][] | PathNode[] | StatePath[]];
 export type StatePath = {
     __$path: string[];
     extendPath: any;

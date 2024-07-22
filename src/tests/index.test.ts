@@ -104,7 +104,7 @@ testManager.init()
             this.setState((prevState: StateObject) => {
                 return [{ override: "constant string" }, []]; // does nothing, nothing is set
             })
-        }
+        },
 
     })
     .addCustomMethods({
@@ -112,6 +112,7 @@ testManager.init()
             return this.getters.getNum1() + num;
         }
     })
+
 
 try {
     testManager.addNamespacedMethods({
@@ -136,6 +137,7 @@ try {
         })
     }
 }
+
 
 describe("Initialization:", () => {
     test("Init", () => {

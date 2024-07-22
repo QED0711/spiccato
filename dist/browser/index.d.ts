@@ -1,6 +1,6 @@
 /************************************* IMPORTS **************************************/
 import { WindowManager, PathNode } from './utils/helpers';
-import type { StateObject, StateUpdateCallback, InitializationOptions, StorageOptions, managerID, StateSchema, GettersSchema, SettersSchema, MethodsSchema, SpiccatoInstance, NamespacedMethods, ExtensionSchema, SpiccatoExtended, StatePath, StatePaths } from './types/index';
+import type { StateObject, StateUpdateCallback, InitializationOptions, StorageOptions, managerID, StateSchema, GettersSchema, SettersSchema, MethodsSchema, SpiccatoInstance, NamespacedMethods, ExtensionSchema, SpiccatoExtended, StatePath, StatePaths, SetStateFunction } from './types/index';
 export declare let WINDOW: Record<string, any>;
 export default class Spiccato<State extends StateSchema = StateSchema, Getters extends GettersSchema<SpiccatoExtended<SpiccatoInstance<State, Getters, Setters, Methods>, Extensions>> = {}, Setters extends SettersSchema<SpiccatoExtended<SpiccatoInstance<State, Getters, Setters, Methods>, Extensions>> = {}, Methods extends MethodsSchema<SpiccatoExtended<SpiccatoInstance<State, Getters, Setters, Methods>, Extensions>> = {}, Extensions extends ExtensionSchema<SpiccatoExtended<SpiccatoInstance<State, Getters, Setters, Methods>, Extensions>> = {}> {
     private static managers;
@@ -31,7 +31,7 @@ export default class Spiccato<State extends StateSchema = StateSchema, Getters e
     private _applyState;
     private _persistToLocalStorage;
     getStateFromPath(path: string | string[]): any | undefined;
-    setState(updater: StateObject | Function, callback?: StateUpdateCallback | null, updatedPaths?: string[][] | PathNode[] | StatePath[] | null): Promise<StateObject>;
+    setState(updater: StateObject | SetStateFunction<State>, callback?: StateUpdateCallback | null, updatedPaths?: string[][] | PathNode[] | StatePath[] | null): Promise<StateObject>;
     addCustomGetters(getters: GettersSchema<SpiccatoExtended<SpiccatoInstance<State, Getters, Setters, Methods>, Extensions>>): this;
     addCustomSetters(setters: SettersSchema<SpiccatoExtended<SpiccatoInstance<State, Getters, Setters, Methods>, Extensions>>): this;
     addCustomMethods(methods: MethodsSchema<SpiccatoExtended<SpiccatoInstance<State, Getters, Setters, Methods>, Extensions>>): this;

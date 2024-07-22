@@ -34,6 +34,7 @@ import type {
     SpiccatoExtended,
     StatePath,
     StatePaths,
+    SetStateFunction,
 } from './types/index'
 
 import {
@@ -299,7 +300,7 @@ export default class Spiccato<
         }
     }
 
-    setState(updater: StateObject | Function, callback: StateUpdateCallback | null = null, updatedPaths: string[][] | PathNode[] | StatePath[] | null = null): Promise<StateObject> {
+    setState(updater: StateObject | SetStateFunction<State>, callback: StateUpdateCallback | null = null, updatedPaths: string[][] | PathNode[] | StatePath[] | null = null): Promise<StateObject> {
 
         return new Promise(resolve => {
             if (typeof updater === 'object') {
@@ -309,7 +310,7 @@ export default class Spiccato<
                 }
                 this._state = { ...this._state, ...updater };
             } else if (typeof updater === 'function') {
-                const result: StateObject | [StateObject, string[][] | PathNode[]] = updater(this.state);
+                const result = updater(this.state as State);
                 if (typeof result !== "object") throw new InvalidStateUpdateError("Functional update did not return an object. The function passed to `setState` must return an object");
                 let updaterValue: StateObject
                 if (Array.isArray(result)) {
