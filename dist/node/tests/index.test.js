@@ -64,7 +64,7 @@ class AdaptiveSpiccato extends index_1.default {
     }
 }
 const testManager = new AdaptiveSpiccato(initState, { id: "TEST" });
-testManager.init()
+testManager
     .addCustomGetters({
     getUser: function () {
         const user = this.state.user;
@@ -96,7 +96,8 @@ testManager.init()
     deriveAdditionToNum1(num) {
         return this.getters.getNum1() + num;
     }
-});
+})
+    .init();
 try {
     testManager.addNamespacedMethods({
         state: {
@@ -328,7 +329,7 @@ describe("State Interactions", () => {
             });
             expect(testManager.state.myVal).toBe(123);
         });
-        test("setStateUnsafe errors when enableWriteProtection is active", () => {
+        test("setStateUnsafe errors when enableWriteProtection is true", () => {
             function shouldFail() {
                 try {
                     testManager.setStateUnsafe(state => {

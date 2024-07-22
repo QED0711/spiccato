@@ -230,14 +230,14 @@ export default class Spiccato<
 
         for (let k in this._state) {
             if (this.initOptions.dynamicGetters) {
-                this._getters[formatAccessor(k, "get")] = () => {
+                this._getters[formatAccessor(k, "get")] ??= () => { // ??= only assign if not already included in a custom getter
                     // this accesses `this.state` and NOT `this._state`. If the getter returns a higher level object, that object should be immutable
                     return this.state[k as keyof State];
                 }
             }
 
             if (this.initOptions.dynamicSetters) {
-                this._setters[formatAccessor(k, "set")] = (v: any, callback: StateUpdateCallback | null, options: DynamicSetterOptions | null) => {
+                this._setters[formatAccessor(k, "set")] ??= (v: any, callback: StateUpdateCallback | null, options: DynamicSetterOptions | null) => { // ??= only assign if not already included in a custom setter
                     options = { ...DEFAULT_DYNAMIC_SETTER_OPTIONS, ...options }
                     return new Promise(async resolve => {
                         resolve(await this.setState({ [k]: v }, callback, options?.explicitUpdatePath ? [[k]] : null));
@@ -254,7 +254,7 @@ export default class Spiccato<
             for (let path of nestedPaths) {
 
                 if (createNestedGetters) {
-                    this._getters[formatAccessor(path, "get")] = () => {
+                    this._getters[formatAccessor(path, "get")] ??= () => {
                         let value = this._state[path[0]];
                         for (let i = 1; i < path.length; i++) {
                             value = value?.[path[i]];
@@ -264,7 +264,7 @@ export default class Spiccato<
                 }
 
                 if (createNestedSetters) {
-                    this._setters[formatAccessor(path, "set")] = (v: any, callback: StateUpdateCallback | null, options: DynamicSetterOptions | null): Promise<StateObject> => {
+                    this._setters[formatAccessor(path, "set")] ??= (v: any, callback: StateUpdateCallback | null, options: DynamicSetterOptions | null): Promise<StateObject> => {
                         options = { ...DEFAULT_DYNAMIC_SETTER_OPTIONS, ...options }
                         const updatedState = nestedSetterFactory(this._state, path)(v);
                         return new Promise(async resolve => {
@@ -361,9 +361,9 @@ export default class Spiccato<
     }
 
     addCustomGetters(getters: GettersSchema<SpiccatoExtended<SpiccatoInstance<State, Getters, Setters, Methods>, Extensions>>) {
-        if (!this._initialized) {
-            throw new InitializationError("`addCustomGetters` called before init(). This may lead to unexpected behavior with dynamic getter overrides")
-        }
+        // if (!this._initialized) {
+        //     throw new InitializationError("`addCustomGetters` called before init(). This may lead to unexpected behavior with dynamic getter overrides")
+        // }
         for (let [key, callback] of Object.entries(getters)) {
             if (!(key in this._getters) || (key in this._getters && this.initOptions.allowDynamicAccessorOverride)) {
                 getters[key] = callback.bind(this as unknown as SpiccatoExtended<SpiccatoInstance<State, Getters, Setters, Methods>, Extensions>);
@@ -375,9 +375,9 @@ export default class Spiccato<
     }
 
     addCustomSetters(setters: SettersSchema<SpiccatoExtended<SpiccatoInstance<State, Getters, Setters, Methods>, Extensions>>) {
-        if (!this._initialized) {
-            throw new InitializationError("`addCustomSetters` called before init(). This may lead to unexpected behavior with dynamic setter overrides")
-        }
+        // if (!this._initialized) {
+        //     throw new InitializationError("`addCustomSetters` called before init(). This may lead to unexpected behavior with dynamic setter overrides")
+        // }
         for (let [key, callback] of Object.entries(setters)) {
             if (!(key in this._setters) || (key in this._setters && this.initOptions.allowDynamicAccessorOverride)) {
                 setters[key] = callback.bind(this as unknown as SpiccatoExtended<SpiccatoInstance<State, Getters, Setters, Methods>, Extensions>);

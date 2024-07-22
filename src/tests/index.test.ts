@@ -77,7 +77,7 @@ const testManager = new AdaptiveSpiccato(
     initState,
     { id: "TEST" },
 );
-testManager.init()
+testManager
     .addCustomGetters({
         getUser: function (): { [key: string]: any } {
             const user = this.state.user;
@@ -112,6 +112,7 @@ testManager.init()
             return this.getters.getNum1() + num;
         }
     })
+    .init()
 
 
 try {

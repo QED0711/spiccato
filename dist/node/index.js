@@ -133,7 +133,8 @@ class Spiccato {
         return this;
     }
     _applyState() {
-        var _a;
+        var _a, _b, _c, _d, _e;
+        var _f, _g, _h, _j, _k, _l, _m, _o;
         if (this._bindToLocalStorage) {
             this._persistToLocalStorage(this._state);
         }
@@ -144,18 +145,18 @@ class Spiccato {
         }
         for (let k in this._state) {
             if (this.initOptions.dynamicGetters) {
-                this._getters[(0, helpers_1.formatAccessor)(k, "get")] = () => {
+                (_b = (_f = this._getters)[_g = (0, helpers_1.formatAccessor)(k, "get")]) !== null && _b !== void 0 ? _b : (_f[_g] = () => {
                     // this accesses `this.state` and NOT `this._state`. If the getter returns a higher level object, that object should be immutable
                     return this.state[k];
-                };
+                });
             }
             if (this.initOptions.dynamicSetters) {
-                this._setters[(0, helpers_1.formatAccessor)(k, "set")] = (v, callback, options) => {
+                (_c = (_h = this._setters)[_j = (0, helpers_1.formatAccessor)(k, "set")]) !== null && _c !== void 0 ? _c : (_h[_j] = (v, callback, options) => {
                     options = Object.assign(Object.assign({}, DEFAULT_DYNAMIC_SETTER_OPTIONS), options);
                     return new Promise((resolve) => __awaiter(this, void 0, void 0, function* () {
                         resolve(yield this.setState({ [k]: v }, callback, (options === null || options === void 0 ? void 0 : options.explicitUpdatePath) ? [[k]] : null));
                     }));
-                };
+                });
             }
         }
         // nested interactions
@@ -165,22 +166,22 @@ class Spiccato {
             const nestedPaths = (0, helpers_1.getNestedRoutes)(this._state);
             for (let path of nestedPaths) {
                 if (createNestedGetters) {
-                    this._getters[(0, helpers_1.formatAccessor)(path, "get")] = () => {
+                    (_d = (_k = this._getters)[_l = (0, helpers_1.formatAccessor)(path, "get")]) !== null && _d !== void 0 ? _d : (_k[_l] = () => {
                         let value = this._state[path[0]];
                         for (let i = 1; i < path.length; i++) {
                             value = value === null || value === void 0 ? void 0 : value[path[i]];
                         }
                         return value;
-                    };
+                    });
                 }
                 if (createNestedSetters) {
-                    this._setters[(0, helpers_1.formatAccessor)(path, "set")] = (v, callback, options) => {
+                    (_e = (_m = this._setters)[_o = (0, helpers_1.formatAccessor)(path, "set")]) !== null && _e !== void 0 ? _e : (_m[_o] = (v, callback, options) => {
                         options = Object.assign(Object.assign({}, DEFAULT_DYNAMIC_SETTER_OPTIONS), options);
                         const updatedState = (0, helpers_1.nestedSetterFactory)(this._state, path)(v);
                         return new Promise((resolve) => __awaiter(this, void 0, void 0, function* () {
                             resolve(yield this.setState(updatedState, callback, (options === null || options === void 0 ? void 0 : options.explicitUpdatePath) ? [path] : null));
                         }));
-                    };
+                    });
                 }
             }
         }
@@ -269,9 +270,9 @@ class Spiccato {
         });
     }
     addCustomGetters(getters) {
-        if (!this._initialized) {
-            throw new errors_1.InitializationError("`addCustomGetters` called before init(). This may lead to unexpected behavior with dynamic getter overrides");
-        }
+        // if (!this._initialized) {
+        //     throw new InitializationError("`addCustomGetters` called before init(). This may lead to unexpected behavior with dynamic getter overrides")
+        // }
         for (let [key, callback] of Object.entries(getters)) {
             if (!(key in this._getters) || (key in this._getters && this.initOptions.allowDynamicAccessorOverride)) {
                 getters[key] = callback.bind(this);
@@ -281,9 +282,9 @@ class Spiccato {
         return this;
     }
     addCustomSetters(setters) {
-        if (!this._initialized) {
-            throw new errors_1.InitializationError("`addCustomSetters` called before init(). This may lead to unexpected behavior with dynamic setter overrides");
-        }
+        // if (!this._initialized) {
+        //     throw new InitializationError("`addCustomSetters` called before init(). This may lead to unexpected behavior with dynamic setter overrides")
+        // }
         for (let [key, callback] of Object.entries(setters)) {
             if (!(key in this._setters) || (key in this._setters && this.initOptions.allowDynamicAccessorOverride)) {
                 setters[key] = callback.bind(this);
