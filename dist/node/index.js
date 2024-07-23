@@ -77,6 +77,13 @@ class Spiccato {
     static getManagerById(id) {
         return this.managers[id];
     }
+    static get state() {
+        const combinedState = {};
+        for (let manager of Object.values(this.managers)) {
+            combinedState[manager.id] = manager.state;
+        }
+        return combinedState;
+    }
     static clear() {
         this.managers = {};
     }

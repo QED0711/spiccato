@@ -177,6 +177,15 @@ describe("Initialization:", () => {
         expect(testManager).toBe(Spiccato.getManagerById("TEST"));
     });
 
+    test("class state", () => {
+        new Spiccato({combinedTest: null}, {id: "combined"});
+        const combinedState = Spiccato.state;
+        expect(combinedState).toHaveProperty("TEST");
+        expect(combinedState).toHaveProperty("combined");
+        expect(combinedState.TEST).toMatchObject(initState);
+        expect(combinedState.combined.combinedTest).toEqual(null);
+    })
+
     test("Instance ID", () => {
         expect(testManager.id).toBe("TEST");
     });

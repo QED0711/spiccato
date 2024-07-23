@@ -157,6 +157,14 @@ describe("Initialization:", () => {
     test("getManagerByID", () => {
         expect(testManager).toBe(index_1.default.getManagerById("TEST"));
     });
+    test("class state", () => {
+        new index_1.default({ combinedTest: null }, { id: "combined" });
+        const combinedState = index_1.default.state;
+        expect(combinedState).toHaveProperty("TEST");
+        expect(combinedState).toHaveProperty("combined");
+        expect(combinedState.TEST).toMatchObject(initState);
+        expect(combinedState.combined.combinedTest).toEqual(null);
+    });
     test("Instance ID", () => {
         expect(testManager.id).toBe("TEST");
     });

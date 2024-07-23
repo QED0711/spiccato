@@ -6,6 +6,7 @@ export default class Spiccato<State extends StateSchema = StateSchema, Getters e
     private static managers;
     private static registerManager;
     static getManagerById(id: managerID): Spiccato<StateSchema, {}, {}, {}, {}>;
+    static get state(): Record<string, StateObject>;
     static clear(): void;
     private initOptions;
     _schema: StateSchema;

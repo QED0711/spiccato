@@ -128,9 +128,18 @@ export default class Spiccato<
         return this.managers[id];
     }
 
+    static get state(): Record<string, StateObject> {
+        const combinedState: Record<string, StateObject> = {};
+        for(let manager of Object.values(this.managers)) {
+            combinedState[manager.id as string] = manager.state;
+        }
+        return combinedState
+    }
+
     static clear() {
         this.managers = {};
     }
+
 
     /* Instance Properties */
     private initOptions: InitializationOptions;
