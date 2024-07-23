@@ -2,14 +2,14 @@
 
 # ⚠️ Beta Release Notice
 
-**This is a beta release (v1.0.4-beta.3) of the Spiccato package.**
+**This is a beta release (v1.0.5-beta) of the Spiccato package.**
 
 Please be aware that this version is currently in beta and may contain bugs or incomplete features. There is no warranty for the beta release. For a stable build, please use the latest version in the 0.x.x series. There are breaking changes between version 0.x.x and 1.x.x-beta.
 
 To install this beta version:
 
 ```bash
-npm install spiccato@1.0.4-beta.3
+npm install spiccato@1.0.5-beta
 ```
 ----
 
@@ -42,6 +42,7 @@ npm install spiccato@1.0.4-beta.3
         - [Event Payload](#event-payload)
         - [removeEventListener](#removeeventlistener)
     - [Errors](#errors)
+    - [Static Methods](#static-methods)
 - [Typescript Support (improved in v^1.0.0)](#typescript-support)
     - [Introduction](#introduction)
     - [Basic Instantiation patterns in Typescript](#basic-instantiation-patterns-in-typescript)
@@ -708,6 +709,19 @@ import {/* SOME_ERROR_TYPE */} from 'spiccato/errors';
 | StatePathNotExistError | The user has attempted to access a property within the instance `paths` object that does not exist | Ensure that the `stateSchema` does define the indicated path and that all path properties are spelled correctly | 
 | ReservedStateKeyError | The user has supplied a key in state that is reserved by `spiccato` to perform additional functionality. | Select a different key name for the indicated state resource |
 | ManagerNotFoundError | The class method, `getManagerByID`, returns `undefined`. This error must be thrown manually. | Check that the ID supplied is associated with an existing manager ID. |
+
+---
+
+### Static Methods
+
+The Spiccato class itself has static methods and accessors that can be used to help track all the spawned manager instances and their states.
+
+| Manager/Accessor | Description |
+| --- | --- |
+| getManagerById | given a string id, returns a manager instance with that unique id if it exists | 
+| clear | Clears its recording of all spawned managers | 
+| state | this is a `get` accessor that returns an object with the current state from all spawned managers. The keys at the top level of this object are the IDs of the spawned managers | 
+
 
 ---
 ## Typescript Support
