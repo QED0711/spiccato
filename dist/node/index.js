@@ -1,4 +1,5 @@
 "use strict";
+/************************************* IMPORTS **************************************/
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -10,7 +11,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.WINDOW = void 0;
-/************************************* IMPORTS **************************************/
 const helpers_1 = require("./utils/helpers");
 const errors_1 = require("./errors");
 /************************************* DEFAULTS **************************************/
@@ -56,6 +56,9 @@ const PROTECTED_NAMESPACES = {
     paths: true,
     _schema: true,
     _state: true,
+    _getters: true,
+    _setters: true,
+    _methods: true,
     _bindToLocalStorage: true,
     windowManager: true,
     eventListeners: true
@@ -74,6 +77,13 @@ class Spiccato {
     static getManagerById(id) {
         return this.managers[id];
     }
+    static get state() {
+        const combinedState = {};
+        for (let manager of Object.values(this.managers)) {
+            combinedState[manager.id] = manager.state;
+        }
+        return combinedState;
+    }
     static clear() {
         this.managers = {};
     }
@@ -87,14 +97,14 @@ class Spiccato {
         }
         this._schema = Object.freeze(Object.assign({}, stateSchema));
         this._state = stateSchema;
-        this.paths = new helpers_1.PathTree(this._schema).root;
+        this._paths = new helpers_1.PathTree(this._schema).root;
         const stateKeyViolations = RESERVED_STATE_KEYS.filter(k => Object.keys(this._state).includes(k));
         if (stateKeyViolations.length) {
             throw new errors_1.ReservedStateKeyError(`The key: '${stateKeyViolations[0]}' is reserved at this level. Please select a different key for this state resource.`);
         }
-        this.getters = {};
-        this.setters = {};
-        this.methods = {};
+        this._getters = {};
+        this._setters = {};
+        this._methods = {};
         this._initialized = false;
         this._bindToLocalStorage = false;
         this._role = "provider";
@@ -107,17 +117,31 @@ class Spiccato {
         this.constructor.registerManager(this);
     }
     get state() {
-        return this.initOptions.enableWriteProtection ? (0, helpers_1.createStateProxy)(this._state, this._schema) : this._state;
+        return (this.initOptions.enableWriteProtection ? (0, helpers_1.createStateProxy)(this._state, this._schema) : this._state);
     }
     get id() {
         return this.initOptions.id;
     }
+    get paths() {
+        return this._paths; // this is for intellisense support
+    }
+    get getters() {
+        return this._getters;
+    }
+    get setters() {
+        return this._setters;
+    }
+    get methods() {
+        return this._methods;
+    }
     init() {
         this._applyState();
         this._initialized = true;
+        return this;
     }
     _applyState() {
-        var _a;
+        var _a, _b, _c, _d, _e;
+        var _f, _g, _h, _j, _k, _l, _m, _o;
         if (this._bindToLocalStorage) {
             this._persistToLocalStorage(this._state);
         }
@@ -128,18 +152,18 @@ class Spiccato {
         }
         for (let k in this._state) {
             if (this.initOptions.dynamicGetters) {
-                this.getters[(0, helpers_1.formatAccessor)(k, "get")] = () => {
+                (_b = (_f = this._getters)[_g = (0, helpers_1.formatAccessor)(k, "get")]) !== null && _b !== void 0 ? _b : (_f[_g] = () => {
                     // this accesses `this.state` and NOT `this._state`. If the getter returns a higher level object, that object should be immutable
                     return this.state[k];
-                };
+                });
             }
             if (this.initOptions.dynamicSetters) {
-                this.setters[(0, helpers_1.formatAccessor)(k, "set")] = (v, callback, options) => {
+                (_c = (_h = this._setters)[_j = (0, helpers_1.formatAccessor)(k, "set")]) !== null && _c !== void 0 ? _c : (_h[_j] = (v, callback, options) => {
                     options = Object.assign(Object.assign({}, DEFAULT_DYNAMIC_SETTER_OPTIONS), options);
                     return new Promise((resolve) => __awaiter(this, void 0, void 0, function* () {
                         resolve(yield this.setState({ [k]: v }, callback, (options === null || options === void 0 ? void 0 : options.explicitUpdatePath) ? [[k]] : null));
                     }));
-                };
+                });
             }
         }
         // nested interactions
@@ -149,22 +173,22 @@ class Spiccato {
             const nestedPaths = (0, helpers_1.getNestedRoutes)(this._state);
             for (let path of nestedPaths) {
                 if (createNestedGetters) {
-                    this.getters[(0, helpers_1.formatAccessor)(path, "get")] = () => {
+                    (_d = (_k = this._getters)[_l = (0, helpers_1.formatAccessor)(path, "get")]) !== null && _d !== void 0 ? _d : (_k[_l] = () => {
                         let value = this._state[path[0]];
                         for (let i = 1; i < path.length; i++) {
                             value = value === null || value === void 0 ? void 0 : value[path[i]];
                         }
                         return value;
-                    };
+                    });
                 }
                 if (createNestedSetters) {
-                    this.setters[(0, helpers_1.formatAccessor)(path, "set")] = (v, callback, options) => {
+                    (_e = (_m = this._setters)[_o = (0, helpers_1.formatAccessor)(path, "set")]) !== null && _e !== void 0 ? _e : (_m[_o] = (v, callback, options) => {
                         options = Object.assign(Object.assign({}, DEFAULT_DYNAMIC_SETTER_OPTIONS), options);
                         const updatedState = (0, helpers_1.nestedSetterFactory)(this._state, path)(v);
                         return new Promise((resolve) => __awaiter(this, void 0, void 0, function* () {
                             resolve(yield this.setState(updatedState, callback, (options === null || options === void 0 ? void 0 : options.explicitUpdatePath) ? [path] : null));
                         }));
-                    };
+                    });
                 }
             }
         }
@@ -184,9 +208,14 @@ class Spiccato {
         else if (Array.isArray(path)) {
             let val = this.state;
             for (let p of path) {
-                val = val[p];
-                if (val === undefined)
+                if (val && typeof val === "object" && p in val) {
+                    val = val[p];
+                }
+                else {
                     return undefined;
+                }
+                // val = val[p];
+                // if (val === undefined) return undefined
             }
             return val;
         }
@@ -231,51 +260,71 @@ class Spiccato {
             }
         });
     }
-    addCustomGetters(getters) {
-        if (!this._initialized) {
-            throw new errors_1.InitializationError("`addCustomGetters` called before init(). This may lead to unexpected behavior with dynamic getter overrides");
+    setStateUnsafe(updater, callback) {
+        if (this.initOptions.enableWriteProtection) {
+            throw new errors_1.ImmutableStateError(`Manager '${this.id}' has been initialized with the {enableWriteProtection: true}. When this is set to true, you cannot call 'setStateUnsafe'.`);
         }
+        return new Promise(resolve => {
+            const updatedPaths = updater(this._state);
+            resolve(this._state); // we can return _state here because we've already confirmed that enableWriteProtection is false 
+            callback === null || callback === void 0 ? void 0 : callback(this._state);
+            for (let path of updatedPaths) {
+                this.emitUpdateEventFromPath(path);
+            }
+            if (this._bindToLocalStorage && this.storageOptions.persistKey) {
+                this._persistToLocalStorage(this._state);
+            }
+        });
+    }
+    addCustomGetters(getters) {
+        // if (!this._initialized) {
+        //     throw new InitializationError("`addCustomGetters` called before init(). This may lead to unexpected behavior with dynamic getter overrides")
+        // }
         for (let [key, callback] of Object.entries(getters)) {
-            if (!(key in this.getters) || (key in this.getters && this.initOptions.allowDynamicAccessorOverride)) {
+            if (!(key in this._getters) || (key in this._getters && this.initOptions.allowDynamicAccessorOverride)) {
                 getters[key] = callback.bind(this);
             }
         }
-        this.getters = Object.assign(Object.assign({}, this.getters), getters);
+        this._getters = Object.assign(Object.assign({}, this._getters), getters);
+        return this;
     }
     addCustomSetters(setters) {
-        if (!this._initialized) {
-            throw new errors_1.InitializationError("`addCustomSetters` called before init(). This may lead to unexpected behavior with dynamic setter overrides");
-        }
+        // if (!this._initialized) {
+        //     throw new InitializationError("`addCustomSetters` called before init(). This may lead to unexpected behavior with dynamic setter overrides")
+        // }
         for (let [key, callback] of Object.entries(setters)) {
-            if (!(key in this.setters) || (key in this.setters && this.initOptions.allowDynamicAccessorOverride)) {
+            if (!(key in this._setters) || (key in this._setters && this.initOptions.allowDynamicAccessorOverride)) {
                 setters[key] = callback.bind(this);
             }
         }
-        this.setters = Object.assign(Object.assign({}, this.setters), setters);
+        this._setters = Object.assign(Object.assign({}, this._setters), setters);
+        return this;
     }
     addCustomMethods(methods) {
         for (let [key, callback] of Object.entries(methods)) {
             methods[key] = callback.bind(this);
         }
-        this.methods = Object.assign(Object.assign({}, this.methods), methods);
+        this._methods = Object.assign(Object.assign({}, this._methods), methods);
+        return this;
     }
-    addNamespacedMethods(namespaces) {
+    addNamespacedMethods(namespaces, tsSupport = true) {
         for (let ns in namespaces) {
-            if (PROTECTED_NAMESPACES[ns]) {
-                throw new errors_1.ProtectedNamespaceError(`The namespace '${ns}' is protected. Please choose a different namespace for you methods.`);
+            if (PROTECTED_NAMESPACES["_" + ns] || PROTECTED_NAMESPACES[ns]) {
+                throw new errors_1.ProtectedNamespaceError(`The namespace '_${ns}/${ns}' is protected. Please choose a different namespace for you methods.`);
             }
-            this[ns] = {};
+            this[(tsSupport ? "_" : "") + ns] = {};
             for (let [key, callback] of Object.entries(namespaces[ns])) {
-                this[ns][key] = callback.bind(this);
+                this[(tsSupport ? "_" : "") + ns][key] = callback.bind(this);
             }
         }
+        return this;
     }
     /********** EVENTS **********/
     addEventListener(eventType, callback) {
         if (Array.isArray(eventType)) {
             eventType = "on_" + eventType.join("_") + "_update";
         }
-        if (eventType instanceof helpers_1.PathNode) {
+        if (eventType instanceof helpers_1.PathNode || eventType.__$path) {
             eventType = "on_" + eventType.__$path.join("_") + "_update";
         }
         if (eventType in this._eventListeners) {
@@ -284,6 +333,7 @@ class Spiccato {
         else {
             this._eventListeners[eventType] = [callback];
         }
+        return this;
     }
     removeEventListener(eventType, callback) {
         var _a;
@@ -294,6 +344,7 @@ class Spiccato {
             eventType = "on_" + eventType.__$path.join("_") + "_update";
         }
         this._eventListeners[eventType] = (_a = this._eventListeners[eventType]) === null || _a === void 0 ? void 0 : _a.filter(cb => cb !== callback);
+        return this;
     }
     emitEvent(eventType, payload) {
         var _a;
@@ -371,6 +422,6 @@ class Spiccato {
         }
     }
 }
-exports.default = Spiccato;
 /* Class Properties */
 Spiccato.managers = {};
+exports.default = Spiccato;

@@ -34,7 +34,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 const index_1 = __importStar(require("../index"));
 const helpers_1 = require("../utils/helpers");
-const testManager = new index_1.default({
+const initState = {
     isNull: null,
     isUndefined: undefined,
     nested: { isNull: null, isUndefined: undefined },
@@ -51,19 +51,36 @@ const testManager = new index_1.default({
     arr: [1, 2, 3],
     override: "override this setter",
     overrideGetter: "override this getter",
-}, {
-    id: "TEST"
-});
-testManager.init();
-testManager.addCustomGetters({
+    CapitalizedPath: {
+        AnotherCapitalizedProperty: ""
+    },
+};
+class AdaptiveSpiccato extends index_1.default {
+    get api() {
+        return this._api;
+    }
+    get other() {
+        return this._other;
+    }
+}
+const testManager = new AdaptiveSpiccato(initState, { id: "TEST" });
+testManager
+    .addCustomGetters({
+    getUser: function () {
+        const user = this.state.user;
+        return user;
+    },
     getAddedNums: function () {
         return this.state.num1 + this.state.num2;
     },
-    getOverrideGetter() {
+    getOverrideGetter: function () {
         return "this is not the string you're looking for";
+    },
+    getNum1: function () {
+        return this.state.num1;
     }
-});
-testManager.addCustomSetters({
+})
+    .addCustomSetters({
     setBothNums(num1, num2) {
         this.setState((prevState) => {
             return { num1, num2 };
@@ -73,13 +90,14 @@ testManager.addCustomSetters({
         this.setState((prevState) => {
             return [{ override: "constant string" }, []]; // does nothing, nothing is set
         });
-    }
-});
-testManager.addCustomMethods({
+    },
+})
+    .addCustomMethods({
     deriveAdditionToNum1(num) {
         return this.getters.getNum1() + num;
     }
-});
+})
+    .init();
 try {
     testManager.addNamespacedMethods({
         state: {
@@ -92,10 +110,15 @@ catch (err) {
         testManager.addNamespacedMethods({
             api: {
                 getUser(userID) {
-                    const user = { name: "test", id: 1 };
+                    const user = { name: "test", id: userID };
                     this.setters.setUser(user);
-                }
+                },
             },
+            other: {
+                iAmNamespaced(s, n) {
+                    return s.repeat(n);
+                }
+            }
         });
     }
 }
@@ -133,6 +156,14 @@ describe("Initialization:", () => {
     });
     test("getManagerByID", () => {
         expect(testManager).toBe(index_1.default.getManagerById("TEST"));
+    });
+    test("class state", () => {
+        new index_1.default({ combinedTest: null }, { id: "combined" });
+        const combinedState = index_1.default.state;
+        expect(combinedState).toHaveProperty("TEST");
+        expect(combinedState).toHaveProperty("combined");
+        expect(combinedState.TEST).toMatchObject(initState);
+        expect(combinedState.combined.combinedTest).toEqual(null);
     });
     test("Instance ID", () => {
         expect(testManager.id).toBe("TEST");
@@ -198,9 +229,10 @@ describe("State Interactions", () => {
             expect(shouldFail(["myVal"], 14, "delete")).toBe(0);
             expect(shouldFail(["level1", "level2", "level3"], "TEST")).toBe(0);
             expect(shouldFail(["someNewVal"], "I'm New!!!")).toBe(0);
-            expect(shouldFail(["arr", "0"], "This should work")).toBe(1); // only object properties are protected from mutation. Arrays within a schema are mutatable
+            expect(shouldFail(["arr", "0"], "This should work")).toBe(1); // only object properties are protected from mutation. Arrays within a schema are mutable
         });
         describe("Disabled write protection", () => {
+            const initState = { myVal: 1 };
             const performanceManager = new index_1.default({ myVal: 1 }, { id: "performanceManager", enableWriteProtection: false });
             performanceManager.init();
             test("allows normal state operations", () => {
@@ -212,6 +244,13 @@ describe("State Interactions", () => {
             test("allows unsafe mutation", () => {
                 performanceManager.state.myVal = 2;
                 expect(performanceManager.state.myVal).toBe(2);
+            });
+            test("setStateUnsafe", () => {
+                performanceManager.setStateUnsafe((state) => {
+                    state.myVal = 0;
+                    return [performanceManager.paths.myVal];
+                });
+                expect(performanceManager.state.myVal).toBe(0);
             });
         });
     });
@@ -297,6 +336,27 @@ describe("State Interactions", () => {
                 return [{ myVal: 123 }, [testManager.paths.myVal]];
             });
             expect(testManager.state.myVal).toBe(123);
+        });
+        test("setStateUnsafe errors when enableWriteProtection is true", () => {
+            function shouldFail() {
+                try {
+                    testManager.setStateUnsafe(state => {
+                        state.myVal = -1;
+                        return [testManager.paths.myVal];
+                    });
+                    return 0;
+                }
+                catch (err) {
+                    if (err.name === "ImmutableStateError") {
+                        return 1;
+                    }
+                    else {
+                        return 0;
+                    }
+                }
+            }
+            expect(shouldFail()).toEqual(1);
+            expect(testManager.state.myVal).toBe(123); // should not have changed since last test
         });
         test("Dynamic Setters", () => {
             testManager.setters.setMyVal(4);
@@ -466,14 +526,14 @@ describe("Events", () => {
             expect(payload.value).toBe("Hi Again!!!");
         }));
         test("Full State Update", () => __awaiter(void 0, void 0, void 0, function* () {
-            var _g;
+            var _a;
             const payload = yield new Promise(resolve => {
                 testManager.addEventListener("update", (payload) => {
                     resolve(payload);
                 });
                 testManager.setState({ myVal: 84 });
             });
-            expect((_g = payload.state) === null || _g === void 0 ? void 0 : _g.myVal).toBe(84);
+            expect((_a = payload.state) === null || _a === void 0 ? void 0 : _a.myVal).toBe(84);
         }));
         test("removeEventListener", () => __awaiter(void 0, void 0, void 0, function* () {
             const value = yield new Promise((resolve) => __awaiter(void 0, void 0, void 0, function* () {
@@ -508,7 +568,7 @@ describe("Local Storage Peristance", () => {
     test("Persistance doesn't mutate local state", () => {
         index_1.default.clear();
         delete index_1.WINDOW.name;
-        const manager = new index_1.default({
+        const initPersistState = {
             a: {
                 b: {
                     c: 3
@@ -516,7 +576,8 @@ describe("Local Storage Peristance", () => {
                 d: 4
             },
             e: 5
-        }, {
+        };
+        const manager = new index_1.default(initPersistState, {
             id: "Persist",
         });
         manager.connectToLocalStorage({
@@ -550,7 +611,8 @@ describe("Local Storage Peristance", () => {
         index_1.default.clear();
         index_1.WINDOW.name = "someSubscriber";
         index_1.WINDOW.localStorage.setItem("init", JSON.stringify({ a: 100 }));
-        const manager = new index_1.default({ a: 1, b: 2 }, { id: "localStorageInit" });
+        const initState = { a: 1, b: 2 };
+        const manager = new index_1.default(initState, { id: "localStorageInit" });
         manager.connectToLocalStorage({
             persistKey: "init",
             subscriberIDs: ["someSubscriber"],
@@ -572,7 +634,8 @@ describe("Local Storage Peristance", () => {
         index_1.default.clear();
         index_1.WINDOW.name = "sanitizedSubscriber";
         index_1.WINDOW.localStorage.setItem("init", JSON.stringify({ a: 100 }));
-        const manager = new index_1.default({ a: 1, b: 2 }, { id: "localStorageInit" });
+        const initState = { a: 1, b: 2 };
+        const manager = new index_1.default(initState, { id: "localStorageInit" });
         manager.connectToLocalStorage({
             persistKey: "init",
             subscriberIDs: ["sanitizedSubscriber"],

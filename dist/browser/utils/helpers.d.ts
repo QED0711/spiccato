@@ -9,9 +9,9 @@ export declare const nestedSetterFactory: (state: {
 }, path: string[]) => (newValue: any) => {
     [x: string]: any;
 };
-export declare const sanitizeState: (state: StateObject, privatePaths: (string | string[])[]) => {
+export declare const sanitizeState: (state: StateObject, privatePaths: (string | string[])[]) => ({
     [x: string]: any;
-}[];
+} | Map<string | string[], string[]>)[];
 export declare const restoreState: (state: {
     [key: string]: any;
 }, removed: {
